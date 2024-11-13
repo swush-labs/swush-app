@@ -76,15 +76,25 @@ export default function Component() {
                 <div className="absolute left-1/3 bottom-1/3 w-64 h-64 bg-pink-200 dark:bg-pink-700 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
             </div>
 
-            {/* Theme toggle button */}
-            <Button
-                variant="outline"
-                size="icon"
-                className="absolute top-4 left-4 bg-white/80 dark:bg-gray-800/80 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-full"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            >
-                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </Button>
+            {/* Theme toggle and wallet buttons */}
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+                <Button
+                    variant="outline"
+                    className="bg-white/80 dark:bg-gray-800/80 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    onClick={() => setWalletConnected(true)}
+                >
+                    <Wallet className="mr-2 h-5 w-5" /> 
+                    {walletConnected ? 'Connected' : 'Connect Wallet'}
+                </Button>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="bg-white/80 dark:bg-gray-800/80 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-full"
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                >
+                    {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                </Button>
+            </div>
 
             {/* Main swap container */}
             <div className="max-w-md w-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-3xl shadow-lg dark:shadow-2xl p-8 space-y-6 relative z-10 border border-gray-200 dark:border-gray-700">
@@ -212,22 +222,13 @@ export default function Component() {
                     </div>
                 </div>
 
-                {walletConnected ? (
-                    <Button
-                        className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 transition-all"
-                        onClick={handleSwap}
-                        disabled={!inputAmount}
-                    >
-                        Swap
-                    </Button>
-                ) : (
-                    <Button
-                        className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 transition-all"
-                        onClick={() => setWalletConnected(true)}
-                    >
-                        <Wallet className="mr-2 h-5 w-5" /> Connect Wallet
-                    </Button>
-                )}
+                <Button
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 transition-all"
+                    onClick={handleSwap}
+                    disabled={!inputAmount || !walletConnected}
+                >
+                    Swap
+                </Button>
             </div>
         </div>
     )
