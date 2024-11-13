@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -26,15 +26,37 @@ const availableTokens = [
     { name: 'USDC', balance: '1000' },
 ]
 
+const STORAGE_KEYS = {
+    SLIPPAGE: 'swap-slippage-tolerance',
+    DEADLINE: 'swap-transaction-deadline'
+};
+
+const getStoredPreferences = () => {
+    if (typeof window === 'undefined') return null;
+    return {
+        slippageTolerance: parseFloat(localStorage.getItem(STORAGE_KEYS.SLIPPAGE) ?? '0.5'),
+        transactionDeadline: parseInt(localStorage.getItem(STORAGE_KEYS.DEADLINE) ?? '20')
+    };
+};
+
 export default function Component() {
+    const storedPrefs = getStoredPreferences();
     const [inputToken, setInputToken] = useState('DOT')
     const [outputToken, setOutputToken] = useState('USDC')
     const [inputAmount, setInputAmount] = useState('')
     const [outputAmount, setOutputAmount] = useState('')
-    const [slippageTolerance, setSlippageTolerance] = useState(0.5)
-    const [transactionDeadline, setTransactionDeadline] = useState(20)
+    const [slippageTolerance, setSlippageTolerance] = useState(storedPrefs?.slippageTolerance ?? 0.5)
+    const [transactionDeadline, setTransactionDeadline] = useState(storedPrefs?.transactionDeadline ?? 20)
     const [walletConnected, setWalletConnected] = useState(false)
     const { theme, setTheme } = useTheme()
+
+    useEffect(() => {
+        localStorage.setItem(STORAGE_KEYS.SLIPPAGE, slippageTolerance.toString());
+    }, [slippageTolerance]);
+
+    useEffect(() => {
+        localStorage.setItem(STORAGE_KEYS.DEADLINE, transactionDeadline.toString());
+    }, [transactionDeadline]);
 
     const handleInputChange = (value: string) => {
         setInputAmount(value)
