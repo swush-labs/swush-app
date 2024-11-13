@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -13,7 +13,7 @@ import {
 
 import { Settings, Clock, ArrowRight, DollarSign, Wallet } from 'lucide-react'
 
-const TokenButton = ({ token, icon, price, onClick }) => (
+const TokenButton = ({ token, icon, onClick }) => (
   <button
     onClick={onClick}
     className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 transition-colors"
@@ -28,8 +28,6 @@ const TokenButton = ({ token, icon, price, onClick }) => (
 
 export default function Component() {
   const [walletConnected, setWalletConnected] = useState(false)
-  const [inputToken, setInputToken] = useState('DOT')
-  const [outputToken, setOutputToken] = useState('ETH')
   const [inputAmount, setInputAmount] = useState('50')
   const [outputAmount, setOutputAmount] = useState('100')
   const [slippageTolerance, setSlippageTolerance] = useState(0.5)
