@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -10,14 +10,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Settings, Clock, ArrowRight, DollarSign } from 'lucide-react'
+
+import { Settings, Clock, ArrowRight, DollarSign, Wallet } from 'lucide-react'
 
 const TokenButton = ({ token, icon, price, onClick }) => (
   <button
@@ -33,6 +27,7 @@ const TokenButton = ({ token, icon, price, onClick }) => (
 )
 
 export default function Component() {
+  const [walletConnected, setWalletConnected] = useState(false)
   const [inputToken, setInputToken] = useState('DOT')
   const [outputToken, setOutputToken] = useState('ETH')
   const [inputAmount, setInputAmount] = useState('50')
@@ -47,6 +42,16 @@ export default function Component() {
 
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-cyan-900 to-slate-900 flex flex-col items-center justify-center p-4">
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <Button
+          variant="outline"
+          className="bg-slate-900/90 border border-slate-800/50 text-white hover:bg-slate-800/90 transition-colors"
+          onClick={() => setWalletConnected(!walletConnected)}
+        >
+          <Wallet className="mr-2 h-4 w-4" />
+          {walletConnected ? '0x...abc' : 'Connect Wallet'}
+        </Button>
+      </div>
       <div className="w-full max-w-md space-y-8">
         <div className="flex justify-between items-center px-1">
           <h1 className="text-xl font-medium text-white">Swap</h1>
