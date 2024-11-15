@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Settings, RotateCcw, ArrowRight, Wallet, Check, Loader2, Info, ArrowLeftRight } from 'lucide-react'
+import { Settings, RotateCcw, ArrowRight, Wallet, Check, Loader2, Info, ChevronsDown } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 interface TokenButtonProps {
@@ -145,7 +145,7 @@ export default function Component() {
 
       <div className="w-full max-w-md space-y-8">
         <div className="flex justify-between items-center px-1">
-          <h1 className="text-2xl font-bold text-white">Swap Tokens</h1>
+          <h1 className="text-2xl font-bold text-white"></h1>
           <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800/50">
             <RotateCcw className="w-5 h-5" />
           </Button>
@@ -233,7 +233,7 @@ export default function Component() {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
-              <ArrowLeftRight className="w-6 h-6 text-slate-300" />
+              <ChevronsDown className="w-6 h-6 text-slate-300" />
             </motion.div>
           </div>
 
@@ -362,7 +362,7 @@ export default function Component() {
               className="w-full h-14 text-lg font-semibold bg-rose-500 hover:bg-rose-600 text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-rose-500/25"
               onClick={handleSwap}
             >
-              Swap Tokens
+              Swap
             </Button>
           </DialogTrigger>
           <DialogContent className="bg-slate-900 border-slate-800 sm:max-w-md">
