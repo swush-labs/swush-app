@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Settings, Clock, ArrowRight, Wallet, Check, Loader2, Info, ArrowLeftRight } from 'lucide-react'
+import { Settings, RotateCcw, ArrowRight, Wallet, Check, Loader2, Info, ArrowLeftRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 interface TokenButtonProps {
@@ -147,7 +147,7 @@ export default function Component() {
         <div className="flex justify-between items-center px-1">
           <h1 className="text-2xl font-bold text-white">Swap Tokens</h1>
           <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800/50">
-            <Clock className="w-5 h-5" />
+            <RotateCcw className="w-5 h-5" />
           </Button>
         </div>
 
