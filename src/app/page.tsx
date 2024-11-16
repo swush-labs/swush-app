@@ -222,7 +222,7 @@ export default function Component() {
                   type="number"
                   value={inputAmount}
                   onChange={(e) => handleInputChange(e.target.value)}
-                  className="border-0 bg-transparent text-3xl text-white placeholder:text-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0 text-right"
+                  className="border-0 bg-transparent text-2xl text-white placeholder:text-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0 text-right"
                   placeholder="0"
                 />
               </div>
@@ -292,7 +292,7 @@ export default function Component() {
                   type="number"
                   value={outputAmount}
                   readOnly
-                  className="border-0 bg-transparent text-3xl text-white placeholder:text-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0 text-right"
+                  className="border-0 bg-transparent text-2xl text-white placeholder:text-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0 text-right"
                   placeholder="0"
                 />
               </div>
