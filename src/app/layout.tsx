@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import "./globals.css";
+import { Inter } from 'next/font/google'
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
 
+export const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+})
 export const metadata: Metadata = {
   title: "Swush",
   description: "DEX Aggregator on Polkadot Asset Hub",
@@ -26,9 +20,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={inter.className}
       >
-          {children}
+        {children}
       </body>
     </html>
   );
