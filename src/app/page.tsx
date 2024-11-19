@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Settings, RotateCcw, ArrowRight, Wallet, Check, Loader2, Info, ChevronsDown } from 'lucide-react'
+import { Settings, RotateCcw, ArrowRight, Wallet, Check, Loader2, Info, ChevronsDown, History } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { Toaster, toast } from 'react-hot-toast'
 
 interface TokenButtonProps {
   token: string;
@@ -39,6 +40,13 @@ const TokenButton = ({ token, icon, onClick, price }: TokenButtonProps) => (
   </button>
 )
 
+interface SwapHistoryItem {
+  id: number;
+  type: 'success' | 'error';
+  message: string;
+  timestamp: Date;
+}
+
 export default function Component() {
   const [inputToken, setInputToken] = useState({ name: 'DOT', icon: '●', price: '$2.00' })
   const [outputToken, setOutputToken] = useState({ name: 'ETH', icon: 'Ξ', price: '$2000' })
@@ -54,6 +62,8 @@ export default function Component() {
     { id: 2, title: 'Swap DOT → USDC', status: 'waiting' },
     { id: 3, title: 'Swap USDC → ETH', status: 'waiting' },
   ])
+  const [swapHistory, setSwapHistory] = useState<SwapHistoryItem[]>([])
+  const [showHistory, setShowHistory] = useState(false)
 
   const handleInputChange = (value: string) => {
     setInputAmount(value)
@@ -63,44 +73,59 @@ export default function Component() {
   const handleWalletConnect = () => {
     setIsConnected(!isConnected)
     setWalletAddress(isConnected ? '' : '0x1234...5678')
+    toast.success(isConnected ? 'Wallet disconnected' : 'Wallet connected', {
+      icon: isConnected ? '🔴' : '🟢',
+    })
   }
 
   const handleSwap = async () => {
     if (!isConnected) {
-      return;
+      toast.error('Please connect your wallet first', {
+        icon: '🔒',
+      })
+      return
     }
 
-    setIsSwapping(true);
+    setIsSwapping(true)
     
     try {
       for (let i = 0; i < swapSteps.length; i++) {
         setSwapSteps(steps => steps.map(step =>
           step.id === i + 1 ? { ...step, status: 'loading' } : step
-        ));
+        ))
 
-        await new Promise(r => setTimeout(r, 2000 + Math.random() * 1000));
+        await new Promise(r => setTimeout(r, 2000 + Math.random() * 1000))
 
-        const success = await mockBlockchainTransaction();
+        const success = await mockBlockchainTransaction()
         
         if (!success) {
-          throw new Error(`Step ${i + 1} failed`);
+          throw new Error(`Step ${i + 1} failed`)
         }
 
         setSwapSteps(steps => steps.map(step =>
           step.id === i + 1 ? { ...step, status: 'completed' } : step
-        ));
+        ))
       }
+
+      const successMessage = `Swapped ${inputAmount} ${inputToken.name} for ${outputAmount} ${outputToken.name}`
+      toast.success(successMessage, { icon: '🎉' })
+      setSwapHistory(prev => [{ id: Date.now(), type: 'success', message: successMessage, timestamp: new Date() }, ...prev])
     } catch (error) {
-      console.error('Swap failed:', error);
+      console.error('Swap failed:', error)
       setSwapSteps(steps => steps.map(step =>
         step.status === 'loading' ? { ...step, status: 'pending' } : step
-      ));
+      ))
+      const errorMessage = 'Swap failed. Please try again.'
+      toast.error(errorMessage, { icon: '❌' })
+      setSwapHistory(prev => [{ id: Date.now(), type: 'error', message: errorMessage, timestamp: new Date() }, ...prev])
+    } finally {
+      setIsSwapping(false)
     }
   }
 
   const mockBlockchainTransaction = async (): Promise<boolean> => {
-    const success = Math.random() > 0.1;
-    return success;
+    const success = Math.random() > 0.1
+    return success
   }
 
   const tokens = [
@@ -119,6 +144,14 @@ export default function Component() {
   return (
     <>
       <div className="fixed top-4 right-4 hidden sm:flex items-center gap-4 z-50">
+        <Button
+          onClick={() => setShowHistory(true)}
+          variant="outline"
+          size="icon"
+          className="bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-white transition-all duration-200"
+        >
+          <History className="w-4 h-4" />
+        </Button>
         <Button
           onClick={handleWalletConnect}
           variant="outline"
@@ -469,6 +502,45 @@ export default function Component() {
           </Dialog>
         </div>
       </div>
+
+      <Dialog open={showHistory} onOpenChange={setShowHistory}>
+        <DialogContent className="bg-slate-900 border-slate-800 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-white">Swap History</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4 space-y-4 max-h-96 overflow-y-auto">
+            {swapHistory.length === 0 ? (
+              <p className="text-slate-400">No swap history yet.</p>
+            ) : (
+              swapHistory.map((item) => (
+                <div key={item.id} className="bg-slate-800 p-4 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm ${item.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                      {item.type === 'success' ? '✅ Success' : '❌ Error'}
+                    </span>
+                    <span className="text-xs text-slate-400">{item.timestamp.toLocaleString()}</span>
+                  </div>
+                  <p className="mt-2 text-white">{item.message}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#1e293b',
+            color: '#fff',
+            borderRadius: '0.5rem',
+            padding: '1rem',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          },
+        }}
+      />
     </>
   )
 }
