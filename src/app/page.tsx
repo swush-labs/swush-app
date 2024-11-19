@@ -11,9 +11,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Settings, RotateCcw, ArrowRight, Wallet, Check, Loader2, Info, ChevronsDown, History } from 'lucide-react'
+import { Settings, RotateCcw, ArrowRight, Wallet, Check, Loader2, ChevronsDown, History } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Toaster, toast } from 'react-hot-toast'
 
@@ -510,56 +508,22 @@ export default function Component() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.2 }}
           >
-            <Tabs defaultValue="details" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-slate-800/50">
-                <TabsTrigger value="details" className="text-sm text-slate-400 data-[state=active]:bg-slate-700/50 data-[state=active]:text-white">Details</TabsTrigger>
-                <TabsTrigger value="route" className="text-sm text-slate-400 data-[state=active]:bg-slate-700/50 data-[state=active]:text-white">Route</TabsTrigger>
-              </TabsList>
-              <TabsContent value="details" className="mt-4 space-y-2 text-sm">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-400">Exchange Rate</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-white">1 {inputToken.name} = {(parseFloat(outputToken.price.slice(1)) / parseFloat(inputToken.price.slice(1))).toFixed(4)} {outputToken.name}</span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="w-4 h-4 text-slate-500 hover:text-slate-400" />
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-slate-800 border-slate-700">
-                          <div className="space-y-2">
-                            <p>Current market rate including:</p>
-                            <ul className="text-xs space-y-1 text-slate-300">
-                              <li>• Network fees</li>
-                              <li>• Price impact</li>
-                              <li>• DEX fees</li>
-                            </ul>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-400">Price Impact</span>
-                  <span className="text-green-400">-0.03%</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-400">Minimum Received</span>
-                  <span className="text-white">
-                    {(parseFloat(outputAmount) * 0.995).toFixed(4)} {outputToken.name}
-                  </span>
-                </div>
-              </TabsContent>
-              <TabsContent value="route" className="mt-4 text-sm">
-                <div className="text-sm text-slate-400">
-                  Best route: <span className="text-white">{inputToken.name} → USDC → {outputToken.name}</span>
-                </div>
-                <div className="mt-2 flex items-center justify-between text-sm">
-                  <span className="text-slate-400">Estimated Time</span>
-                  <span className="text-white">~2 minutes</span>
-                </div>
-              </TabsContent>
-            </Tabs>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-400">Minimum Received</span>
+                <span className="text-slate-300">
+                  {(parseFloat(outputAmount) * 0.995).toFixed(4)} {outputToken.name}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-400">Max Transaction Fee</span>
+                <span className="text-slate-300">0.004005 SOL</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-400">Price Impact</span>
+                <span className="text-slate-300">~0.1724%</span>
+              </div>
+            </div>
           </motion.div>
 
           <motion.div 
