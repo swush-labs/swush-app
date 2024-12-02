@@ -121,7 +121,7 @@ export default function Component() {
       needsSignature: true
     },
   ])
-  const [swapHistory, setSwapHistory] = useState<SwapHistoryItem[]>([])
+  const [swapHistory] = useState<SwapHistoryItem[]>([])
   const [showHistory, setShowHistory] = useState(false)
   const [balance] = useState(1234.56)
   const [insufficientBalance, setInsufficientBalance] = useState(false)
@@ -217,7 +217,7 @@ export default function Component() {
     { label: 'MAX', value: 1 },
   ]
 
-  const getStepStatusMessage = (status: StepStatus) => {
+/*   const getStepStatusMessage = (status: StepStatus) => {
     switch (status) {
       case 'completed':
         return 'Transaction confirmed'
@@ -232,7 +232,7 @@ export default function Component() {
       default:
         return 'Unknown status'
     }
-  }
+  } */
 
   // Render the main action button based on connection state
   const renderActionButton = () => {
