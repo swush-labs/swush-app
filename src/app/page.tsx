@@ -275,14 +275,14 @@ export default function Component() {
           onClick={() => setShowHistory(true)}
           variant="outline"
           size="icon"
-          className="bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-white transition-all duration-200"
+          className="bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-slate-300 transition-all duration-200"
         >
           <History className="w-4 h-4" />
         </Button>
         <Button
           onClick={handleWalletConnect}
           variant="outline"
-          className="flex items-center gap-2 bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-white transition-all duration-200"
+          className="flex items-center gap-2 bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-slate-300 transition-all duration-200"
         >
           <Wallet className="w-4 h-4" />
           <span>{isConnected ? walletAddress : 'Connect Wallet'}</span>
