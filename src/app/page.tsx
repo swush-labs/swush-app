@@ -518,12 +518,12 @@ export default function Component() {
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-400">Max Transaction Fee</span>
-                  <span className="text-slate-300">0.004005 SOL</span>
+                  <span className="text-slate-300">0.004005</span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                {/* <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-400">Price Impact</span>
                   <span className="text-slate-300">~0.1724%</span>
-                </div>
+                </div> */}
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-400">Route</span>
                   <span className="text-slate-300">Moonbeam</span>
