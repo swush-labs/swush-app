@@ -27,7 +27,9 @@
     "react-dom": "^18",
     "react-hot-toast": "^2.4.1",
     "tailwind-merge": "^2.5.3",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "@talismn/connect-components": "^1.1.9",
+    "@talismn/connect-wallets": "^1.2.8"
   },
   "devDependencies": {
     "@shadcn/ui": "^0.0.4",

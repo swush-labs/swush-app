@@ -14,6 +14,20 @@ import { Settings, RotateCcw, ArrowRight, Wallet, Check, Loader2, ChevronsDown, 
 import { motion } from 'framer-motion'
 import { Toaster, toast } from 'react-hot-toast'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import {
+  WalletSelect
+} from '@talismn/connect-components'
+import {
+  AlephZeroWallet,
+  EnkryptWallet,
+  FearlessWallet,
+  MantaWallet,
+  NovaWallet,
+  PolkadotjsWallet,
+  PolkaGate,
+  SubWallet,
+  TalismanWallet,
+} from '@talismn/connect-wallets'
 
 interface TokenButtonProps {
   token: string;
@@ -238,13 +252,48 @@ export default function Component() {
   const renderActionButton = () => {
     if (!isConnected) {
       return (
-        <Button 
-          className="w-full h-14 text-lg font-semibold bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
-          onClick={handleWalletConnect}
-        >
-          <Wallet className="w-5 h-5 mr-2" />
-          Connect Wallet
-        </Button>
+        <WalletSelect
+          dappName="Swush"
+          showAccountsList
+          walletList={[
+            new TalismanWallet(),
+            new NovaWallet(),
+            new SubWallet(),
+            new MantaWallet(),
+            new PolkaGate(),
+            new FearlessWallet(),
+            new EnkryptWallet(),
+            new PolkadotjsWallet(),
+            new AlephZeroWallet(),
+          ]}
+          triggerComponent={
+            <Button 
+              className="w-full h-14 text-lg font-semibold bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
+            >
+              <Wallet className="w-5 h-5 mr-2" />
+              Connect Wallet
+            </Button>
+          }
+          onAccountSelected={(account) => {
+            setIsConnected(true);
+            setWalletAddress(account.address);
+            toast.success('Wallet connected successfully', {
+              icon: '👋',
+              style: {
+                borderLeft: '4px solid #22c55e',
+              },
+            });
+          }}
+          onError={(error) => {
+            toast.error('Failed to connect wallet', {
+              icon: '❌',
+              style: {
+                borderLeft: '4px solid #ef4444',
+              },
+            });
+            console.error('Wallet connection error:', error);
+          }}
+        />
       );
     }
 
@@ -279,14 +328,60 @@ export default function Component() {
         >
           <History className="w-4 h-4" />
         </Button>
-        <Button
-          onClick={handleWalletConnect}
-          variant="outline"
-          className="flex items-center gap-2 bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-slate-300 transition-all duration-200"
-        >
-          <Wallet className="w-4 h-4" />
-          <span>{isConnected ? walletAddress : 'Connect Wallet'}</span>
-        </Button>
+        {!isConnected ? (
+          <WalletSelect
+            dappName="Swush"
+            showAccountsList
+            walletList={[
+              new TalismanWallet(),
+              new NovaWallet(),
+              new SubWallet(),
+              new MantaWallet(),
+              new PolkaGate(),
+              new FearlessWallet(),
+              new EnkryptWallet(),
+              new PolkadotjsWallet(),
+              new AlephZeroWallet(),
+            ]}
+            triggerComponent={
+              <Button
+                variant="outline"
+                className="flex items-center gap-2 bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-slate-300 transition-all duration-200"
+              >
+                <Wallet className="w-4 h-4" />
+                <span>Connect Wallet</span>
+              </Button>
+            }
+            onAccountSelected={(account) => {
+              setIsConnected(true);
+              setWalletAddress(account.address);
+              toast.success('Wallet connected successfully', {
+                icon: '👋',
+                style: {
+                  borderLeft: '4px solid #22c55e',
+                },
+              });
+            }}
+            onError={(error) => {
+              toast.error('Failed to connect wallet', {
+                icon: '❌',
+                style: {
+                  borderLeft: '4px solid #ef4444',
+                },
+              });
+              console.error('Wallet connection error:', error);
+            }}
+          />
+        ) : (
+          <Button
+            onClick={handleWalletConnect}
+            variant="outline"
+            className="flex items-center gap-2 bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-slate-300 transition-all duration-200"
+          >
+            <Wallet className="w-4 h-4" />
+            <span>{walletAddress}</span>
+          </Button>
+        )}
       </div>
 
       <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-cyan-900 to-slate-900 flex flex-col items-center justify-center p-4">
