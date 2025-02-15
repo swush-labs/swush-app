@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -158,6 +158,72 @@ const AssetList = ({
   )
 }
 
+const shortenAddress = (address: string): string => {
+  if (!address) return '';
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+};
+
+const WalletMenu = ({
+  address,
+  onDisconnect,
+  className = ''
+}: {
+  address: string;
+  onDisconnect: () => void;
+  className?: string;
+}) => {
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showMenu]);
+
+  const handleDisconnect = () => {
+    onDisconnect();
+    setShowMenu(false);
+  };
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <Button
+        variant="outline"
+        className={`flex items-center gap-2 ${className}`}
+        onClick={() => setShowMenu(!showMenu)}
+      >
+        <Wallet className="w-4 h-4" />
+        <span>{shortenAddress(address)}</span>
+        <ChevronDown className={`w-4 h-4 ml-1 transition-transform duration-200 ${showMenu ? 'rotate-180' : ''}`} />
+      </Button>
+
+      {showMenu && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="absolute right-0 mt-2 w-48 rounded-xl bg-slate-800 border border-slate-700 shadow-lg z-50"
+        >
+          <button
+            onClick={handleDisconnect}
+            className="w-full px-4 py-2 text-left text-rose-400 hover:bg-slate-700/50 transition-colors rounded-xl"
+          >
+            Disconnect
+          </button>
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
 const WalletButton = ({ 
   isConnected, 
   setIsConnected, 
@@ -168,35 +234,18 @@ const WalletButton = ({
   isConnected: boolean;
   setIsConnected: (value: boolean) => void;
   setWalletAddress: (value: string) => void;
-  variant?: 'default' | 'outline';
+  variant?: 'default' | 'outline' | 'ghost';
   className?: string;
 }) => {
-  const [hasShownError, setHasShownError] = useState(false);
-
   const handleAccountSelected = (account: any) => {
     setIsConnected(true);
     setWalletAddress(account.address);
-    setHasShownError(false); // Reset error state on successful connection
     toast.success('Wallet connected successfully', {
       icon: '👋',
       style: {
         borderLeft: '4px solid #22c55e',
       },
     });
-  };
-
-  const handleError = (error: unknown) => {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    if (errorMessage !== 'Wallet not found' && !hasShownError) {
-      setHasShownError(true);
-      toast.error('Failed to connect wallet', {
-        icon: '❌',
-        style: {
-          borderLeft: '4px solid #ef4444',
-        },
-      });
-      console.error('Wallet connection error:', error);
-    }
   };
 
   return (
@@ -224,7 +273,6 @@ const WalletButton = ({
         </Button>
       }
       onAccountSelected={handleAccountSelected}
-      onError={handleError}
     />
   );
 };
@@ -293,27 +341,6 @@ export default function Component() {
     const inputValue = parseFloat(value)
     setOutputAmount(isNaN(inputValue) ? '0' : (inputValue * 2).toFixed(4))
     setInsufficientBalance(inputValue > balance)
-  }
-
-  const handleWalletConnect = () => {
-    setIsConnected(!isConnected)
-    setWalletAddress(isConnected ? '' : '0x1234...5678')
-    
-    if (!isConnected) {
-      toast.success('Wallet connected successfully', {
-        icon: '👋',
-        style: {
-          borderLeft: '4px solid #22c55e', // Green border for success
-        },
-      })
-    } else {
-      toast.success('Wallet disconnected', {
-        icon: '👋',
-        style: {
-          borderLeft: '4px solid #64748b', // Slate border for neutral actions
-        },
-      })
-    }
   }
 
   const handleSwap = async () => {
@@ -428,6 +455,18 @@ export default function Component() {
     );
   };
 
+  // Update the main component's disconnect handler
+  const handleDisconnect = () => {
+    setIsConnected(false);
+    setWalletAddress('');
+    toast.success('Wallet disconnected', {
+      icon: '👋',
+      style: {
+        borderLeft: '4px solid #64748b',
+      },
+    });
+  };
+
   return (
     <>
       <div className="fixed top-4 right-4 hidden sm:flex items-center gap-4 z-50">
@@ -448,14 +487,11 @@ export default function Component() {
             className="flex items-center gap-2 bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-slate-300 transition-all duration-200"
           />
         ) : (
-          <Button
-            onClick={handleWalletConnect}
-            variant="outline"
-            className="flex items-center gap-2 bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-slate-300 transition-all duration-200"
-          >
-            <Wallet className="w-4 h-4" />
-            <span>{walletAddress}</span>
-          </Button>
+          <WalletMenu
+            address={walletAddress}
+            onDisconnect={handleDisconnect}
+            className="bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-slate-300 transition-all duration-200"
+          />
         )}
       </div>
 
@@ -495,14 +531,21 @@ export default function Component() {
                     </div>
                   </div>
                   <div className="sm:hidden pt-4 border-t border-slate-800">
-                    <Button
-                      onClick={handleWalletConnect}
-                      variant="outline"
-                      className="w-full flex items-center justify-center gap-2 bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-white transition-all duration-200"
-                    >
-                      <Wallet className="w-4 h-4" />
-                      <span>{isConnected ? walletAddress : 'Connect Wallet'}</span>
-                    </Button>
+                    {!isConnected ? (
+                      <WalletButton
+                        isConnected={isConnected}
+                        setIsConnected={setIsConnected}
+                        setWalletAddress={setWalletAddress}
+                        variant="outline"
+                        className="w-full flex items-center justify-center gap-2 bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-white transition-all duration-200"
+                      />
+                    ) : (
+                      <WalletMenu
+                        address={walletAddress}
+                        onDisconnect={handleDisconnect}
+                        className="w-full bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-white transition-all duration-200"
+                      />
+                    )}
                   </div>
                 </DialogContent>
               </Dialog>
@@ -510,14 +553,21 @@ export default function Component() {
                 <RotateCcw className="w-5 h-5" />
               </Button>
               <div className="sm:hidden">
-                <Button
-                  onClick={handleWalletConnect}
-                  variant="ghost"
-                  size="icon"
-                  className="text-slate-400 hover:text-white hover:bg-slate-800/50"
-                >
-                  <Wallet className="w-5 h-5" />
-                </Button>
+                {!isConnected ? (
+                  <WalletButton
+                    isConnected={isConnected}
+                    setIsConnected={setIsConnected}
+                    setWalletAddress={setWalletAddress}
+                    variant="ghost"
+                    className="text-slate-400 hover:text-white hover:bg-slate-800/50"
+                  />
+                ) : (
+                  <WalletMenu
+                    address={walletAddress}
+                    onDisconnect={handleDisconnect}
+                    className="text-slate-400 hover:text-white hover:bg-slate-800/50"
+                  />
+                )}
               </div>
             </div>
           </div>
