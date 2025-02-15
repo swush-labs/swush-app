@@ -2,7 +2,7 @@ import { TypedApi } from 'polkadot-api';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
 import { TokenGraph } from './TokenGraph';
 import { Asset } from './types';
-
+import { TradeRouterService } from '../network/TradeRouterService';
 
 export interface RouteQuote {
     path: string[];
@@ -13,6 +13,7 @@ export interface RouteQuote {
         amountIn: bigint;
         amountOut: bigint;
     }[];
+    dex: 'assetHub' | 'hydraDx';
 }
 
 export class AssetHubRouter {
@@ -63,31 +64,102 @@ export class AssetHubRouter {
         );
     }
 
+    private async getHydraDxQuote(
+        fromAsset: Asset,
+        toAsset: Asset,
+        amountIn: bigint
+    ): Promise<RouteQuote | null> {
+        try {
+            if (!fromAsset.hydradx || !toAsset.hydradx) {
+                return null;
+            }
+
+            const tradeRouter = TradeRouterService.getInstance().getTradeRouter();
+            const trade = await tradeRouter.getBestSell(
+                fromAsset.hydradx.assetId,
+                toAsset.hydradx.assetId,
+                amountIn.toString()
+            );
+
+            if (!trade) {
+                return null;
+            }
+
+            // Convert the trade to our RouteQuote format
+            return {
+                path: [fromAsset.hydradx.assetId, toAsset.hydradx.assetId],
+                expectedOutput: BigInt(trade.amountOut.toString()),
+                hops: [{
+                    from: fromAsset.hydradx.assetId,
+                    to: toAsset.hydradx.assetId,
+                    amountIn: BigInt(trade.amountIn.toString()),
+                    amountOut: BigInt(trade.amountOut.toString())
+                }],
+                dex: 'hydraDx'
+            };
+        } catch (error) {
+            console.error('Error getting HydraDX quote:', error);
+            return null;
+        }
+    }
+
     public async findBestRoute(
         fromAssetId: string,
         toAssetId: string,
         amountIn: bigint
     ): Promise<RouteQuote | null> {
         try {
-            // Find all possible paths up to 3 hops
-            const paths = this.tokenGraph.findAllPaths(fromAssetId, toAssetId, 3, 'assetHub');
-            if (paths.length === 0) return null;
+            const fromAsset = this.assetMap.get(fromAssetId);
+            const toAsset = this.assetMap.get(toAssetId);
 
-            // Get quotes for all paths in parallel using batch calls
-            const pathQuotes = await Promise.all(
-                paths.map(path => this.calculatePathQuoteWithBatch(path, amountIn))
-            );
+            if (!fromAsset || !toAsset) {
+                throw new Error('Assets not found');
+            }
 
-            const validQuotes = pathQuotes.filter((quote): quote is RouteQuote => quote !== null);
-            if (validQuotes.length === 0) return null;
+            // Get quotes from both DEXes in parallel
+            const [assetHubQuote, hydraDxQuote] = await Promise.all([
+                // Get Asset Hub quote
+                (async () => {
+                    try {
+                        const paths = this.tokenGraph.findAllPaths(fromAssetId, toAssetId, 3, 'assetHub');
+                        if (paths.length === 0) return null;
 
-            // Return the path with highest output amount
-            return validQuotes.reduce((best, current) => 
-                current.expectedOutput > best.expectedOutput ? current : best
-            );
+                        const pathQuotes = await Promise.all(
+                            paths.map(path => this.calculatePathQuoteWithBatch(path, amountIn))
+                        );
+
+                        const validQuotes = pathQuotes.filter((quote): quote is RouteQuote => quote !== null);
+                        if (validQuotes.length === 0) return null;
+
+                        const bestAssetHubQuote = validQuotes.reduce((best, current) => 
+                            current.expectedOutput > best.expectedOutput ? current : best
+                        );
+                        
+                        return { ...bestAssetHubQuote, dex: 'assetHub' as const };
+                    } catch (error) {
+                        console.error('Error getting Asset Hub quote:', error);
+                        return null;
+                    }
+                })(),
+                // Get HydraDX quote if both assets support it
+                this.getHydraDxQuote(fromAsset, toAsset, amountIn)
+            ]);
+
+            // Compare quotes and return the best one
+            if (!assetHubQuote && !hydraDxQuote) {
+                return null;
+            }
+
+            if (!assetHubQuote) return hydraDxQuote;
+            if (!hydraDxQuote) return assetHubQuote;
+
+            // Return the quote with higher expected output
+            return assetHubQuote.expectedOutput > hydraDxQuote.expectedOutput
+                ? assetHubQuote
+                : hydraDxQuote;
 
         } catch (error) {
-            console.error('Error finding route:', error);
+            console.error('Error finding best route:', error);
             return null;
         }
     }
@@ -142,7 +214,8 @@ export class AssetHubRouter {
             return {
                 path,
                 expectedOutput: finalAmount,
-                hops
+                hops,
+                dex: 'assetHub'
             };
 
         } catch (error) {

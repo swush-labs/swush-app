@@ -9,6 +9,7 @@ import { ConnectionManager } from '../network/ConnectionManager';
 import { AssetHubRouter } from './AssetHubRouter';
 import { CACHE_KEYS } from '../constants';
 import { NATIVE_DOT_ASSET } from './metadata';
+import { TradeRouterService } from '@/network/TradeRouterService';
 
 export class AssetService {
     private static instance: AssetService;
@@ -277,11 +278,7 @@ export class AssetService {
         };
     
         try {
-            const poolService = new PoolService(hydraApi);
-            const externalAssets = [...base, ...degen];
-            console.log("Syncing registry with", externalAssets.length, "assets");
-            await poolService.syncRegistry(externalAssets);
-            const tradeRouter = new TradeRouter(poolService);
+            const tradeRouter = TradeRouterService.getInstance().getTradeRouter();
             const hydradxPools = await tradeRouter.getPools();
     
             console.log('First HydraDX Pool:', JSON.stringify(hydradxPools[0], null, 2));

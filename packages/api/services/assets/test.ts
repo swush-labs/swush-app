@@ -1,15 +1,15 @@
 //main function to test the asset service
 
 import { AssetService } from './AssetService';
-import { initializeSDK } from '../../start';
+import { initializeSDK } from '../index';
 import fs from 'fs';
 import path from 'path';
 import { ConnectionManager } from '../network/ConnectionManager';
 import { AssetHubRouter } from './AssetHubRouter';
 import CacheManager from '../cache/CacheManager';
 import { Asset } from './types';
-import { saveAssetsToFile } from '@/utils';
-import { CACHE_KEYS } from '@/constants';
+import { saveAssetsToFile } from '../utils';
+import { CACHE_KEYS } from '../constants';
 // await CacheService.getInstance().initializeAllCaches();
 // const assetService = AssetService.getInstance();
 // await assetService.getAssets();
@@ -90,15 +90,15 @@ async function testAssetHubQuotes() {
                 
                 console.log('Expected Output:', route.expectedOutput.toString());
                 
-                console.log('\nHops:');
-                for (const hop of route.hops) {
-                    const fromAsset = assets.get(hop.from);
-                    const toAsset = assets.get(hop.to);
+                // console.log('\nHops:');
+                // for (const hop of route.hops) {
+                //     const fromAsset = assets.get(hop.from);
+                //     const toAsset = assets.get(hop.to);
                     
-                    console.log(`\nFrom ${fromAsset?.metadata.symbol || hop.from} to ${toAsset?.metadata.symbol || hop.to}:`);
-                    console.log('Amount In:', formatAmount(hop.amountIn, fromAsset?.metadata.decimals));
-                    console.log('Amount Out:', formatAmount(hop.amountOut, toAsset?.metadata.decimals));
-                }
+                //     console.log(`\nFrom ${fromAsset?.metadata.symbol || hop.from} to ${toAsset?.metadata.symbol || hop.to}:`);
+                //     console.log('Amount In:', formatAmount(hop.amountIn, fromAsset?.metadata.decimals));
+                //     console.log('Amount Out:', formatAmount(hop.amountOut, toAsset?.metadata.decimals));
+                // }
             } else {
                 console.log('No route found!');
             }
@@ -124,25 +124,6 @@ function formatAmount(amount: bigint, decimals: number = 0): string {
 // Main function to test the asset service
 async function main() {
     try {
-        await initializeSDK();
-        
-        // Test original asset fetching
-        const assetService = AssetService.getInstance();
-        const testAssets = await assetService.getAssets();
-        
-        // Save assets to file
-        const outputDir = path.join(__dirname, 'output');
-        fs.mkdirSync(outputDir, { recursive: true });
-        
-        fs.writeFileSync(
-            path.join(outputDir, 'testAssets.json'),
-            JSON.stringify(
-                Object.fromEntries(testAssets),
-                (_, value) => typeof value === 'bigint' ? value.toString() : value,
-                2
-            )
-        );
-
         // Test router quotes
         await testAssetHubQuotes();
 
