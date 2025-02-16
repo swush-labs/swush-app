@@ -1,7 +1,6 @@
 import { TypedApi } from 'polkadot-api';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
 import { PoolService, TradeRouter } from '@galacticcouncil/sdk';
-import CacheManager from '../cache/CacheManager';
 import { Asset, AssetType, XcmV4Location } from './types';
 import { getXcmV3Multilocation, serializeKey } from './utils';
 import { base, degen } from './external';
@@ -16,6 +15,12 @@ export class AssetService {
     private static instance: AssetService;
     private cacheService: CacheService;
     private connectionManager: ConnectionManager;
+    private initialized: boolean = false;
+
+    // Cache refresh intervals in milliseconds
+    private static REFRESH_INTERVALS = {
+        ASSETS: 30 * 60 * 1000  // 30 minutes
+    };
 
     private constructor() {
         this.cacheService = CacheService.getInstance();
@@ -27,6 +32,43 @@ export class AssetService {
             AssetService.instance = new AssetService();
         }
         return AssetService.instance;
+    }
+
+    public isInitialized(): boolean {
+        return this.initialized;
+    }
+
+    private async setupCacheRefresh(): Promise<void> {
+        // Register cache refresh for assets
+        this.cacheService.registerRefreshCallback(
+            CACHE_KEYS.MERGED_ASSETS,
+            async () => {
+                const assets = await this.fetchAllAssetsPapi(this.connectionManager.getAssetHubApi()!);
+                await this.cacheService.set(CACHE_KEYS.MERGED_ASSETS, assets);
+            },
+            AssetService.REFRESH_INTERVALS.ASSETS
+        );
+    }
+
+    public async initialize(): Promise<void> {
+        if (this.initialized) return;
+
+        try {
+            // Initialize network connections first
+            await this.connectionManager.initialize();
+
+            // Setup cache refresh
+            await this.setupCacheRefresh();
+            
+            // Initialize cache service
+            await this.cacheService.initialize();
+
+            this.initialized = true;
+            console.log('AssetService initialized successfully');
+        } catch (error) {
+            console.error('Failed to initialize AssetService:', error);
+            throw error;
+        }
     }
 
     public async getAssets(forceRefresh = false): Promise<Map<string, Asset>> {
@@ -249,12 +291,12 @@ export class AssetService {
             if (!location?.interior?.x3) return null;
             const interior = location.interior.x3;
             
-            if (!interior.some(j => j.palletInstance === 50) || 
-                !interior.some(j => j.parachain === 1000)) {
+            if (!interior.some((j: { palletInstance?: number }) => j.palletInstance === 50) || 
+                !interior.some((j: { parachain?: number }) => j.parachain === 1000)) {
                 return null;
             }
     
-            const generalIndexEntry = interior.find(j => j.generalIndex !== undefined);
+            const generalIndexEntry = interior.find((j: { generalIndex?: string | number }) => j.generalIndex !== undefined);
             return generalIndexEntry ? generalIndexEntry.generalIndex.toString() : null;
         };
     

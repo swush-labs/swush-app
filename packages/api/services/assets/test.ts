@@ -6,10 +6,11 @@ import fs from 'fs';
 import path from 'path';
 import { ConnectionManager } from '../network/ConnectionManager';
 import { AssetHubRouter } from './AssetHubRouter';
-import CacheManager from '../cache/CacheManager';
 import { Asset } from './types';
 import { saveAssetsToFile } from '../utils';
 import { CACHE_KEYS } from '../constants';
+import { CacheService } from '@/cache/CacheService';
+import { TokenGraph } from './TokenGraph';
 // await CacheService.getInstance().initializeAllCaches();
 // const assetService = AssetService.getInstance();
 // await assetService.getAssets();
@@ -20,7 +21,7 @@ async function testAssetHubQuotes() {
         // Get required services
         const assetService = AssetService.getInstance();
         const connectionManager = ConnectionManager.getInstance();
-        const cacheManager = CacheManager.getInstance();
+        const cacheManager = CacheService.getInstance();
 
         // Get assets and API
         const assets = await assetService.getAssets();
@@ -28,7 +29,7 @@ async function testAssetHubQuotes() {
         if (!api) throw new Error('Asset Hub API not initialized');
 
         // Get cached router or create new one
-        const tokenGraph = cacheManager.get(CACHE_KEYS.TOKEN_GRAPH);
+        const tokenGraph = cacheManager.get<TokenGraph>(CACHE_KEYS.TOKEN_GRAPH);
         const router = AssetHubRouter.fromCachedGraph(api, assets, tokenGraph);
 
         // Helper function to find asset by symbol

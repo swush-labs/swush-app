@@ -10,7 +10,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "dev:api": "turbo run dev --filter=@swush/api",
-    "dev:web": "turbo run dev --filter=@swush/web",
+    "dev:ui": "turbo run dev --filter=@swush/web",
     "dev:all": "turbo run dev --parallel --filter=@swush/api --filter=@swush/web",
     "lint": "turbo run lint",
     "clean": "turbo run clean",

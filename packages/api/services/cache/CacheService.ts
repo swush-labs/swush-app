@@ -1,22 +1,13 @@
-import CacheManager from './CacheManager';
-import { AssetService } from '../assets/AssetService';
 import { CACHE_KEYS } from '../constants';
 
 export class CacheService {
     private static instance: CacheService;
-    private intervals: { [key: string]: NodeJS.Timer } = {};
-    private cacheManager: CacheManager;
-    private assetService: AssetService;
+    private cache: Map<string, any> = new Map();
+    private refreshCallbacks: Map<string, () => Promise<void>> = new Map();
+    private intervals: Map<string, NodeJS.Timeout> = new Map();
+    private initialized: boolean = false;
 
-    // Cache refresh intervals in milliseconds
-    private static REFRESH_INTERVALS = {
-        ASSETS: 30 * 60 * 1000  // 30 minutes
-    };
-
-    private constructor() {
-        this.cacheManager = CacheManager.getInstance();
-        this.assetService = AssetService.getInstance();
-    }
+    private constructor() {}
 
     public static getInstance(): CacheService {
         if (!CacheService.instance) {
@@ -25,62 +16,76 @@ export class CacheService {
         return CacheService.instance;
     }
 
+    public isInitialized(): boolean {
+        return this.initialized;
+    }
+
     public get<T>(key: string): T | undefined {
-        return this.cacheManager.get<T>(key);
+        return this.cache.get(key) as T;
     }
 
     public set<T>(key: string, value: T): void {
-        this.cacheManager.set(key, value);
+        this.cache.set(key, value);
     }
 
-    private async refreshAssetCache(): Promise<void> {
-        try {
-            await this.assetService.getAssets(true);
-            console.log('Assets cache refreshed');
-        } catch (error) {
-            console.error('Failed to refresh Assets cache:', error);
-            throw error;
+    public registerRefreshCallback(key: string, callback: () => Promise<void>, interval: number): void {
+        this.refreshCallbacks.set(key, callback);
+        this.startRefresh(key, interval);
+    }
+
+    private startRefresh(key: string, interval: number): void {
+        const callback = this.refreshCallbacks.get(key);
+        if (!callback) return;
+
+        const timer = setInterval(async () => {
+            try {
+                await callback();
+            } catch (error) {
+                console.error(`Error refreshing cache for ${key}:`, error);
+            }
+        }, interval) as NodeJS.Timeout;
+
+        this.intervals.set(key, timer);
+    }
+
+    public async initialize(): Promise<void> {
+        if (this.initialized) return;
+        
+        // Wait for all registered callbacks to complete their first run
+        const initPromises = Array.from(this.refreshCallbacks.entries()).map(
+            async ([key, callback]) => {
+                try {
+                    await callback();
+                    console.log(`Cache initialized for ${key}`);
+                } catch (error) {
+                    console.error(`Failed to initialize cache for ${key}:`, error);
+                    throw error;
+                }
+            }
+        );
+
+        await Promise.all(initPromises);
+        this.initialized = true;
+    }
+
+    public stopRefresh(key: string): void {
+        const timer = this.intervals.get(key);
+        if (timer) {
+            clearInterval(timer);
+            this.intervals.delete(key);
         }
     }
 
-    private startCacheRefresh(): void {
-        // Start Assets refresh
-        this.intervals['ASSETS'] = setInterval(
-            () => this.refreshAssetCache().catch(error => {
-                console.error('Error in refresh interval:', error);
-            }),
-            CacheService.REFRESH_INTERVALS.ASSETS
-        );
-    }
-
-    public stopCacheRefresh(): void {
-        Object.values(this.intervals).forEach(interval => {
-            if (interval) {
-                clearInterval(interval as NodeJS.Timeout);
-            }
+    public stopAllRefresh(): void {
+        this.intervals.forEach((timer) => {
+            clearInterval(timer);
         });
-        this.intervals = {};
+        this.intervals.clear();
         console.log('All cache refresh intervals stopped');
     }
 
-    public async initializeAllCaches(): Promise<void> {
-        try {
-            console.log('Initializing all caches...');
-            
-            // Initialize asset cache
-            await this.refreshAssetCache();
-            
-            console.log('All caches initialized');
-            this.startCacheRefresh();
-        } catch (error) {
-            console.error('Failed to initialize caches:', error);
-            this.stopCacheRefresh();
-            throw error;
-        }
-    }
-
-    public clearAllCaches(): void {
-        this.cacheManager.clear();
+    public clear(): void {
+        this.cache.clear();
         console.log('All caches cleared');
     }
 } 

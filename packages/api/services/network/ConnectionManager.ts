@@ -15,6 +15,7 @@ export class ConnectionManager {
         assetHub: null,
         hydradx: null
     };
+    private initialized: boolean = false;
 
     private constructor() {}
 
@@ -25,7 +26,13 @@ export class ConnectionManager {
         return ConnectionManager.instance;
     }
 
+    public isInitialized(): boolean {
+        return this.initialized;
+    }
+
     public async initialize(): Promise<void> {
+        if (this.initialized) return;
+
         try {
             // Initialize Asset Hub connection
             this.connections.assetHub = await connectPapi(AH_RPC_URL, 'asset-hub');
@@ -33,6 +40,7 @@ export class ConnectionManager {
             // Initialize HydraDX connection
             this.connections.hydradx = await connectPolkadotjs('wss://rpc.hydradx.cloud');
             
+            this.initialized = true;
             console.log('All network connections initialized');
         } catch (error) {
             console.error('Failed to initialize connections:', error);
