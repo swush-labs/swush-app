@@ -1,38 +1,35 @@
 // services/CacheManager.ts
 
-interface CacheData {
-    [key: string]: any;
+// Low-level cache operations manager
+class CacheManager {
+  private static instance: CacheManager;
+  private cache: Map<string, any> = new Map();
+
+  private constructor() {}
+
+  public static getInstance(): CacheManager {
+    if (!CacheManager.instance) {
+      CacheManager.instance = new CacheManager();
+    }
+    return CacheManager.instance;
   }
-  
-  class CacheManager {
-    private static instance: CacheManager;
-    private cache: CacheData = {};
-  
-    private constructor() {}
-  
-    public static getInstance(): CacheManager {
-      if (!CacheManager.instance) {
-        CacheManager.instance = new CacheManager();
-      }
-      return CacheManager.instance;
-    }
-  
-    public get(key: string): any {
-      return this.cache[key];
-    }
-  
-    public set(key: string, value: any): void {
-      this.cache[key] = value;
-    }
-  
-    public clear(): void {
-      this.cache = {};
-    }
-  
-    public getAll(): CacheData {
-      return this.cache;
-    }
+
+  public get<T>(key: string): T | undefined {
+    return this.cache.get(key) as T;
   }
-  
-  export default CacheManager;
+
+  public set<T>(key: string, value: T): void {
+    this.cache.set(key, value);
+  }
+
+  public has(key: string): boolean {
+    return this.cache.has(key);
+  }
+
+  public clear(): void {
+    this.cache.clear();
+  }
+}
+
+export default CacheManager;
   

@@ -1,7 +1,8 @@
 export const CACHE_KEYS = {
     ASSET_HUB_ASSETS: 'asset_hub_assets',
     MERGED_ASSETS: 'merged_assets',
-    TOKEN_GRAPH: 'token_graph'
+    TOKEN_GRAPH: 'token_graph',
+    ASSET_HUB_ROUTER: 'asset_hub_router'
 };
 
 export const NETWORKS_SUPPORTED = ['polkadot'];

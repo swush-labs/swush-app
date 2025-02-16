@@ -10,14 +10,15 @@ import { AssetHubRouter } from './AssetHubRouter';
 import { CACHE_KEYS } from '../constants';
 import { NATIVE_DOT_ASSET } from './metadata';
 import { TradeRouterService } from '@/network/TradeRouterService';
+import { CacheService } from '../cache/CacheService';
 
 export class AssetService {
     private static instance: AssetService;
-    private cacheManager: CacheManager;
+    private cacheService: CacheService;
     private connectionManager: ConnectionManager;
 
     private constructor() {
-        this.cacheManager = CacheManager.getInstance();
+        this.cacheService = CacheService.getInstance();
         this.connectionManager = ConnectionManager.getInstance();
     }
 
@@ -29,7 +30,7 @@ export class AssetService {
     }
 
     public async getAssets(forceRefresh = false): Promise<Map<string, Asset>> {
-        const cachedAssets = this.cacheManager.get(CACHE_KEYS.MERGED_ASSETS);
+        const cachedAssets = this.cacheService.get<Map<string, Asset>>(CACHE_KEYS.MERGED_ASSETS);
         if (!forceRefresh && cachedAssets) {
             console.log('Returning cached assets');
             return cachedAssets;
@@ -143,7 +144,6 @@ export class AssetService {
         const api = this.connectionManager.getAssetHubApi();
         if (!api) throw new Error('API not initialized');
     
-        // Get assets from Asset Hub pools
         const pools = await api.query.AssetConversion.Pools.getEntries();
 
         const assetHubPoolAssets = new Map<string, Asset>();
@@ -218,8 +218,9 @@ export class AssetService {
         //saveAssetsToFile(assetHubPoolAssets, 'assetHubAssets.json');
 
 
-        // Store the router instance for later use
-        this.cacheManager.set('asset_hub_router', assetHubRouter);
+        // Cache router and graph
+        this.cacheService.set(CACHE_KEYS.ASSET_HUB_ROUTER, assetHubRouter);
+        this.cacheService.set(CACHE_KEYS.TOKEN_GRAPH, assetHubRouter.getTokenGraph());
 
     
         // Get HydraDX assets and merge them
@@ -227,8 +228,7 @@ export class AssetService {
         //saveAssetsToFile(mergedAssets, 'mergedAssets.json');
 
         //set cache for mergedAssets
-        this.cacheManager.set(CACHE_KEYS.MERGED_ASSETS, mergedAssets);
-        this.cacheManager.set(CACHE_KEYS.TOKEN_GRAPH, assetHubRouter.getTokenGraph());
+        this.cacheService.set(CACHE_KEYS.MERGED_ASSETS, mergedAssets);
         return mergedAssets;
     }
     
