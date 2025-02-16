@@ -1,4 +1,3 @@
-import { CACHE_KEYS } from '../constants';
 
 export class CacheService {
     private static instance: CacheService;
@@ -20,7 +19,7 @@ export class CacheService {
         return this.initialized;
     }
 
-    public get<T>(key: string): T | undefined {
+    public get<T>(key: string): T  {
         return this.cache.get(key) as T;
     }
 

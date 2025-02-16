@@ -12,7 +12,11 @@
     "sourceMap": true,
     "isolatedModules": true,
     "resolveJsonModule": true,
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./packages/api/services/*"]
+    }
   },
   "exclude": ["node_modules"]
 } 

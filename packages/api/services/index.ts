@@ -1,10 +1,8 @@
 import { AssetService } from './assets/AssetService';
 import { Asset } from './assets/types';
-import { CacheService } from './cache/CacheService';
 import { ConnectionManager } from './network/ConnectionManager';
 import { TradeRouterService } from './network/TradeRouterService';
 import { base, degen } from './assets/external';
-import { CACHE_KEYS } from './constants';
 
 let isInitialized = false;
 

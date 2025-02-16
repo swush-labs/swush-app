@@ -8,7 +8,7 @@ import { ConnectionManager } from '../network/ConnectionManager';
 import { AssetHubRouter } from './AssetHubRouter';
 import { CACHE_KEYS } from '../constants';
 import { NATIVE_DOT_ASSET } from './metadata';
-import { TradeRouterService } from '@/network/TradeRouterService';
+import { TradeRouterService } from '../network/TradeRouterService';
 import { CacheService } from '../cache/CacheService';
 
 export class AssetService {

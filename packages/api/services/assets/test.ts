@@ -9,7 +9,7 @@ import { AssetHubRouter } from './AssetHubRouter';
 import { Asset } from './types';
 import { saveAssetsToFile } from '../utils';
 import { CACHE_KEYS } from '../constants';
-import { CacheService } from '@/cache/CacheService';
+import { CacheService } from '../cache/CacheService';
 import { TokenGraph } from './TokenGraph';
 // await CacheService.getInstance().initializeAllCaches();
 // const assetService = AssetService.getInstance();
@@ -125,6 +125,7 @@ function formatAmount(amount: bigint, decimals: number = 0): string {
 // Main function to test the asset service
 async function main() {
     try {
+        await initializeSDK();
         // Test router quotes
         await testAssetHubQuotes();
 
