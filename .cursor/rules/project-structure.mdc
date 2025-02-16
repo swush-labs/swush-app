@@ -1,0 +1,64 @@
+---
+description: high-level overview of codebase structure
+globs: 
+---
+I'll provide a high-level overview of your codebase structure:
+
+```
+swush-me-app/
+├── apps/
+│   └── web/                 # Next.js web application
+│       └── src/
+│           ├── app/        # Next.js App Router pages
+│           └── lib/        # Shared utilities and API clients
+│
+├── packages/
+│   ├── api/                # Core API and Services
+│   │   ├── services/
+│   │   │   ├── assets/    # Asset-related services
+│   │   │   │   ├── AssetService.ts       # Main asset management
+│   │   │   │   ├── AssetHubRouter.ts     # Asset Hub routing logic
+│   │   │   │   ├── TokenGraph.ts         # Token relationship graph
+│   │   │   │   └── types.ts              # Asset-related types
+│   │   │   ├── network/
+│   │   │   │   ├── ConnectionManager.ts   # Network connection handling
+│   │   │   │   └── TradeRouterService.ts # Trading route management
+│   │   │   └── cache/
+│   │   │       └── CacheService.ts       # Caching layer
+│   │   └── src/
+│   │       └── routes/    # API endpoints
+│   │
+│   ├── core/              # Shared core functionality
+│   │   └── src/
+│   │
+│   └── .papi/             # Polkadot API related code
+```
+
+Key Architecture Points:
+1. **Monorepo Structure**:
+   - Uses a monorepo setup with `apps` and `packages` separation
+   - Shared code is in `packages`, applications in `apps`
+
+2. **Service Layer** (`packages/api/services/`):
+   - `AssetService`: Manages asset data and caching
+   - `ConnectionManager`: Handles blockchain network connections
+   - `CacheService`: Singleton for caching with refresh callbacks
+   - `TradeRouterService`: Manages trading routes and calculations
+
+3. **Web Application** (`apps/web/`):
+   - Built with Next.js App Router
+   - Consumes the API services
+
+4. **Key Features**:
+   - Asset management for Polkadot Asset Hub
+   - Trading route calculations
+   - Caching system with automatic refresh
+   - Network connection management for multiple chains
+
+5. **Design Patterns**:
+   - Singleton pattern for services
+   - Dependency injection
+   - Observer pattern for cache updates
+   - Factory pattern for asset creation
+
+This codebase is focused on managing and trading assets across different blockchain networks, with a particular focus on Polkadot's Asset Hub and HydraDX.
