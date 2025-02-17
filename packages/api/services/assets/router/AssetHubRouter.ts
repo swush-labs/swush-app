@@ -1,6 +1,6 @@
 import { TypedApi } from 'polkadot-api';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
-import { TokenGraph } from './TokenGraph';
+import { TokenGraph, Node } from './TokenGraph';
 import { XcmV4Location } from '../types';
 import { TradeRouterService } from '../../network/TradeRouterService';
 
@@ -39,19 +39,25 @@ export class AssetHubRouter {
         amountIn: bigint
     ): Promise<RouteQuote | null> {
         try {
-            // Get quotes from both DEXes in parallel
-            const [assetHubQuote, hydraDxQuote] = await Promise.all([
-                // Get Asset Hub quote
-                this.getBestAssetHubQuote(fromAsset, toAsset, amountIn),
-                // Get HydraDX quote if both assets support it
-                this.getHydraDxQuote(fromAsset, toAsset, amountIn)
-            ]);
+            // Get both nodes upfront
+            const fromNode = this.tokenGraph.getNode(fromAsset.id);
+            const toNode = this.tokenGraph.getNode(toAsset.id);
 
-            // Compare quotes and return the best one
-            if (!assetHubQuote && !hydraDxQuote) {
+            if (!fromNode || !toNode) {
+                console.error(`Asset nodes not found: ${fromAsset.id} or ${toAsset.id}`);
                 return null;
             }
 
+            // Convert amount to planck (base units) for Asset Hub
+            const amountInPlanck = amountIn * BigInt(10 ** fromNode.asset.metadata.decimals);
+
+            // Get quotes from both DEXes in parallel
+            const [assetHubQuote, hydraDxQuote] = await Promise.all([
+                this.getBestAssetHubQuote(fromNode, toNode, amountInPlanck),
+                this.getHydraDxQuote(fromNode, toNode, amountIn)
+            ]);
+
+            if (!assetHubQuote && !hydraDxQuote) return null;
             if (!assetHubQuote) return hydraDxQuote;
             if (!hydraDxQuote) return assetHubQuote;
 
@@ -66,17 +72,13 @@ export class AssetHubRouter {
         }
     }
 
-    private async getHydraDxQuote(
-        fromAsset: RouterAsset,
-        toAsset: RouterAsset,
+    public async getHydraDxQuote(
+        fromNode: Node,
+        toNode: Node,
         amountIn: bigint
     ): Promise<RouteQuote | null> {
         try {
-            // Get complete asset info from graph
-            const fromNode = this.tokenGraph.getNode(fromAsset.id);
-            const toNode = this.tokenGraph.getNode(toAsset.id);
-
-            if (!fromNode?.asset.hydradx || !toNode?.asset.hydradx) {
+            if (!fromNode.asset.hydradx || !toNode.asset.hydradx) {
                 return null;
             }
 
@@ -87,16 +89,14 @@ export class AssetHubRouter {
                 amountIn.toString()
             );
 
-            if (!trade) {
-                return null;
-            }
+            if (!trade) return null;
 
             return {
-                path: [fromAsset.id, toAsset.id],
+                path: [fromNode.assetId, toNode.assetId],
                 expectedOutput: BigInt(trade.amountOut.toString()),
                 hops: [{
-                    from: fromAsset.id,
-                    to: toAsset.id,
+                    from: fromNode.assetId,
+                    to: toNode.assetId,
                     amountIn: BigInt(trade.amountIn.toString()),
                     amountOut: BigInt(trade.amountOut.toString())
                 }],
@@ -108,23 +108,26 @@ export class AssetHubRouter {
         }
     }
 
-    private async getBestAssetHubQuote(fromAsset: RouterAsset, toAsset: RouterAsset, amountIn: bigint): Promise<RouteQuote | null> {
+    private async getBestAssetHubQuote(
+        fromNode: Node,
+        toNode: Node,
+        amountInPlanck: bigint
+    ): Promise<RouteQuote | null> {
         try {
-            const paths = this.tokenGraph.findAllPaths(fromAsset.id, toAsset.id, 3, 'assetHub');
+            const paths = this.tokenGraph.findAllPaths(fromNode.assetId, toNode.assetId, 3, 'assetHub');
             if (paths.length === 0) return null;
 
             const pathQuotes = await Promise.all(
-                paths.map(path => this.calculatePathQuote(path, fromAsset, toAsset, amountIn))
+                paths.map(path => this.calculatePathQuote(path, amountInPlanck))
             );
 
             const validQuotes = pathQuotes.filter((quote): quote is RouteQuote => quote !== null);
             if (validQuotes.length === 0) return null;
 
-            const bestAssetHubQuote = validQuotes.reduce((best, current) =>
+            return validQuotes.reduce((best, current) =>
                 current.expectedOutput > best.expectedOutput ? current : best
             );
 
-            return { ...bestAssetHubQuote, dex: 'assetHub' as const };
         } catch (error) {
             console.error('Error getting Asset Hub quote:', error);
             return null;
@@ -133,61 +136,49 @@ export class AssetHubRouter {
 
     private async calculatePathQuote(
         path: string[],
-        fromAsset: RouterAsset,
-        toAsset: RouterAsset,
-        amountIn: bigint
+        amountInPlanck: bigint
     ): Promise<RouteQuote | null> {
         try {
             const hops: RouteQuote['hops'] = [];
-            let currentAmount = amountIn;
+            let currentAmount = amountInPlanck;
 
-            // Handle multi-hop paths
+            // Pre-fetch all nodes for the path
+            const pathNodes = path.map(id => this.tokenGraph.getNode(id));
+            if (pathNodes.some(node => !node)) {
+                console.error('One or more nodes not found in path');
+                return null;
+            }
+
+            // Calculate quotes for each hop
             for (let i = 0; i < path.length - 1; i++) {
-                const fromId = path[i];
-                const toId = path[i + 1];
+                const fromNode = pathNodes[i]!;
+                const toNode = pathNodes[i + 1]!;
 
-                // Get node information from the graph
-                const fromNode = this.tokenGraph.getNode(fromId);
-                const toNode = this.tokenGraph.getNode(toId);
-
-                if (!fromNode || !toNode) {
-                    console.error(`Node not found for ${fromId} or ${toId}`);
-                    return null;
-                }
-
-                // Calculate quote for this hop
                 const quote = await this.api.apis.AssetConversionApi.quote_price_exact_tokens_for_tokens(
                     fromNode.asset.xcmLocation,
                     toNode.asset.xcmLocation,
                     currentAmount,
-                    true // include_fee parameter
+                    true
                 );
 
                 if (!quote) {
-                    console.error(`No quote available for hop ${fromId} to ${toId}`);
+                    console.error(`No quote available for hop ${fromNode.assetId} to ${toNode.assetId}`);
                     return null;
                 }
 
                 hops.push({
-                    from: fromId,
-                    to: toId,
+                    from: fromNode.assetId,
+                    to: toNode.assetId,
                     amountIn: currentAmount,
                     amountOut: quote
                 });
 
-                // Update current amount for next hop
                 currentAmount = quote;
             }
 
-            // Get final asset info for decimals calculation
-            const toNode = this.tokenGraph.getNode(toAsset.id);
-            if (!toNode) {
-                console.error(`Final asset node not found: ${toAsset.id}`);
-                return null;
-            }
-
-            // Calculate final amount considering the last asset's decimals
-            const finalAmount = currentAmount / BigInt(10 ** toNode.asset.metadata.decimals);
+            // Get final node for decimals calculation (already fetched in pathNodes)
+            const finalNode = pathNodes[pathNodes.length - 1]!;
+            const finalAmount = currentAmount / BigInt(10 ** finalNode.asset.metadata.decimals);
             
             return {
                 path,
@@ -201,5 +192,4 @@ export class AssetHubRouter {
             return null;
         }
     }
-    
 }
