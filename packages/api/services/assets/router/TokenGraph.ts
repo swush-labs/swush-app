@@ -24,7 +24,7 @@ export class TokenGraph {
     private nodes: Map<string, Node> = new Map();
     private adjacencyList: Map<string, Edge[]> = new Map();
 
-    addNode(assetId: string, hasHydraDx: boolean) {
+    addNode(assetId: string) {
         this.nodes.set(assetId, {
             assetId,
         });

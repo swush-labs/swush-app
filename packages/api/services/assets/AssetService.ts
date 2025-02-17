@@ -58,7 +58,7 @@ export class AssetService {
 
             // Setup cache refresh
             await this.setupCacheRefresh();
-            
+
             // Initialize cache service
             await this.cacheService.initialize();
 
@@ -89,7 +89,7 @@ export class AssetService {
         return cachedAssets;
     }
 
-        
+
     private createAssetDetails = (
         assetValue: any,
         metadata: any,
@@ -121,7 +121,7 @@ export class AssetService {
     });
 
     public async fetchAllAssetsPapi(api: TypedApi<typeof polkadot_asset_hub>): Promise<Map<string, Asset>> {
-    
+
         // Get all entries in parallel using PAPI
         const [nativeAssets, nativeMetadata, foreignAssets, foreignMetadata] = await Promise.all([
             api.query.Assets.Asset.getEntries(),
@@ -129,16 +129,16 @@ export class AssetService {
             api.query.ForeignAssets.Asset.getEntries(),
             api.query.ForeignAssets.Metadata.getEntries()
         ]);
-    
+
         // Create metadata maps with string keys
         const nativeMetadataMap = new Map(
             nativeMetadata.map(entry => [entry.keyArgs[0].toString(), entry.value])
         );
-    
+
         const foreignMetadataMap = new Map(
             foreignMetadata.map(entry => [serializeKey(entry.keyArgs[0]), entry.value])
         );
-    
+
         const nativeAssetsMap = new Map<string, Asset>();
         const foreignAssetsMap = new Map<string, Asset>();
 
@@ -149,7 +149,7 @@ export class AssetService {
         for (const nativeAsset of nativeAssets) {
             const assetId = nativeAsset.keyArgs[0].toString();
             const metadata = nativeMetadataMap.get(assetId);
-    
+
             if (metadata) {
                 const assetDetails = this.createAssetDetails(
                     nativeAsset.value,
@@ -160,12 +160,12 @@ export class AssetService {
                 nativeAssetsMap.set(assetId, assetDetails);
             }
         }
-    
+
         // Process foreign assets
         for (const foreignAsset of foreignAssets) {
             const assetId = serializeKey(foreignAsset.keyArgs[0]);
             const metadata = foreignMetadataMap.get(assetId);
-    
+
             if (metadata) {
                 const assetDetails = this.createAssetDetails(
                     foreignAsset.value,
@@ -181,14 +181,14 @@ export class AssetService {
         const mergedAssets = await this.fetchPoolsPapi(nativeAssetsMap, foreignAssetsMap);
         return mergedAssets;
     }
-    
+
     public async fetchPoolsPapi(
         nativeAssetsInfo: Map<string, Asset>,
         foreignAssetsInfo: Map<string, Asset>
     ) {
         const api = this.connectionManager.getAssetHubApi();
         if (!api) throw new Error('API not initialized');
-    
+
         const pools = await api.query.AssetConversion.Pools.getEntries();
 
         const assetHubPoolAssets = new Map<string, Asset>();
@@ -235,7 +235,7 @@ export class AssetService {
                         parents: asset.parents,
                         interior: asset.interior
                     };
-    
+
                     const foreignAssetId = serializeKey(normalizedXcmLocation);
                     const foreignAssetInfo = foreignAssetsInfo.get(foreignAssetId);
                     if (foreignAssetInfo) {
@@ -254,10 +254,10 @@ export class AssetService {
 
         // Initialize router only with assets that are in pools
         const tokenGraph = new TokenGraph();
-        
+
         // Initialize graph with pool assets
-        for (const [assetId, asset] of assetHubPoolAssets) {
-            tokenGraph.addNode(assetId, asset.hydradx? true : false);
+        for (const [assetId] of assetHubPoolAssets) {
+            tokenGraph.addNode(assetId);
         }
 
         // Add pools using the stored pairs
@@ -272,9 +272,9 @@ export class AssetService {
 
         // Cache router and graph
         this.cacheService.set(CACHE_KEYS.TOKEN_GRAPH, tokenGraph);
-    
+
         // Get HydraDX assets and merge them
-        const mergedAssets = await this.enrichWithHydraDxData(assetHubPoolAssets, nativeAssetsInfo, 
+        const mergedAssets = await this.enrichWithHydraDxData(assetHubPoolAssets, nativeAssetsInfo,
             foreignAssetsInfo);
         //saveAssetsToFile(mergedAssets, 'mergedAssets.json');
 
@@ -282,7 +282,7 @@ export class AssetService {
         this.cacheService.set(CACHE_KEYS.MERGED_ASSETS, mergedAssets);
         return mergedAssets;
     }
-    
+
 
     public async enrichWithHydraDxData(
         assetHubAssets: Map<string, Asset>,
@@ -294,13 +294,13 @@ export class AssetService {
         if (!hydraApi) throw new Error('HydraDX API not initialized');
 
         const mergedAssets = new Map<string, Asset>(assetHubAssets);
-    
+
         try {
             const tradeRouter = TradeRouterService.getInstance().getTradeRouter();
             const hydradxPools = await tradeRouter.getPools();
-    
+
             console.log('First HydraDX Pool:', JSON.stringify(hydradxPools[0], null, 2));
-    
+
             // Process all HydraDX pools
             for (const pool of hydradxPools) {
                 for (const token of pool.tokens) {
@@ -312,14 +312,14 @@ export class AssetService {
                         balance: token.balance,
                         existentialDeposit: token.existentialDeposit
                     };
-    
+
                     // Try to match native asset first
                     const nativeAssetId = getNativeAssetId(token.location);
                     if (nativeAssetId !== null) {
                         const nativeAsset = nativeAssetsInfo.get(nativeAssetId);
                         if (nativeAsset) {
                             const existingAsset = mergedAssets.get(nativeAssetId);
-                            
+
                             if (existingAsset) {
                                 existingAsset.hydradx = hydradxInfo;
                                 console.log('Updated existing Asset Hub asset with HydraDX info:', nativeAssetId);
@@ -331,7 +331,7 @@ export class AssetService {
                             continue;
                         }
                     }
-    
+
                     // Try to match foreign asset
                     const foreignId = getForeignAssetId(token.location);
                     if (foreignId !== null) {
@@ -350,7 +350,7 @@ export class AssetService {
                     }
                 }
             }
-    
+
             return mergedAssets;
         } catch (error) {
             console.error('Error enriching with HydraDX data:', error);
