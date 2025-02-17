@@ -29,5 +29,17 @@ export const NATIVE_DOT_ASSET: Asset = {
             type: 'Here',
             value: undefined
         }
+    },
+    //add hydradx info and assetId as 5
+    hydradx: {
+        assetId: '5',
+        location: {
+            parents: 1,
+            interior: { type: 'Here', value: undefined }
+        },
+        poolAddress: '0x0',
+        poolType: '0x0',
+        balance: '0x0',
+        existentialDeposit: '0x0'
     }
 };

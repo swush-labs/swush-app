@@ -8,6 +8,7 @@ import { CACHE_KEYS } from '../constants';
 import { CacheService } from '../cache/CacheService';
 import { TokenGraph } from './router/TokenGraph';
 import { Asset } from './types';
+import { TradeRouterService } from '../network/TradeRouterService';
 // await CacheService.getInstance().initializeAllCaches();
 // const assetService = AssetService.getInstance();
 // await assetService.getAssets();
@@ -65,6 +66,17 @@ async function testAssetHubQuotes() {
                 console.log('No route found!');
             }
             console.log('\n-------------------\n');
+
+            //print hydradx quote
+            const tradeRouter = TradeRouterService.getInstance().getTradeRouter();
+            //  tradeRouter.getBestSell with hydradx assetId
+            const trade = await tradeRouter.getBestSell(
+                "5",
+                "30",
+                "1"
+            );
+
+            console.log('HydraDx Quote:', trade?.toHuman());
 
     } catch (error) {
         console.error('Error testing Asset Hub quotes:', error);
