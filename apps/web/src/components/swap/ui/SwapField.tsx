@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { TokenButton } from '../TokenButton';
-import { AssetList } from '../AssetList';
+import { AssetList } from './AssetList';
 import { TokenInfo } from '../types';
 
 interface SwapFieldProps {

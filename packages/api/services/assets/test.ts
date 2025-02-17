@@ -8,10 +8,7 @@ import { CACHE_KEYS } from '../constants';
 import { CacheService } from '../cache/CacheService';
 import { TokenGraph } from './router/TokenGraph';
 import { Asset } from './types';
-import { TradeRouterService } from '../network/TradeRouterService';
-// await CacheService.getInstance().initializeAllCaches();
-// const assetService = AssetService.getInstance();
-// await assetService.getAssets();
+
 
 // add main function        
 async function testAssetHubQuotes() {
@@ -50,7 +47,7 @@ async function testAssetHubQuotes() {
             const route = await router.findBestRoute(
                 usdcAsset?.[0] ?? '',
                 mythAsset?.[0] ?? '',
-                BigInt(1)
+                1
             );
 
             if (route) {
@@ -71,7 +68,7 @@ async function testAssetHubQuotes() {
             const routeSecond = await router.findBestRoute(
                 usdcAsset?.[0] ?? '',
                 wudAsset?.[0] ?? '',
-                BigInt(1)
+                1
             );
 
             if (routeSecond) {

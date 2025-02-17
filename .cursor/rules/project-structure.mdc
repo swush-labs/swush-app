@@ -2,7 +2,7 @@
 description: high-level overview of codebase structure
 globs: 
 ---
-I'll provide a high-level overview of your codebase structure:
+high-level overview of your codebase structure:
 
 ```
 swush-me-app/
@@ -17,12 +17,13 @@ swush-me-app/
 │   │   ├── services/
 │   │   │   ├── assets/    # Asset-related services
 │   │   │   │   ├── AssetService.ts       # Main asset management
-│   │   │   │   ├── AssetHubRouter.ts     # Asset Hub routing logic
-│   │   │   │   ├── TokenGraph.ts         # Token relationship graph
-│   │   │   │   └── types.ts              # Asset-related types
+│   │   │   │   ├── types.ts    
+│   │   │   |   └── router/
+│   │   │   │        ├── AssetHubRouter.ts     # Asset Hub routing logic
+│   │   │   │        ├── TokenGraph.ts         # Token relationship graph
 │   │   │   ├── network/
 │   │   │   │   ├── ConnectionManager.ts   # Network connection handling
-│   │   │   │   └── TradeRouterService.ts # Trading route management
+│   │   │   │   └── TradeRouterService.ts  # Trading route management
 │   │   │   └── cache/
 │   │   │       └── CacheService.ts       # Caching layer
 │   │   └── src/

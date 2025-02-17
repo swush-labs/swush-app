@@ -62,7 +62,6 @@ export default function SwapPage() {
   const [insufficientBalance, setInsufficientBalance] = useState(false)
   const [showSwapProgress, setShowSwapProgress] = useState(false)
   const [assets, setAssets] = useState<AssetWithId[]>([])
-  const [isLoadingAssets, setIsLoadingAssets] = useState(true)
   const [openInputDialog, setOpenInputDialog] = useState(false)
   const [openOutputDialog, setOpenOutputDialog] = useState(false)
 
@@ -75,8 +74,6 @@ export default function SwapPage() {
       } catch (error) {
         console.error('Failed to fetch assets:', error);
         toast.error('Failed to load assets');
-      } finally {
-        setIsLoadingAssets(false);
       }
     };
 

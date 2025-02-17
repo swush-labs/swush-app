@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from "@/components/ui/input";
-import { TokenButton } from './TokenButton';
-import { AssetListProps } from './types';
+import { TokenButton } from '../TokenButton';
+import { AssetListProps } from '../types';
 
 export const AssetList = ({ assets, onSelect, currentAsset, onClose }: AssetListProps) => {
   const [searchQuery, setSearchQuery] = useState('');
