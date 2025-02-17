@@ -43,6 +43,7 @@ async function testAssetHubQuotes() {
         const dotAsset = findAssetBySymbol('DOT');
         const usdcAsset = findAssetBySymbol('USDC');
         const mythAsset = findAssetBySymbol('MYTH');
+        const wudAsset = findAssetBySymbol('WUD');
 
         console.log('\n=== Testing Asset Hub Router Quotes ===\n');
         
@@ -67,16 +68,26 @@ async function testAssetHubQuotes() {
             }
             console.log('\n-------------------\n');
 
-            //print hydradx quote
-            const tradeRouter = TradeRouterService.getInstance().getTradeRouter();
-            //  tradeRouter.getBestSell with hydradx assetId
-            const trade = await tradeRouter.getBestSell(
-                "5",
-                "30",
-                "1"
+            const routeSecond = await router.findBestRoute(
+                usdcAsset?.[0] ?? '',
+                wudAsset?.[0] ?? '',
+                BigInt(1)
             );
 
-            console.log('HydraDx Quote:', trade?.toHuman());
+            if (routeSecond) {
+                console.log('\nRoute found:');
+                console.log('Path:', routeSecond.path.map(id => {
+                    const asset = assets.get(id);
+                    return asset ? asset.metadata.symbol : id;
+                }).join(' -> '));
+                
+                console.log('Expected Output:', routeSecond.expectedOutput.toString());
+                
+                console.log('\nDEX Used:', routeSecond.dex);
+            } else {
+                console.log('No route found!');
+            }
+            console.log('\n-------------------\n');
 
     } catch (error) {
         console.error('Error testing Asset Hub quotes:', error);

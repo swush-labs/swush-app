@@ -80,7 +80,7 @@ router.post('/find-route', async (req: Request, res: Response) => {
         const route = await router.findBestRoute(
             fromAsset,
             toAsset,
-            BigInt(amountIn)
+            amountIn
         );
 
         if (!route) {

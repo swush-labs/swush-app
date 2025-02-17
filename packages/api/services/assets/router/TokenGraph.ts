@@ -4,18 +4,12 @@ import { Asset, XcmV4Location } from '../types';
 
 export interface Node {
     assetId: string;      // Using assetId as unique identifier
-    asset: Asset;         // Full asset details
-    xcmLocation: XcmV4Location;
 }
 
 export interface Edge {
     from: string;         // assetId of from token
     to: string;          // assetId of to token
-    poolId: string;
-    liquidity: bigint;
-    fee: number;
     dex: 'assetHub' | 'hydraDx';
-    poolType?: string;    // For HydraDX different pool types
 }
 
 export interface HopInfo {
@@ -42,11 +36,9 @@ export class TokenGraph {
     private nodes: Map<string, Node> = new Map();
     private adjacencyList: Map<string, Edge[]> = new Map();
 
-    addNode(assetId: string, asset: Asset) {
+    addNode(assetId: string, hasHydraDx: boolean) {
         this.nodes.set(assetId, {
             assetId,
-            asset,
-            xcmLocation: asset.xcmLocation
         });
         if (!this.adjacencyList.has(assetId)) {
             this.adjacencyList.set(assetId, []);
@@ -56,11 +48,7 @@ export class TokenGraph {
     addEdge(
         fromAssetId: string,
         toAssetId: string,
-        poolId: string,
-        liquidity: bigint,
-        fee: number,
         dex: 'assetHub' | 'hydraDx',
-        poolType?: string
     ) {
         if (!this.nodes.has(fromAssetId) || !this.nodes.has(toAssetId)) {
             throw new Error(`One or both assets not found: ${fromAssetId}, ${toAssetId}`);
@@ -70,11 +58,7 @@ export class TokenGraph {
         const edge: Edge = { 
             from: fromAssetId, 
             to: toAssetId, 
-            poolId, 
-            liquidity, 
-            fee, 
-            dex, 
-            poolType 
+            dex
         };
         this.adjacencyList.get(fromAssetId)?.push(edge);
         
@@ -142,97 +126,4 @@ export class TokenGraph {
         return paths;
     }
 
-    async calculatePathMetrics(
-        path: string[],
-        amountIn: bigint,
-        quoteProvider: (
-            fromAsset: XcmV4Location,
-            toAsset: XcmV4Location,
-            amount: bigint,
-            dex: string
-        ) => Promise<bigint | null>
-    ): Promise<PathMetrics> {
-        let currentAmount = amountIn;
-        let totalFee = 0;
-        let minLiquidity = BigInt(Number.MAX_SAFE_INTEGER);
-        const hops: HopInfo[] = [];
-
-        for (let i = 0; i < path.length - 1; i++) {
-            const fromAssetId = path[i];
-            const toAssetId = path[i + 1];
-            
-            const edge = this.getEdge(fromAssetId, toAssetId);
-            if (!edge) throw new Error(`No pool found between ${fromAssetId} and ${toAssetId}`);
-
-            const fromNode = this.nodes.get(fromAssetId)!;
-            const toNode = this.nodes.get(toAssetId)!;
-
-            const quote = await quoteProvider(
-                fromNode.xcmLocation,
-                toNode.xcmLocation,
-                currentAmount,
-                edge.dex
-            );
-
-            if (!quote) {
-                throw new Error(`No quote available for ${fromAssetId} to ${toAssetId}`);
-            }
-
-            const hopOutput = quote;
-            minLiquidity = edge.liquidity < minLiquidity ? edge.liquidity : minLiquidity;
-            totalFee += edge.fee;
-
-            hops.push({
-                from: fromAssetId,
-                to: toAssetId,
-                amountIn: currentAmount,
-                amountOut: hopOutput,
-                fee: edge.fee,
-                liquidity: edge.liquidity,
-                poolId: edge.poolId,
-                dex: edge.dex
-            });
-
-            currentAmount = hopOutput;
-        }
-
-        return {
-            path,
-            hops,
-            totalOutput: currentAmount,
-            totalFee,
-            minLiquidity,
-            priceImpact: this.calculatePriceImpact(hops)
-        };
-    }
-
-    
-    private calculatePriceImpact(hops: HopInfo[]): number {
-        // Simplified price impact calculation
-        // In real implementation, you'd want to consider:
-        // - Pool depths
-        // - Amount relative to liquidity
-        // - Specific DEX formulas
-        let totalImpact = 0;
-        for (const hop of hops) {
-            const impact = 1 - Number(hop.amountOut) / (Number(hop.amountIn) * (1 - hop.fee));
-            totalImpact += impact;
-        }
-        return totalImpact;
-    }
-
-    private async getQuoteForExactTokens(
-        api: TypedApi<typeof polkadot_asset_hub>,
-        assetIn: XcmV4Location,
-        assetOut: XcmV4Location,
-        amount: bigint
-    ): Promise<bigint | null> {
-        const quote = await api.apis.AssetConversionApi.quote_price_exact_tokens_for_tokens(
-            assetIn,
-            assetOut,
-            amount,
-            true
-        );
-        return quote ? BigInt(quote) : null;
-    }
 }

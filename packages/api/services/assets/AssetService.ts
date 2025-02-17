@@ -257,7 +257,7 @@ export class AssetService {
         
         // Initialize graph with pool assets
         for (const [assetId, asset] of assetHubPoolAssets) {
-            tokenGraph.addNode(assetId, asset);
+            tokenGraph.addNode(assetId, asset.hydradx? true : false);
         }
 
         // Add pools using the stored pairs
@@ -266,9 +266,6 @@ export class AssetService {
             tokenGraph.addEdge(
                 assetOneId,
                 assetTwoId,
-                `${assetOneId}-${assetTwoId}`,
-                BigInt(0), // Placeholder liquidity
-                0.003,
                 'assetHub'
             );
         }
@@ -277,7 +274,8 @@ export class AssetService {
         this.cacheService.set(CACHE_KEYS.TOKEN_GRAPH, tokenGraph);
     
         // Get HydraDX assets and merge them
-        const mergedAssets = await this.enrichWithHydraDxData(assetHubPoolAssets, nativeAssetsInfo, foreignAssetsInfo);
+        const mergedAssets = await this.enrichWithHydraDxData(assetHubPoolAssets, nativeAssetsInfo, 
+            foreignAssetsInfo);
         //saveAssetsToFile(mergedAssets, 'mergedAssets.json');
 
         //set cache for mergedAssets
