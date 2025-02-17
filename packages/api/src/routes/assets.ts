@@ -14,24 +14,10 @@ const router = express.Router();
 // Validation schema for the request body
 const findRouteSchema = z.object({
     fromAsset: z.object({
-        id: z.string(),
-        xcmLocation: z.any(), // You might want to create a more specific schema for XcmLocation
-        metadata: z.object({
-            decimals: z.number()
-        }),
-        hydradx: z.object({
-            assetId: z.string()
-        }).optional()
+        id: z.string()
     }),
     toAsset: z.object({
-        id: z.string(),
-        xcmLocation: z.any(),
-        metadata: z.object({
-            decimals: z.number()
-        }),
-        hydradx: z.object({
-            assetId: z.string()
-        }).optional()
+        id: z.string()
     }),
     amountIn: z.string()
 });

@@ -52,14 +52,7 @@ async function testAssetHubQuotes() {
 
         // Convert Asset to RouterAsset
         const createRouterAsset = (assetId: string, asset: Asset): RouterAsset => ({
-            id: assetId,
-            xcmLocation: asset.xcmLocation,
-            metadata: {
-                decimals: asset.metadata.decimals
-            },
-            hydradx: asset.hydradx ? {
-                assetId: asset.hydradx.assetId
-            } : undefined
+            id: assetId
         });
 
         // Test cases using RouterAsset format

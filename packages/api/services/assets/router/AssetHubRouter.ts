@@ -4,15 +4,9 @@ import { TokenGraph } from './TokenGraph';
 import { XcmV4Location } from '../types';
 import { TradeRouterService } from '../../network/TradeRouterService';
 
+// Simplified to just contain the asset ID
 export interface RouterAsset {
     id: string;
-    xcmLocation: XcmV4Location;
-    metadata: {
-        decimals: number;
-    };
-    hydradx?: {
-        assetId: string;
-    };
 }
 
 export interface RouteQuote {
@@ -78,14 +72,18 @@ export class AssetHubRouter {
         amountIn: bigint
     ): Promise<RouteQuote | null> {
         try {
-            if (!fromAsset.hydradx || !toAsset.hydradx) {
+            // Get complete asset info from graph
+            const fromNode = this.tokenGraph.getNode(fromAsset.id);
+            const toNode = this.tokenGraph.getNode(toAsset.id);
+
+            if (!fromNode?.asset.hydradx || !toNode?.asset.hydradx) {
                 return null;
             }
 
             const tradeRouter = TradeRouterService.getInstance().getTradeRouter();
             const trade = await tradeRouter.getBestSell(
-                fromAsset.hydradx.assetId,
-                toAsset.hydradx.assetId,
+                fromNode.asset.hydradx.assetId,
+                toNode.asset.hydradx.assetId,
                 amountIn.toString()
             );
 
@@ -159,8 +157,8 @@ export class AssetHubRouter {
 
                 // Calculate quote for this hop
                 const quote = await this.api.apis.AssetConversionApi.quote_price_exact_tokens_for_tokens(
-                    fromNode.xcmLocation,
-                    toNode.xcmLocation,
+                    fromNode.asset.xcmLocation,
+                    toNode.asset.xcmLocation,
                     currentAmount,
                     true // include_fee parameter
                 );
@@ -181,8 +179,15 @@ export class AssetHubRouter {
                 currentAmount = quote;
             }
 
+            // Get final asset info for decimals calculation
+            const toNode = this.tokenGraph.getNode(toAsset.id);
+            if (!toNode) {
+                console.error(`Final asset node not found: ${toAsset.id}`);
+                return null;
+            }
+
             // Calculate final amount considering the last asset's decimals
-            const finalAmount = currentAmount / BigInt(10 ** toAsset.metadata.decimals);
+            const finalAmount = currentAmount / BigInt(10 ** toNode.asset.metadata.decimals);
             
             return {
                 path,
