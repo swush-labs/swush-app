@@ -1,7 +1,7 @@
 import { TypedApi } from 'polkadot-api';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
 import { Asset, AssetType, XcmV4Location } from './types';
-import { getXcmV3Multilocation, serializeKey } from './utils';
+import { getForeignAssetId, getNativeAssetId, getXcmV3Multilocation, serializeKey } from './utils';
 import { ConnectionManager } from '../network/ConnectionManager';
 import { CACHE_KEYS } from '../constants';
 import { NATIVE_DOT_ASSET } from './metadata';
@@ -294,39 +294,6 @@ export class AssetService {
         if (!hydraApi) throw new Error('HydraDX API not initialized');
 
         const mergedAssets = new Map<string, Asset>(assetHubAssets);
-    
-        // Helper function to check native asset match and extract assetId
-        const getNativeAssetId = (location: any): string | null => {
-            if (!location?.interior?.x3) return null;
-            const interior = location.interior.x3;
-            
-            if (!interior.some((j: { palletInstance?: number }) => j.palletInstance === 50) || 
-                !interior.some((j: { parachain?: number }) => j.parachain === 1000)) {
-                return null;
-            }
-    
-            const generalIndexEntry = interior.find((j: { generalIndex?: string | number }) => j.generalIndex !== undefined);
-            return generalIndexEntry ? generalIndexEntry.generalIndex.toString() : null;
-        };
-    
-        // Helper function to check foreign asset match
-        const getForeignAssetId = (location: any): string | null => {
-            try {
-                // Check if location and required properties exist
-                if (!location || typeof location.parents === 'undefined' || !location.interior) {
-                    return null;
-                }
-
-                const normalizedLocation = {
-                    parents: location.parents,
-                    interior: location.interior
-                };
-                return serializeKey(normalizedLocation);
-            } catch (error) {
-                console.error('Error matching foreign asset:', error);
-                return null;
-            }
-        };
     
         try {
             const tradeRouter = TradeRouterService.getInstance().getTradeRouter();

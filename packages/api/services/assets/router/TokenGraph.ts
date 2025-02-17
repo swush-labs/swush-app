@@ -1,6 +1,3 @@
-import { TypedApi } from 'polkadot-api';
-import { polkadot_asset_hub } from '@polkadot-api/descriptors';
-import { Asset, XcmV4Location } from '../types';
 
 export interface Node {
     assetId: string;      // Using assetId as unique identifier
@@ -21,15 +18,6 @@ export interface HopInfo {
     liquidity: bigint;
     poolId: string;
     dex: string;
-}
-
-export interface PathMetrics {
-    path: string[];
-    hops: HopInfo[];
-    totalOutput: bigint;
-    totalFee: number;
-    minLiquidity: bigint;
-    priceImpact: number;
 }
 
 export class TokenGraph {

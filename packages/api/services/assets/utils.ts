@@ -40,3 +40,37 @@ export function createXcmLocation(assetId: number) {
         ])
     };
 }
+
+
+// Helper function to check native asset match and extract assetId
+export const getNativeAssetId = (location: any): string | null => {
+    if (!location?.interior?.x3) return null;
+    const interior = location.interior.x3;
+
+    if (!interior.some((j: { palletInstance?: number }) => j.palletInstance === 50) ||
+        !interior.some((j: { parachain?: number }) => j.parachain === 1000)) {
+        return null;
+    }
+
+    const generalIndexEntry = interior.find((j: { generalIndex?: string | number }) => j.generalIndex !== undefined);
+    return generalIndexEntry ? generalIndexEntry.generalIndex.toString() : null;
+};
+
+// Helper function to check foreign asset match
+export const getForeignAssetId = (location: any): string | null => {
+    try {
+        // Check if location and required properties exist
+        if (!location || typeof location.parents === 'undefined' || !location.interior) {
+            return null;
+        }
+
+        const normalizedLocation = {
+            parents: location.parents,
+            interior: location.interior
+        };
+        return serializeKey(normalizedLocation);
+    } catch (error) {
+        console.error('Error matching foreign asset:', error);
+        return null;
+    }
+};
