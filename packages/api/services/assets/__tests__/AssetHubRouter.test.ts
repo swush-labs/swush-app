@@ -30,7 +30,7 @@ describe('AssetHubRouter', () => {
             decimals: decimals,
             is_frozen: false
         },
-        type: AssetType.Native,
+        assetType: AssetType.Native,
         xcmLocation: {
             parents: 0,
             interior: {

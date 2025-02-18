@@ -5,6 +5,7 @@ import { TradeRouterService } from '../../network/TradeRouterService';
 import { CacheService } from '../../cache/CacheService';
 import { CACHE_KEYS } from '../../constants';
 import { Asset } from '../types';
+import { convertToPlank, formatAmount } from '../utils';
 
 export interface RouteQuote {
     path: string[];
@@ -36,38 +37,6 @@ export class AssetHubRouter {
         this.assets = cacheService.get<Map<string, Asset>>(CACHE_KEYS.MERGED_ASSETS);
     }
 
-    private formatAmount(amount: string | bigint, decimals: number): { raw: string; decimal: string } {
-        try {
-            const rawBigInt = typeof amount === 'string' ? BigInt(amount) : amount;
-            const raw = rawBigInt.toString();
-            const decimal = (Number(rawBigInt) / Math.pow(10, decimals)).toFixed(decimals);
-            
-            return {
-                raw,
-                decimal
-            };
-        } catch (error) {
-            console.error('Error formatting amount:', error);
-            return {
-                raw: '0',
-                decimal: '0'
-            };
-        }
-    }
-
-    private convertToPlank(amount: string | number, decimals: number): bigint {
-        try {
-            // Convert amount to a number first to handle both string and number inputs
-            const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-            // Use Math.round to avoid floating point precision issues
-            const planckAmount = Math.round(numAmount * Math.pow(10, decimals));
-            return BigInt(planckAmount);
-        } catch (error) {
-            console.error('Error converting to planck:', error);
-            return BigInt(0);
-        }
-    }
-
     public async findBestRoute(
         fromAsset: string,
         toAsset: string,
@@ -90,7 +59,7 @@ export class AssetHubRouter {
             }
 
             // Convert input amount to planck
-            const amountInPlanck = this.convertToPlank(amountIn, fromAssetDetails.metadata.decimals);
+            const amountInPlanck = convertToPlank(amountIn, fromAssetDetails.metadata.decimals);
 
             // Check if assets exist in token graph for routing
             const fromInGraph = this.tokenGraph.getNode(fromAsset);
@@ -152,7 +121,7 @@ export class AssetHubRouter {
 
             return {
                 path: [fromAssetId, toAssetId],
-                expectedOutput: this.formatAmount(trade.amountOut.toString(), toAsset.metadata.decimals),
+                expectedOutput: formatAmount(trade.amountOut.toString(), toAsset.metadata.decimals),
                 hops: [{
                     from: fromAssetId,
                     to: toAssetId,
@@ -241,7 +210,7 @@ export class AssetHubRouter {
             
             return {
                 path,
-                expectedOutput: this.formatAmount(currentAmount, finalAsset.metadata.decimals),
+                expectedOutput:  formatAmount(currentAmount, finalAsset.metadata.decimals),
                 hops,
                 dex: 'assetHub'
             };

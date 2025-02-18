@@ -22,7 +22,7 @@ export const NATIVE_DOT_ASSET: Asset = {
         decimals: 10, // DOT has 10 decimals
         is_frozen: false
     },
-    type: AssetType.Native,
+    assetType: AssetType.Native,
     xcmLocation: {
         parents: 1,
         interior: {

@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { assetsRouter } from './routes/assets';
+import { balancesRouter } from './routes/balances';
 import { initializeSDK } from '../services';
 
 const app = express();
@@ -33,6 +34,7 @@ app.use(limiter);
 
 // Routes
 app.use('/api/v1/assets', assetsRouter);
+app.use('/api/v1/balances', balancesRouter);
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -1,6 +1,8 @@
 import { XcmV3Junction } from '@polkadot-api/descriptors';
 import { XcmV3Junctions } from '@polkadot-api/descriptors';
-import { XcmV4Location } from './types';
+import { Asset, XcmV4Location } from './types';
+import { CacheService } from 'services/cache/CacheService';
+import { CACHE_KEYS } from 'services/constants';
 
 export function serializeKey(key: any): string {
     if (typeof key === 'number' || typeof key === 'bigint') {
@@ -74,3 +76,42 @@ export const getForeignAssetId = (location: any): string | null => {
         return null;
     }
 };
+
+
+export function formatAmount(amount: string | bigint, decimals: number): { raw: string; decimal: string } {
+    try {
+        const rawBigInt = typeof amount === 'string' ? BigInt(amount) : amount;
+        const raw = rawBigInt.toString();
+        const decimal = (Number(rawBigInt) / Math.pow(10, decimals)).toFixed(decimals);
+        
+        return {
+            raw,
+            decimal
+        };
+    } catch (error) {
+        console.error('Error formatting amount:', error);
+        return {
+            raw: '0',
+            decimal: '0'
+        };
+    }
+}
+
+export function convertToPlank(amount: string | number, decimals: number): bigint {
+    try {
+        // Convert amount to a number first to handle both string and number inputs
+        const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+        // Use Math.round to avoid floating point precision issues
+        const planckAmount = Math.round(numAmount * Math.pow(10, decimals));
+        return BigInt(planckAmount);
+    } catch (error) {
+        console.error('Error converting to planck:', error);
+        return BigInt(0);
+    }
+}
+
+export function fetchCachedAssets(assetId?: string): Asset | Map<string, Asset> | null {
+    const cacheService = CacheService.getInstance();
+    const assets = cacheService.get<Map<string, Asset>>(CACHE_KEYS.MERGED_ASSETS);
+    return assetId ? assets.get(assetId) || null : assets;
+}

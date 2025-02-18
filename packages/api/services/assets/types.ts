@@ -16,7 +16,7 @@ export enum AssetType {
 export interface Asset {
     asset: AssetInfo;
     metadata: AssetMetadata;
-    type: AssetType;
+    assetType: AssetType;
     xcmLocation: XcmV4Location;
     hydradx?: HydraDxInfo;
 }

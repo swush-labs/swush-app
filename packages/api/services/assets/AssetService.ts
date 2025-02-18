@@ -116,7 +116,7 @@ export class AssetService {
             decimals: metadata.decimals,
             is_frozen: metadata.is_frozen
         },
-        type: assetType,
+        assetType: assetType,
         xcmLocation
     });
 

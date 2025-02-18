@@ -1,7 +1,6 @@
 import express, { Request, Response } from 'express';
 import { z } from 'zod';
-import { getAssets } from '../../services';
-import type { Asset } from '@swush/core';
+import { Asset, getAssets } from '../../services';
 import { serializeKey } from '../../services/assets/utils';
 import { AssetHubRouter } from '../../services/assets/router/AssetHubRouter';
 import { CacheService } from '../../services/cache/CacheService';
