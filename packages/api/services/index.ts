@@ -1,7 +1,7 @@
-import { AssetService } from './assets/AssetService';
+import { FetchAssetService } from './assets/FetchAssetService';
 import { Asset } from './assets/types';
 import { ConnectionManager } from './network/ConnectionManager';
-import { TradeRouterService } from './network/TradeRouterService';
+import { TradeRouterService } from './assets/router/TradeRouterService';
 import { base, degen } from './assets/external';
 
 let isInitialized = false;
@@ -24,7 +24,7 @@ export async function initializeSDK(): Promise<void> {
 
         // Step 3: Initialize Asset Service (which will set up caches)
         console.log('Initializing asset service...');
-        await AssetService.getInstance().initialize();
+        await FetchAssetService.getInstance().initialize();
 
         isInitialized = true;
     } catch (error) {
@@ -62,7 +62,7 @@ export async function getAssets(forceRefresh = false): Promise<Map<string, Asset
     if (!isInitialized) {
         throw new Error('SDK not initialized. Call initializeSDK() first');
     }
-    return await AssetService.getInstance().getAssets(forceRefresh);
+    return await FetchAssetService.getInstance().getAssets(forceRefresh);
 }
 
 export * from './assets/types';

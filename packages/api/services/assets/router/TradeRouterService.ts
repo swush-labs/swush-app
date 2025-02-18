@@ -1,5 +1,5 @@
 import { PoolService, TradeRouter } from '@galacticcouncil/sdk';
-import { ConnectionManager } from './ConnectionManager';
+import { ConnectionManager } from '../../network/ConnectionManager';
 
 export class TradeRouterService {
     private static instance: TradeRouterService;

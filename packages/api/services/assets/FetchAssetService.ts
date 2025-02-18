@@ -5,12 +5,12 @@ import { getForeignAssetId, getNativeAssetId, getXcmV3Multilocation, serializeKe
 import { ConnectionManager } from '../network/ConnectionManager';
 import { CACHE_KEYS } from '../constants';
 import { NATIVE_DOT_ASSET } from './metadata';
-import { TradeRouterService } from '../network/TradeRouterService';
+import { TradeRouterService } from './router/TradeRouterService';
 import { CacheService } from '../cache/CacheService';
 import { TokenGraph } from './router/TokenGraph';
 
-export class AssetService {
-    private static instance: AssetService;
+export class FetchAssetService {
+    private static instance: FetchAssetService;
     private cacheService: CacheService;
     private connectionManager: ConnectionManager;
     private initialized: boolean = false;
@@ -26,11 +26,11 @@ export class AssetService {
         this.connectionManager = ConnectionManager.getInstance();
     }
 
-    public static getInstance(): AssetService {
-        if (!AssetService.instance) {
-            AssetService.instance = new AssetService();
+    public static getInstance(): FetchAssetService {
+        if (!FetchAssetService.instance) {
+            FetchAssetService.instance = new FetchAssetService();
         }
-        return AssetService.instance;
+        return FetchAssetService.instance;
     }
 
     public isInitialized(): boolean {
@@ -45,7 +45,7 @@ export class AssetService {
                 const assets = await this.fetchAllAssetsPapi(this.connectionManager.getAssetHubApi()!);
                 await this.cacheService.set(CACHE_KEYS.MERGED_ASSETS, assets);
             },
-            AssetService.REFRESH_INTERVALS.ASSETS
+            FetchAssetService.REFRESH_INTERVALS.ASSETS
         );
     }
 

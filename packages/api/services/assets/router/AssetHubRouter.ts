@@ -1,7 +1,7 @@
 import { TypedApi } from 'polkadot-api';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
 import { TokenGraph } from './TokenGraph';
-import { TradeRouterService } from '../../network/TradeRouterService';
+import { TradeRouterService } from './TradeRouterService';
 import { CacheService } from '../../cache/CacheService';
 import { CACHE_KEYS } from '../../constants';
 import { Asset } from '../types';

@@ -1,6 +1,6 @@
 //main function to test the asset service
 
-import { AssetService } from './AssetService';
+import { FetchAssetService } from './FetchAssetService';
 import { initializeSDK } from '../index';
 import { ConnectionManager } from '../network/ConnectionManager';
 import { AssetHubRouter } from './router/AssetHubRouter';
@@ -14,7 +14,7 @@ import { Asset } from './types';
 async function testAssetHubQuotes() {
     try {
         // Get required services
-        const assetService = AssetService.getInstance();
+        const assetService = FetchAssetService.getInstance();
         const connectionManager = ConnectionManager.getInstance();
         const cacheManager = CacheService.getInstance();
 
