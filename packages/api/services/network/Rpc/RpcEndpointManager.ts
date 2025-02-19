@@ -1,4 +1,5 @@
-import { NetworkConfig, RpcEndpoint, DEFAULT_RPC_CONFIG, HEALTH_CHECK } from './rpc-config';
+import { NetworkConfig, DEFAULT_RPC_CONFIG } from './rpc-config';
+import { HEALTH_CHECK } from '../../constants';
 import EventEmitter from 'events';
 import WebSocket from 'ws';
 

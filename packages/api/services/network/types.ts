@@ -4,8 +4,7 @@ import {
     polkadot,
     hydration 
 } from '@polkadot-api/descriptors';
-import RpcConnection from './RpcConnection';
-import { AH_RPC_URL } from '../constants';
+import RpcConnection from './Rpc/RpcConnection';
 import { ApiPromise } from '@polkadot/api';
 
 // Define supported chains
