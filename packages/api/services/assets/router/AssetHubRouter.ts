@@ -16,8 +16,8 @@ export interface RouteQuote {
     hops: {
         from: string;
         to: string;
-        amountIn: bigint;
-        amountOut: bigint;
+        amountIn: string;
+        amountOut: string;
     }[];
     dex: 'assetHub' | 'hydraDx';
 }
@@ -119,14 +119,17 @@ export class AssetHubRouter {
 
             if (!trade) return null;
 
+            // Format amounts with UI-friendly options
+            const formatOptions = { round: 2, trim: true, commify: true };
+
             return {
                 path: [fromAssetId, toAssetId],
-                expectedOutput: formatAmount(trade.amountOut.toString(), toAsset.metadata.decimals),
+                expectedOutput: formatAmount(trade.amountOut.toString(), toAsset.metadata.decimals, formatOptions),
                 hops: [{
                     from: fromAssetId,
                     to: toAssetId,
-                    amountIn: BigInt(trade.amountIn.toString()),
-                    amountOut: BigInt(trade.amountOut.toString())
+                    amountIn: formatAmount(trade.amountIn.toString(), fromAsset.metadata.decimals, formatOptions)?.decimal,
+                    amountOut: formatAmount(trade.amountOut.toString(), toAsset.metadata.decimals, formatOptions)?.decimal
                 }],
                 dex: 'hydraDx'
             };
@@ -178,6 +181,9 @@ export class AssetHubRouter {
                 return null;
             }
 
+            // Format options for UI display
+            const formatOptions = { round: 6, trim: true, commify: true };
+
             // Calculate quotes for each hop
             for (let i = 0; i < path.length - 1; i++) {
                 const fromAsset = pathAssets[i]!;
@@ -198,8 +204,8 @@ export class AssetHubRouter {
                 hops.push({
                     from: path[i],
                     to: path[i + 1],
-                    amountIn: currentAmount,
-                    amountOut: quote
+                    amountIn: formatAmount(currentAmount.toString(), fromAsset.metadata.decimals, formatOptions)?.decimal,
+                    amountOut: formatAmount(quote.toString(), toAsset.metadata.decimals, formatOptions)?.decimal
                 });
 
                 currentAmount = quote;
@@ -210,7 +216,7 @@ export class AssetHubRouter {
             
             return {
                 path,
-                expectedOutput:  formatAmount(currentAmount, finalAsset.metadata.decimals),
+                expectedOutput: formatAmount(currentAmount.toString(), finalAsset.metadata.decimals, formatOptions),
                 hops,
                 dex: 'assetHub'
             };
