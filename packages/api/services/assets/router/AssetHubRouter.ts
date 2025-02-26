@@ -1,11 +1,12 @@
 import { TypedApi } from 'polkadot-api';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
+import { XcmV3Junctions } from '@polkadot-api/descriptors';
 import { TokenGraph } from './TokenGraph';
 import { TradeRouterService } from './TradeRouterService';
 import { CacheService } from '../../cache/CacheService';
 import { CACHE_KEYS, NETWORKS_SUPPORTED, NUMBER_FORMAT_OPTIONS } from '../../constants';
-import { Asset } from '../types';
-import { convertToPlank, formatAmount } from '../utils';
+import { Asset, XcmV4Location } from '../types';
+import { convertToPlank, formatAmount, safeParse, safeStringify } from '../utils';
 
 export interface RouteQuote {
     path: string[];
@@ -70,7 +71,7 @@ export class AssetHubRouter {
             // Get quotes from both DEXes in parallel if no specific DEX is requested
             const [assetHubQuote, hydraDxQuote] = await Promise.all([
                 // For Asset Hub, check if both assets are in the graph first
-                (!dex || dex === NETWORKS_SUPPORTED.ASSET_HUB) && fromInGraph && toInGraph ? 
+                (!dex || dex === NETWORKS_SUPPORTED.ASSET_HUB) && fromInGraph && toInGraph ?
                     this.getBestAssetHubQuote(
                         fromAsset,
                         toAsset,
@@ -207,15 +208,50 @@ export class AssetHubRouter {
                 const fromAsset = pathAssets[i]!;
                 const toAsset = pathAssets[i + 1]!;
 
+                // Enhanced debug logging for XCM locations
+                console.log(`Detailed debug - From Asset (${fromAsset.metadata.symbol}):`, {
+                    raw: fromAsset.rawXcmLocation ? safeStringify(fromAsset.rawXcmLocation) : 'undefined',
+                    serialized: fromAsset.xcmLocation
+                });
+
+                console.log(`Detailed debug - To Asset (${toAsset.metadata.symbol}):`, {
+                    raw: toAsset.rawXcmLocation ? safeStringify(toAsset.rawXcmLocation) : 'undefined',
+                    serialized: toAsset.xcmLocation
+                });
+
+                // Extract the actual XCM location from the asset objects
+                // const fromXcmLocation = fromAsset.rawXcmLocation;
+                const fromXcmLocation = fromAsset.rawXcmLocation;
+                const toXcmLocation = toAsset.rawXcmLocation;
+                
+                // Add comparison debug to verify difference
+                console.log('XCM Location Comparison:');
+                console.log('Parsed fromXcmLocation:', safeParse<XcmV4Location>(fromAsset.xcmLocation));
+                console.log('Raw fromXcmLocation:', fromAsset.rawXcmLocation);
+
+                // const fromAssetInfo = await this.api.query.ForeignAssets.Asset.getValue(fromXcmLocation);   
+                // console.log('fromAssetInfo', fromAssetInfo);
+
+                const toAssetInfo = await this.api.query.ForeignAssets.Asset.getValue(toXcmLocation);   
+                console.log('toAssetInfo', toAssetInfo);
+
+                // Log the actual XCM locations being used in the API call
+                console.log(`API call XCM locations:`, {
+                    from: safeStringify(fromXcmLocation),
+                    to: safeStringify(toXcmLocation)
+                });
+
+                console.log('currentAmount ', currentAmount);
                 const quote = await this.api.apis.AssetConversionApi.quote_price_exact_tokens_for_tokens(
-                    fromAsset.xcmLocation,
-                    toAsset.xcmLocation,
+                    fromXcmLocation,
+                    toXcmLocation,
                     currentAmount,
                     true
                 );
+                console.log('quote :', quote);
 
                 if (!quote) {
-                    console.error(`No quote available for hop ${path[i]} to ${path[i + 1]}`);
+                    console.error(`No quote available`);
                     return null;
                 }
 
@@ -239,7 +275,7 @@ export class AssetHubRouter {
 
             // Get final asset for decimals calculation
             const finalAsset = pathAssets[pathAssets.length - 1]!;
-            
+
             const finalAmount = formatAmount(currentAmount.toString(), finalAsset.metadata.decimals, formatOptions);
             if (!finalAmount) {
                 console.error('Error formatting final amount');

@@ -1,4 +1,11 @@
 import { Asset, AssetType } from "./types";
+import { safeStringify } from "./utils";
+
+// Create the raw XCM location for DOT
+const dotRawXcmLocation = {
+    parents: 1,
+    interior: { type: 'Here' }
+};
 
 export const NATIVE_DOT_ASSET: Asset = {
     asset: {
@@ -23,14 +30,11 @@ export const NATIVE_DOT_ASSET: Asset = {
         is_frozen: false
     },
     assetType: AssetType.Native,
-    xcmLocation: {
-        parents: 1,
-        interior: {
-            type: 'Here',
-            value: undefined
-        }
-    },
-    //add hydradx info and assetId as 5
+    // Store serialized XCM location as a string
+    xcmLocation: safeStringify(dotRawXcmLocation),
+    // Store the raw XCM location
+    rawXcmLocation: dotRawXcmLocation,
+    // Add hydradx info and assetId as 5
     hydradx: {
         assetId: '5',
         location: {

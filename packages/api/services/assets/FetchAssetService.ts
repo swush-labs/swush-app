@@ -1,13 +1,14 @@
 import { TypedApi } from 'polkadot-api';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
 import { Asset, AssetType, XcmV4Location } from './types';
-import { getForeignAssetId, getNativeAssetId, getXcmV3Multilocation, serializeKey } from './utils';
+import { getForeignAssetId, getNativeAssetId, getXcmV3Multilocation, safeStringify} from './utils';
 import { ConnectionManager } from '../network/ConnectionManager';
 import { CACHE_KEYS } from '../constants';
 import { NATIVE_DOT_ASSET } from './metadata';
 import { TradeRouterService } from './router/TradeRouterService';
 import { CacheService } from '../cache/CacheService';
 import { TokenGraph } from './router/TokenGraph';
+import { saveAssetsToFile } from 'services/utils';
 
 export class FetchAssetService {
     private static instance: FetchAssetService;
@@ -95,30 +96,36 @@ export class FetchAssetService {
         metadata: any,
         assetType: AssetType,
         xcmLocation: any
-    ): Asset => ({
-        asset: {
-            owner: assetValue.owner,
-            issuer: assetValue.issuer,
-            admin: assetValue.admin,
-            freezer: assetValue.freezer,
-            supply: assetValue.supply,
-            deposit: assetValue.deposit,
-            min_balance: assetValue.min_balance,
-            is_sufficient: assetValue.is_sufficient,
-            accounts: assetValue.accounts,
-            sufficients: assetValue.sufficients,
-            approvals: assetValue.approvals,
-        },
-        metadata: {
-            deposit: metadata.deposit,
-            name: metadata.name.asText(),
-            symbol: metadata.symbol.asText(),
-            decimals: metadata.decimals,
-            is_frozen: metadata.is_frozen
-        },
-        assetType: assetType,
-        xcmLocation
-    });
+    ): Asset => {
+        
+        return {
+            asset: {
+                owner: assetValue.owner,
+                issuer: assetValue.issuer,
+                admin: assetValue.admin,
+                freezer: assetValue.freezer,
+                supply: assetValue.supply,
+                deposit: assetValue.deposit,
+                min_balance: assetValue.min_balance,
+                is_sufficient: assetValue.is_sufficient,
+                accounts: assetValue.accounts,
+                sufficients: assetValue.sufficients,
+                approvals: assetValue.approvals,
+            },
+            metadata: {
+                deposit: metadata.deposit,
+                name: metadata.name.asText(),
+                symbol: metadata.symbol.asText(),
+                decimals: metadata.decimals,
+                is_frozen: metadata.is_frozen
+            },
+            assetType: assetType,
+            // Store the serialized XCM location as a string
+            xcmLocation: safeStringify(xcmLocation),
+            // Store the original XCM location object
+            rawXcmLocation: xcmLocation
+        };
+    };
 
     public async fetchAllAssetsPapi(api: TypedApi<typeof polkadot_asset_hub>): Promise<Map<string, Asset>> {
 
@@ -136,13 +143,13 @@ export class FetchAssetService {
         );
 
         const foreignMetadataMap = new Map(
-            foreignMetadata.map(entry => [serializeKey(entry.keyArgs[0]), entry.value])
+            foreignMetadata.map(entry => [safeStringify(entry.keyArgs[0]), entry.value])
         );
 
         const nativeAssetsMap = new Map<string, Asset>();
         const foreignAssetsMap = new Map<string, Asset>();
 
-        // Add native DOT token first
+        // Add native DOT token first - use the predefined constant from metadata.ts
         nativeAssetsMap.set('DOT', NATIVE_DOT_ASSET);
 
         // Process native assets with string keys
@@ -163,7 +170,7 @@ export class FetchAssetService {
 
         // Process foreign assets
         for (const foreignAsset of foreignAssets) {
-            const assetId = serializeKey(foreignAsset.keyArgs[0]);
+            const assetId = safeStringify(foreignAsset.keyArgs[0]);
             const metadata = foreignMetadataMap.get(assetId);
 
             if (metadata) {
@@ -210,10 +217,8 @@ export class FetchAssetService {
                     assetHubPoolAssets.set('DOT', NATIVE_DOT_ASSET);
                     if (!assetOneId) assetOneId = 'DOT';
                     else assetTwoId = 'DOT';
-                    continue;
                 }
-
-                if (
+                else if (
                     parents === 0 &&
                     interior?.type === 'X2' &&
                     interior.value.some((e) => e.type === "PalletInstance" && e.value === 50)
@@ -236,7 +241,7 @@ export class FetchAssetService {
                         interior: asset.interior
                     };
 
-                    const foreignAssetId = serializeKey(normalizedXcmLocation);
+                    const foreignAssetId = safeStringify(normalizedXcmLocation);
                     const foreignAssetInfo = foreignAssetsInfo.get(foreignAssetId);
                     if (foreignAssetInfo) {
                         assetHubPoolAssets.set(foreignAssetId, foreignAssetInfo);
@@ -272,11 +277,17 @@ export class FetchAssetService {
 
         // Cache router and graph
         this.cacheService.set(CACHE_KEYS.TOKEN_GRAPH, tokenGraph);
-
+        saveAssetsToFile(assetHubPoolAssets, 'assetHubPoolAssets.json');
         // Get HydraDX assets and merge them
         const mergedAssets = await this.enrichWithHydraDxData(assetHubPoolAssets, nativeAssetsInfo,
             foreignAssetsInfo);
-        //saveAssetsToFile(mergedAssets, 'mergedAssets.json');
+        saveAssetsToFile(mergedAssets, 'mergedAssets.json');
+
+        // // Ensure all assets have serialized XCM locations before caching
+        // const serializedAssets = new Map<string, Asset>();
+        // for (const [key, asset] of mergedAssets.entries()) {
+        //     serializedAssets.set(key, ensureSerializedXcmLocation(asset));
+        // }
 
         //set cache for mergedAssets
         this.cacheService.set(CACHE_KEYS.MERGED_ASSETS, mergedAssets);

@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { z } from 'zod';
 import { Asset, getAssets } from '../../services';
-import { serializeKey } from '../../services/assets/utils';
+import { safeStringify } from '../../services/assets/utils';
 import { AssetHubRouter } from '../../services/assets/router/AssetHubRouter';
 import { CacheService } from '../../services/cache/CacheService';
 import { ConnectionManager } from '../../services/network/ConnectionManager';
@@ -26,10 +26,10 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const assets: Map<string, Asset> = await getAssets();
     
-    // Convert Map to array and serialize using serializeKey
+    // Convert Map to array and serialize using safeStringify
     const assetsArray = Array.from(assets.entries()).map(([id, asset]) => ({
       id,
-      ...JSON.parse(serializeKey(asset))  // Use existing serializer
+      ...JSON.parse(safeStringify(asset))  // Use safeStringify consistently
     }));
 
     res.json({
@@ -90,9 +90,10 @@ router.post('/find-route', async (req: Request, res: Response) => {
             });
         }
 
+        // CHANGED: Use safeStringify instead of serializeKey for consistency
         res.json({
             status: 'success',
-            data: JSON.parse(serializeKey(route))
+            data: JSON.parse(safeStringify(route))
         });
     } catch (error: unknown) {
         console.error('Error finding route:', error);

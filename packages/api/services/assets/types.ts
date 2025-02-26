@@ -17,8 +17,9 @@ export interface Asset {
     asset: AssetInfo;
     metadata: AssetMetadata;
     assetType: AssetType;
-    xcmLocation: XcmV4Location;
+    xcmLocation: string;
     hydradx?: HydraDxInfo;
+    rawXcmLocation?: any; // Store the original XCM location object
 }
 
 export interface AssetMetadata {

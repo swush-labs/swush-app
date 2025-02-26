@@ -31,15 +31,15 @@ export const RPC_ENDPOINTS =  {
   [NETWORKS_SUPPORTED.ASSET_HUB]: {
       endpoints: [
         // Primary endpoints (major providers)
-        { url: 'wss://polkadot-asset-hub-rpc.polkadot.io', priority: 1, isActive: true }, // Parity (Official)
+  //      { url: 'wss://polkadot-asset-hub-rpc.polkadot.io', priority: 3, isActive: true }, // Parity (Official)
         
         // Secondary endpoints (reliable providers)
         { url: 'wss://asset-hub-polkadot.dotters.network', priority: 2, isActive: true }, // IBP2
-        { url: 'wss://sys.ibp.network/asset-hub-polkadot', priority: 3, isActive: true }, // IBP1
-        { url: 'wss://rpc-asset-hub-polkadot.luckyfriday.io', priority: 4, isActive: true }, // LuckyFriday
+        { url: 'wss://sys.ibp.network/asset-hub-polkadot', priority: 1, isActive: true }, // IBP1
+  //      { url: 'wss://rpc-asset-hub-polkadot.luckyfriday.io', priority: 4, isActive: true }, // LuckyFriday
   
         // Tertiary endpoints (additional providers)
-         { url: 'wss://asset-hub-polkadot-rpc.dwellir.com', priority: 5, isActive: true }, // Dwellir (Main)
+   //      { url: 'wss://asset-hub-polkadot-rpc.dwellir.com', priority: 5, isActive: true }, // Dwellir (Main)
       //   { url: 'wss://statemint-rpc-tn.dwellir.com', priority: 6, isActive: true },       // Dwellir Tunisia
       //   { url: 'wss://statemint.public.curie.radiumblock.co/ws', priority: 7, isActive: true } // RadiumBlock
       ],

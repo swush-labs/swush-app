@@ -1,0 +1,1070 @@
+{
+  "18": {
+    "asset": {
+      "owner": "15ZZzNB9aW2Dgk6fuQVq9w6FpnEHzVqpvKHz5QzfvqYvYgTK",
+      "issuer": "15ZZzNB9aW2Dgk6fuQVq9w6FpnEHzVqpvKHz5QzfvqYvYgTK",
+      "admin": "15ZZzNB9aW2Dgk6fuQVq9w6FpnEHzVqpvKHz5QzfvqYvYgTK",
+      "freezer": "15ZZzNB9aW2Dgk6fuQVq9w6FpnEHzVqpvKHz5QzfvqYvYgTK",
+      "supply": "2199999301527422",
+      "deposit": "100000000000",
+      "min_balance": "1",
+      "is_sufficient": false,
+      "accounts": 21897,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2007600000",
+      "name": "DOTA",
+      "symbol": "DOTA",
+      "decimals": 4,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:18\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "18"
+          }
+        ]
+      }
+    }
+  },
+  "23": {
+    "asset": {
+      "owner": "15yFZ58x6aLJ3WjRUfmF3VrQbSoaYh21qcqaqawVMYMVPkdd",
+      "issuer": "15yFZ58x6aLJ3WjRUfmF3VrQbSoaYh21qcqaqawVMYMVPkdd",
+      "admin": "15yFZ58x6aLJ3WjRUfmF3VrQbSoaYh21qcqaqawVMYMVPkdd",
+      "freezer": "15yFZ58x6aLJ3WjRUfmF3VrQbSoaYh21qcqaqawVMYMVPkdd",
+      "supply": "22994441172708564040",
+      "deposit": "100000000000",
+      "min_balance": "1",
+      "is_sufficient": false,
+      "accounts": 729,
+      "sufficients": 0,
+      "approvals": 3
+    },
+    "metadata": {
+      "deposit": "2007600000",
+      "name": "PINK",
+      "symbol": "PINK",
+      "decimals": 10,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:23\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "23"
+          }
+        ]
+      }
+    }
+  },
+  "30": {
+    "asset": {
+      "owner": "136FwWWfX7jf9pKxE66UXzQ25QJrcP77q5jPfwxC9M2xdsHn",
+      "issuer": "136FwWWfX7jf9pKxE66UXzQ25QJrcP77q5jPfwxC9M2xdsHn",
+      "admin": "136FwWWfX7jf9pKxE66UXzQ25QJrcP77q5jPfwxC9M2xdsHn",
+      "freezer": "136FwWWfX7jf9pKxE66UXzQ25QJrcP77q5jPfwxC9M2xdsHn",
+      "supply": "9999999594298900000000",
+      "deposit": "100000000000",
+      "min_balance": "1",
+      "is_sufficient": false,
+      "accounts": 1307100,
+      "sufficients": 0,
+      "approvals": 2
+    },
+    "metadata": {
+      "deposit": "2007400000",
+      "name": "DED",
+      "symbol": "DED",
+      "decimals": 10,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:30\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "30"
+          }
+        ]
+      }
+    }
+  },
+  "111": {
+    "asset": {
+      "owner": "14r7HsToLvNGFGo3RKKehh7jLKF4YHdAaHUi5bDF8XQaoB4k",
+      "issuer": "14r7HsToLvNGFGo3RKKehh7jLKF4YHdAaHUi5bDF8XQaoB4k",
+      "admin": "14r7HsToLvNGFGo3RKKehh7jLKF4YHdAaHUi5bDF8XQaoB4k",
+      "freezer": "14r7HsToLvNGFGo3RKKehh7jLKF4YHdAaHUi5bDF8XQaoB4k",
+      "supply": "1000000000000",
+      "deposit": "2019000000",
+      "min_balance": "10000",
+      "is_sufficient": false,
+      "accounts": 5,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2007600000",
+      "name": "DEMO",
+      "symbol": "DEMO",
+      "decimals": 6,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:111\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "111"
+          }
+        ]
+      }
+    }
+  },
+  "888": {
+    "asset": {
+      "owner": "14iULn6TYRmawsxazqR2xwWVuyDXc8ycGjg7ppJ15qVKctEN",
+      "issuer": "14iULn6TYRmawsxazqR2xwWVuyDXc8ycGjg7ppJ15qVKctEN",
+      "admin": "14iULn6TYRmawsxazqR2xwWVuyDXc8ycGjg7ppJ15qVKctEN",
+      "freezer": "14iULn6TYRmawsxazqR2xwWVuyDXc8ycGjg7ppJ15qVKctEN",
+      "supply": "10000000000000000000",
+      "deposit": "100000000000",
+      "min_balance": "100000",
+      "is_sufficient": false,
+      "accounts": 20,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2007700000",
+      "name": "AssetX",
+      "symbol": "ASX",
+      "decimals": 10,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:888\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "888"
+          }
+        ]
+      }
+    }
+  },
+  "1148": {
+    "asset": {
+      "owner": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
+      "issuer": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
+      "admin": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
+      "freezer": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
+      "supply": "10000000000000",
+      "deposit": "2019000000",
+      "min_balance": "10000000000",
+      "is_sufficient": false,
+      "accounts": 2,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2008400000",
+      "name": "Nikola Test 2",
+      "symbol": "NT2",
+      "decimals": 10,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:1148\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "1148"
+          }
+        ]
+      }
+    }
+  },
+  "1313": {
+    "asset": {
+      "owner": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "issuer": "12Yf7iECLhPsjnS4F5tBCpZqWjFbUhxDGoEFcrn9ayaEke6m",
+      "admin": "12Yf7iECLhPsjnS4F5tBCpZqWjFbUhxDGoEFcrn9ayaEke6m",
+      "freezer": "12Yf7iECLhPsjnS4F5tBCpZqWjFbUhxDGoEFcrn9ayaEke6m",
+      "supply": "100000000",
+      "deposit": "2019000000",
+      "min_balance": "100",
+      "is_sufficient": false,
+      "accounts": 2,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2007500000",
+      "name": "Gagi",
+      "symbol": "GGI",
+      "decimals": 6,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:1313\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "1313"
+          }
+        ]
+      }
+    }
+  },
+  "1337": {
+    "asset": {
+      "owner": "12xLgPQunSsPkwMJ3vAgfac7mtU3Xw6R4fbHQcCp2QqXzdtu",
+      "issuer": "12GiwQK3AYwaQWgjAvFwWG9L3RYoedk9kTSBSYzFKGSfqkEQ",
+      "admin": "13TEbzUcFVsdZA1BAWm2TjLMRZ4y2CQDq3JEoiPqXh43MEoa",
+      "freezer": "12amXH9jF3ob2EqE1a44NKnoFdxz6qsXzmYY17pT84764dLL",
+      "supply": "350019960831940",
+      "deposit": "100000000000",
+      "min_balance": "10000",
+      "is_sufficient": true,
+      "accounts": 1054308,
+      "sufficients": 1054292,
+      "approvals": 2
+    },
+    "metadata": {
+      "deposit": "2008000000",
+      "name": "USD Coin",
+      "symbol": "USDC",
+      "decimals": 6,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:1337\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "1337"
+          }
+        ]
+      }
+    }
+  },
+  "1984": {
+    "asset": {
+      "owner": "15uPcYeUE2XaMiMJuR6W7QGW2LsLdKXX7F3PxKG8gcizPh3X",
+      "issuer": "15uPcYeUE2XaMiMJuR6W7QGW2LsLdKXX7F3PxKG8gcizPh3X",
+      "admin": "15uPcYeUE2XaMiMJuR6W7QGW2LsLdKXX7F3PxKG8gcizPh3X",
+      "freezer": "15uPcYeUE2XaMiMJuR6W7QGW2LsLdKXX7F3PxKG8gcizPh3X",
+      "supply": "77998712570364",
+      "deposit": "1000000000000",
+      "min_balance": "10000",
+      "is_sufficient": true,
+      "accounts": 10618,
+      "sufficients": 10509,
+      "approvals": 15
+    },
+    "metadata": {
+      "deposit": "2008200000",
+      "name": "Tether USD",
+      "symbol": "USDt",
+      "decimals": 6,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:1984\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "1984"
+          }
+        ]
+      }
+    }
+  },
+  "3164": {
+    "asset": {
+      "owner": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "issuer": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "admin": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "freezer": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "supply": "1000000",
+      "deposit": "2019000000",
+      "min_balance": "100000",
+      "is_sufficient": false,
+      "accounts": 2,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2007900000",
+      "name": "TestTest",
+      "symbol": "TTT",
+      "decimals": 3,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:3164\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "3164"
+          }
+        ]
+      }
+    }
+  },
+  "5361": {
+    "asset": {
+      "owner": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
+      "issuer": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
+      "admin": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
+      "freezer": "15Zziet89E6QDaaBK9tcQ6gQTPFYPPTmG4CRLKYPTBV7qWj6",
+      "supply": "100000000000000",
+      "deposit": "2019000000",
+      "min_balance": "10000000000",
+      "is_sufficient": false,
+      "accounts": 2,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2008200000",
+      "name": "Nikola Test",
+      "symbol": "NAT",
+      "decimals": 10,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:5361\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "5361"
+          }
+        ]
+      }
+    }
+  },
+  "6594": {
+    "asset": {
+      "owner": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "issuer": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "admin": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "freezer": "14okT24c4gotG9RgafLjLCfqHBt81TGWFJHFq2dzPFXi6N7A",
+      "supply": "10000000",
+      "deposit": "2019000000",
+      "min_balance": "1000000",
+      "is_sufficient": false,
+      "accounts": 2,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2008100000",
+      "name": "MVPW Test",
+      "symbol": "MVPW",
+      "decimals": 3,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:6594\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "6594"
+          }
+        ]
+      }
+    }
+  },
+  "42069": {
+    "asset": {
+      "owner": "1571oVEvh65S22BQa7Catg4i9FMEf8U2FHx8XHz3cQdAKcz1",
+      "issuer": "1571oVEvh65S22BQa7Catg4i9FMEf8U2FHx8XHz3cQdAKcz1",
+      "admin": "1571oVEvh65S22BQa7Catg4i9FMEf8U2FHx8XHz3cQdAKcz1",
+      "freezer": "1571oVEvh65S22BQa7Catg4i9FMEf8U2FHx8XHz3cQdAKcz1",
+      "supply": "22996383897549355766",
+      "deposit": "100000000000",
+      "min_balance": "1000000",
+      "is_sufficient": false,
+      "accounts": 296,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2007800000",
+      "name": "STINK",
+      "symbol": "STINK",
+      "decimals": 10,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:42069\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "42069"
+          }
+        ]
+      }
+    }
+  },
+  "112233": {
+    "asset": {
+      "owner": "12TSza479ukWFzdXnz7x2XqKsvuex24df887wLVGMXq9Uqqu",
+      "issuer": "12TSza479ukWFzdXnz7x2XqKsvuex24df887wLVGMXq9Uqqu",
+      "admin": "12TSza479ukWFzdXnz7x2XqKsvuex24df887wLVGMXq9Uqqu",
+      "freezer": "12TSza479ukWFzdXnz7x2XqKsvuex24df887wLVGMXq9Uqqu",
+      "supply": "247000000000000",
+      "deposit": "2019000000",
+      "min_balance": "10000000000",
+      "is_sufficient": false,
+      "accounts": 5,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2008400000",
+      "name": "My Test Coin ",
+      "symbol": "MTC",
+      "decimals": 10,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:112233\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "112233"
+          }
+        ]
+      }
+    }
+  },
+  "22222030": {
+    "asset": {
+      "owner": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "issuer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "admin": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "freezer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "supply": "100000000000000000000",
+      "deposit": "2019000000",
+      "min_balance": "1000000000000",
+      "is_sufficient": false,
+      "accounts": 3,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2008100000",
+      "name": "Pink Pigs",
+      "symbol": "PIGS",
+      "decimals": 12,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:22222030\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "22222030"
+          }
+        ]
+      }
+    }
+  },
+  "22222051": {
+    "asset": {
+      "owner": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "issuer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "admin": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "freezer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "supply": "50000000000000000000",
+      "deposit": "2019000000",
+      "min_balance": "1000000000000",
+      "is_sufficient": false,
+      "accounts": 3,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2008100000",
+      "name": "synergy AI",
+      "symbol": "NIN",
+      "decimals": 12,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:22222051\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "22222051"
+          }
+        ]
+      }
+    }
+  },
+  "22222052": {
+    "asset": {
+      "owner": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "issuer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "admin": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "freezer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "supply": "50000000000000000000",
+      "deposit": "2019000000",
+      "min_balance": "1000000000000",
+      "is_sufficient": false,
+      "accounts": 3,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2009200000",
+      "name": "Quant Full Potato.AI",
+      "symbol": "MODE",
+      "decimals": 12,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:22222052\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "22222052"
+          }
+        ]
+      }
+    }
+  },
+  "22222060": {
+    "asset": {
+      "owner": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "issuer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "admin": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "freezer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "supply": "84000000000000000000",
+      "deposit": "2019000000",
+      "min_balance": "1000000000000",
+      "is_sufficient": false,
+      "accounts": 3,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2008300000",
+      "name": "Thunderdome",
+      "symbol": "TATE",
+      "decimals": 12,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:22222060\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "22222060"
+          }
+        ]
+      }
+    }
+  },
+  "50000058": {
+    "asset": {
+      "owner": "13WL5iJ3jTN1PuXRJ43khB36DW81m8ndRsuVQ7tX45VuyqZj",
+      "issuer": "13WL5iJ3jTN1PuXRJ43khB36DW81m8ndRsuVQ7tX45VuyqZj",
+      "admin": "13WL5iJ3jTN1PuXRJ43khB36DW81m8ndRsuVQ7tX45VuyqZj",
+      "freezer": "13WL5iJ3jTN1PuXRJ43khB36DW81m8ndRsuVQ7tX45VuyqZj",
+      "supply": "1000000000000000000000000000",
+      "deposit": "2019000000",
+      "min_balance": "100000000",
+      "is_sufficient": false,
+      "accounts": 2,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2008100000",
+      "name": "G Token",
+      "symbol": "GTOKEN",
+      "decimals": 18,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:50000058\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "50000058"
+          }
+        ]
+      }
+    }
+  },
+  "50000075": {
+    "asset": {
+      "owner": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "issuer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "admin": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "freezer": "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB",
+      "supply": "100000000000000000000",
+      "deposit": "2019000000",
+      "min_balance": "1000000000000",
+      "is_sufficient": false,
+      "accounts": 6,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2009100000",
+      "name": "Billcoin - Polkadot",
+      "symbol": "BILL",
+      "decimals": 12,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":0,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"PalletInstance\",\"value\":50},{\"type\":\"GeneralIndex\",\"value\":\"bigint:50000075\"}]}}",
+    "rawXcmLocation": {
+      "parents": 0,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "PalletInstance",
+            "value": 50
+          },
+          {
+            "type": "GeneralIndex",
+            "value": "50000075"
+          }
+        ]
+      }
+    }
+  },
+  "DOT": {
+    "asset": {
+      "owner": "0x0",
+      "issuer": "0x0",
+      "admin": "0x0",
+      "freezer": "0x0",
+      "supply": "0",
+      "deposit": "0",
+      "min_balance": "1",
+      "is_sufficient": true,
+      "accounts": 0,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "0",
+      "name": "Polkadot",
+      "symbol": "DOT",
+      "decimals": 10,
+      "is_frozen": false
+    },
+    "assetType": "Native",
+    "xcmLocation": "{\"parents\":1,\"interior\":{\"type\":\"Here\"}}",
+    "rawXcmLocation": {
+      "parents": 1,
+      "interior": {
+        "type": "Here"
+      }
+    },
+    "hydradx": {
+      "assetId": "5",
+      "location": {
+        "parents": 1,
+        "interior": {
+          "type": "Here"
+        }
+      },
+      "poolAddress": "0x0",
+      "poolType": "0x0",
+      "balance": "0x0",
+      "existentialDeposit": "0x0"
+    }
+  },
+  "{\"parents\":1,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"Parachain\",\"value\":2004},{\"type\":\"PalletInstance\",\"value\":10}]}}": {
+    "asset": {
+      "owner": "13cKp89NgPL56sRoVRpBcjkGZPrk4Vf4tS6ePUD96XhAXozG",
+      "issuer": "13cKp89NgPL56sRoVRpBcjkGZPrk4Vf4tS6ePUD96XhAXozG",
+      "admin": "13cKp89NgPL56sRoVRpBcjkGZPrk4Vf4tS6ePUD96XhAXozG",
+      "freezer": "13cKp89NgPL56sRoVRpBcjkGZPrk4Vf4tS6ePUD96XhAXozG",
+      "supply": "0",
+      "deposit": "100000000000",
+      "min_balance": "1",
+      "is_sufficient": false,
+      "accounts": 1,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2007900000",
+      "name": "Glimmer",
+      "symbol": "GLMR",
+      "decimals": 18,
+      "is_frozen": false
+    },
+    "assetType": "Foreign",
+    "xcmLocation": "{\"parents\":1,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"Parachain\",\"value\":2004},{\"type\":\"PalletInstance\",\"value\":10}]}}",
+    "rawXcmLocation": {
+      "parents": 1,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "Parachain",
+            "value": 2004
+          },
+          {
+            "type": "PalletInstance",
+            "value": 10
+          }
+        ]
+      }
+    }
+  },
+  "{\"parents\":2,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"GlobalConsensus\",\"value\":{\"type\":\"Ethereum\",\"value\":{\"chain_id\":\"bigint:1\"}}},{\"type\":\"AccountKey20\",\"value\":{\"key\":\"binary:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2\"}}]}}": {
+    "asset": {
+      "owner": "1jMhfSJv5MkSQmEq97UmXCmMV63SHoQ3ednwkRSKETrCREU",
+      "issuer": "1jMhfSJv5MkSQmEq97UmXCmMV63SHoQ3ednwkRSKETrCREU",
+      "admin": "1jMhfSJv5MkSQmEq97UmXCmMV63SHoQ3ednwkRSKETrCREU",
+      "freezer": "1jMhfSJv5MkSQmEq97UmXCmMV63SHoQ3ednwkRSKETrCREU",
+      "supply": "600599454728878915436",
+      "deposit": "2019000000",
+      "min_balance": "15000000000000",
+      "is_sufficient": true,
+      "accounts": 79,
+      "sufficients": 63,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "0",
+      "name": "Wrapped Ether",
+      "symbol": "WETH",
+      "decimals": 18,
+      "is_frozen": false
+    },
+    "assetType": "Foreign",
+    "xcmLocation": "{\"parents\":2,\"interior\":{\"type\":\"X2\",\"value\":[{\"type\":\"GlobalConsensus\",\"value\":{\"type\":\"Ethereum\",\"value\":{\"chain_id\":\"bigint:1\"}}},{\"type\":\"AccountKey20\",\"value\":{\"key\":\"binary:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2\"}}]}}",
+    "rawXcmLocation": {
+      "parents": 2,
+      "interior": {
+        "type": "X2",
+        "value": [
+          {
+            "type": "GlobalConsensus",
+            "value": {
+              "type": "Ethereum",
+              "value": {
+                "chain_id": "1"
+              }
+            }
+          },
+          {
+            "type": "AccountKey20",
+            "value": {
+              "key": {}
+            }
+          }
+        ]
+      }
+    }
+  },
+  "{\"parents\":1,\"interior\":{\"type\":\"X1\",\"value\":{\"type\":\"Parachain\",\"value\":3369}}}": {
+    "asset": {
+      "owner": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
+      "issuer": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
+      "admin": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
+      "freezer": "13cKp88nRMkMK9jVQ84Xmt9w6bKEwnabVs6HJEK3PmZrxTCY",
+      "supply": "13610050748959633374911922",
+      "deposit": "2019000000",
+      "min_balance": "10000000000000000",
+      "is_sufficient": false,
+      "accounts": 473108,
+      "sufficients": 0,
+      "approvals": 3
+    },
+    "metadata": {
+      "deposit": "2007800000",
+      "name": "Mythos",
+      "symbol": "MYTH",
+      "decimals": 18,
+      "is_frozen": false
+    },
+    "assetType": "Foreign",
+    "xcmLocation": "{\"parents\":1,\"interior\":{\"type\":\"X1\",\"value\":{\"type\":\"Parachain\",\"value\":3369}}}",
+    "rawXcmLocation": {
+      "parents": 1,
+      "interior": {
+        "type": "X1",
+        "value": {
+          "type": "Parachain",
+          "value": 3369
+        }
+      }
+    }
+  },
+  "{\"parents\":2,\"interior\":{\"type\":\"X1\",\"value\":{\"type\":\"GlobalConsensus\",\"value\":{\"type\":\"Kusama\"}}}}": {
+    "asset": {
+      "owner": "14zcUAhP5XypiFQWA3b1AnGKrhZqR4XWUo4deWkwuN5y983G",
+      "issuer": "14zcUAhP5XypiFQWA3b1AnGKrhZqR4XWUo4deWkwuN5y983G",
+      "admin": "14zcUAhP5XypiFQWA3b1AnGKrhZqR4XWUo4deWkwuN5y983G",
+      "freezer": "14zcUAhP5XypiFQWA3b1AnGKrhZqR4XWUo4deWkwuN5y983G",
+      "supply": "36213780621294784",
+      "deposit": "0",
+      "min_balance": "1000000000",
+      "is_sufficient": true,
+      "accounts": 48,
+      "sufficients": 48,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "0",
+      "name": "Kusama",
+      "symbol": "KSM",
+      "decimals": 12,
+      "is_frozen": false
+    },
+    "assetType": "Foreign",
+    "xcmLocation": "{\"parents\":2,\"interior\":{\"type\":\"X1\",\"value\":{\"type\":\"GlobalConsensus\",\"value\":{\"type\":\"Kusama\"}}}}",
+    "rawXcmLocation": {
+      "parents": 2,
+      "interior": {
+        "type": "X1",
+        "value": {
+          "type": "GlobalConsensus",
+          "value": {
+            "type": "Kusama"
+          }
+        }
+      }
+    }
+  },
+  "{\"parents\":1,\"interior\":{\"type\":\"X1\",\"value\":{\"type\":\"Parachain\",\"value\":2051}}}": {
+    "asset": {
+      "owner": "13cKp88eoWVt52MsarZmWKSxnfYgrZiEPDs27pyCRPi8jLAg",
+      "issuer": "13cKp88eoWVt52MsarZmWKSxnfYgrZiEPDs27pyCRPi8jLAg",
+      "admin": "13cKp88eoWVt52MsarZmWKSxnfYgrZiEPDs27pyCRPi8jLAg",
+      "freezer": "13cKp88eoWVt52MsarZmWKSxnfYgrZiEPDs27pyCRPi8jLAg",
+      "supply": "500000000000",
+      "deposit": "2019000000",
+      "min_balance": "1000000000",
+      "is_sufficient": false,
+      "accounts": 2,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2009100000",
+      "name": "Ajuna Polkadot AJUN",
+      "symbol": "AJUN",
+      "decimals": 12,
+      "is_frozen": false
+    },
+    "assetType": "Foreign",
+    "xcmLocation": "{\"parents\":1,\"interior\":{\"type\":\"X1\",\"value\":{\"type\":\"Parachain\",\"value\":2051}}}",
+    "rawXcmLocation": {
+      "parents": 1,
+      "interior": {
+        "type": "X1",
+        "value": {
+          "type": "Parachain",
+          "value": 2051
+        }
+      }
+    }
+  },
+  "{\"parents\":1,\"interior\":{\"type\":\"X1\",\"value\":{\"type\":\"Parachain\",\"value\":3370}}}": {
+    "asset": {
+      "owner": "13cKp88ncyoXqGfJDkYFy4o1CDyf69WibaK6vqUbz4bqBUwY",
+      "issuer": "13cKp88ncyoXqGfJDkYFy4o1CDyf69WibaK6vqUbz4bqBUwY",
+      "admin": "13cKp88ncyoXqGfJDkYFy4o1CDyf69WibaK6vqUbz4bqBUwY",
+      "freezer": "13cKp88ncyoXqGfJDkYFy4o1CDyf69WibaK6vqUbz4bqBUwY",
+      "supply": "74294953817597571447565",
+      "deposit": "2019000000",
+      "min_balance": "1",
+      "is_sufficient": false,
+      "accounts": 12,
+      "sufficients": 0,
+      "approvals": 0
+    },
+    "metadata": {
+      "deposit": "2007600000",
+      "name": "LAOS",
+      "symbol": "LAOS",
+      "decimals": 18,
+      "is_frozen": false
+    },
+    "assetType": "Foreign",
+    "xcmLocation": "{\"parents\":1,\"interior\":{\"type\":\"X1\",\"value\":{\"type\":\"Parachain\",\"value\":3370}}}",
+    "rawXcmLocation": {
+      "parents": 1,
+      "interior": {
+        "type": "X1",
+        "value": {
+          "type": "Parachain",
+          "value": 3370
+        }
+      }
+    }
+  }
+}

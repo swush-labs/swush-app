@@ -3,6 +3,7 @@ import { XcmV3Junctions } from '@polkadot-api/descriptors';
 import { Asset, XcmV4Location } from './types';
 import { CacheService } from 'services/cache/CacheService';
 import { CACHE_KEYS } from 'services/constants';
+import { Binary } from 'polkadot-api';
 
 export function serializeKey(key: any): string {
   if (typeof key === 'number' || typeof key === 'bigint') {
@@ -229,3 +230,81 @@ export function fetchCachedAssets(assetId?: string): Asset | Map<string, Asset> 
   const assets = cacheService.get<Map<string, Asset>>(CACHE_KEYS.MERGED_ASSETS);
   return assetId ? assets.get(assetId) || null : assets;
 }
+
+// Helper function to check if a value is a BigInt
+export const isBigInt = (value: unknown): value is bigint => {
+  return typeof value === 'bigint';
+};
+
+// Helper function to check if a value is a Binary type from Polkadot API
+export const isBinary = (value: unknown): boolean => {
+  return value !== null && 
+         typeof value === 'object' && 
+         'asHex' in value && 
+         typeof value.asHex === 'function';
+};
+
+/**
+ * Safely stringify complex objects including BigInt and Binary values
+ * @param value The value to stringify
+ * @param format Whether to format the JSON with indentation
+ * @returns A string representation of the value
+ */
+export const safeStringify = (value: unknown, format?: boolean): string => {
+  if (!value) return value?.toString() ?? "";
+
+  return JSON.stringify(
+    value,
+    (key, value) => {
+      if (isBigInt(value)) {
+        return `bigint:${value.toString()}`;
+      } else if (isBinary(value)) {
+        return `binary:${value.asHex()}`;
+      }
+      return value;
+    },
+    format ? 2 : undefined,
+  );
+};
+
+/**
+ * Parse a string created with safeStringify back to its original form
+ * @param text The string to parse
+ * @returns The parsed value
+ */
+export const safeParse = <T = unknown>(value: string): T => {
+  return JSON.parse(value, (key, value) => {
+    if (typeof value === "string") {
+      if (value.startsWith("bigint:")) return BigInt(value.slice(7));
+      if (value.startsWith("binary:")) return Binary.fromHex(value.slice(7));
+    }
+    
+    // Handle the specific case for AccountKey20's network property which should be an Option
+    if (key === "network" && value === null) {
+      // Return undefined to indicate that this is None/null Option
+      return undefined;
+    }
+    
+    return value;
+  });
+};
+
+/**
+ * Ensures an asset has properly serialized XCM location for caching
+ * @param asset The asset to prepare
+ * @returns The asset with properly serialized XCM location
+ */
+export const ensureSerializedXcmLocation = (asset: Asset): Asset => {
+  // If xcmLocation is already a string, no need to change
+  if (typeof asset.xcmLocation === 'string') {
+    return asset;
+  }
+  
+  // Make a copy to avoid mutating the original
+  const preparedAsset = {...asset};
+  
+  // Ensure the xcmLocation is serialized
+  preparedAsset.xcmLocation = safeStringify(asset.xcmLocation);
+  
+  return preparedAsset;
+};
