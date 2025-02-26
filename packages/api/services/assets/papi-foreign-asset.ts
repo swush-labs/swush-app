@@ -1,6 +1,6 @@
 import { XcmV4Location } from "services";
 import { ConnectionManager } from "../network/ConnectionManager";
-import { safeStringify, safeParse, serializeKey } from "./utils";
+import { safeStringify, safeParse } from "./utils";
 import { NATIVE_DOT_ASSET } from "./metadata";
 
 async function main() {
@@ -32,7 +32,6 @@ async function main() {
                 wethFound = true;
 
                 console.log("\n=== WETH XCM LOCATION (RAW) ===");
-                console.log(serializeKey(key));
 
                 const xcmLocation = safeStringify(key);
                 console.log("xcmLocation", xcmLocation);

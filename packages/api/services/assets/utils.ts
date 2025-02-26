@@ -5,24 +5,6 @@ import { CacheService } from 'services/cache/CacheService';
 import { CACHE_KEYS } from 'services/constants';
 import { Binary } from 'polkadot-api';
 
-export function serializeKey(key: any): string {
-  if (typeof key === 'number' || typeof key === 'bigint') {
-    return key.toString();
-  }
-
-  if (key && typeof key === 'object') {
-    const replacer = (_: string, value: any) => {
-      if (typeof value === 'bigint') {
-        return value.toString();
-      }
-      return value;
-    };
-    return JSON.stringify(key, replacer);
-  }
-
-  return JSON.stringify(key);
-}
-
 export function getXcmV3Multilocation(assetId: bigint | number): XcmV4Location {
   return {
     parents: 0,
@@ -71,7 +53,7 @@ export const getForeignAssetId = (location: any): string | null => {
       parents: location.parents,
       interior: location.interior
     };
-    return serializeKey(normalizedLocation);
+    return safeStringify(normalizedLocation);
   } catch (error) {
     console.error('Error matching foreign asset:', error);
     return null;

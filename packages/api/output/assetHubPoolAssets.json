@@ -289,8 +289,8 @@
       "deposit": "100000000000",
       "min_balance": "10000",
       "is_sufficient": true,
-      "accounts": 1054308,
-      "sufficients": 1054292,
+      "accounts": 1054307,
+      "sufficients": 1054291,
       "approvals": 2
     },
     "metadata": {
@@ -329,8 +329,8 @@
       "deposit": "1000000000000",
       "min_balance": "10000",
       "is_sufficient": true,
-      "accounts": 10618,
-      "sufficients": 10509,
+      "accounts": 10619,
+      "sufficients": 10510,
       "approvals": 15
     },
     "metadata": {

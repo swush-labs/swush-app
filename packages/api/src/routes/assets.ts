@@ -90,7 +90,6 @@ router.post('/find-route', async (req: Request, res: Response) => {
             });
         }
 
-        // CHANGED: Use safeStringify instead of serializeKey for consistency
         res.json({
             status: 'success',
             data: JSON.parse(safeStringify(route))

@@ -277,11 +277,11 @@ export class FetchAssetService {
 
         // Cache router and graph
         this.cacheService.set(CACHE_KEYS.TOKEN_GRAPH, tokenGraph);
-        saveAssetsToFile(assetHubPoolAssets, 'assetHubPoolAssets.json');
+        //saveAssetsToFile(assetHubPoolAssets, 'assetHubPoolAssets.json');
         // Get HydraDX assets and merge them
         const mergedAssets = await this.enrichWithHydraDxData(assetHubPoolAssets, nativeAssetsInfo,
             foreignAssetsInfo);
-        saveAssetsToFile(mergedAssets, 'mergedAssets.json');
+        //saveAssetsToFile(mergedAssets, 'mergedAssets.json');
 
         // // Ensure all assets have serialized XCM locations before caching
         // const serializedAssets = new Map<string, Asset>();

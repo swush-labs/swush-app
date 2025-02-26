@@ -310,7 +310,7 @@
       },
       "poolAddress": "7NL2VJr35Afnd7Ba3kFMsqp4HfUaVr9x57WNCTp1LBDpS3X3",
       "poolType": "Xyk",
-      "balance": "15808906199717451",
+      "balance": "14779861015575064",
       "existentialDeposit": "1"
     }
   },
@@ -1492,8 +1492,8 @@
       "deposit": "100000000000",
       "min_balance": "10000",
       "is_sufficient": true,
-      "accounts": 1054308,
-      "sufficients": 1054292,
+      "accounts": 1054307,
+      "sufficients": 1054291,
       "approvals": 2
     },
     "metadata": {
@@ -1541,7 +1541,7 @@
       },
       "poolAddress": "7LVGEVLFXpsCCtnsvhzkSMQARU7gRVCtwMckG7u7d3V6FVvG",
       "poolType": "Stableswap",
-      "balance": "7971928137083",
+      "balance": "7966789750035",
       "existentialDeposit": "10000"
     }
   },
@@ -1555,8 +1555,8 @@
       "deposit": "1000000000000",
       "min_balance": "10000",
       "is_sufficient": true,
-      "accounts": 10618,
-      "sufficients": 10509,
+      "accounts": 10619,
+      "sufficients": 10510,
       "approvals": 15
     },
     "metadata": {
@@ -1604,7 +1604,7 @@
       },
       "poolAddress": "7LVGEVLFXpsCCtnsvhzkSMQARU7gRVCtwMckG7u7d3V6FVvG",
       "poolType": "Stableswap",
-      "balance": "8950129410827",
+      "balance": "8914335910566",
       "existentialDeposit": "10000"
     }
   },
@@ -2039,7 +2039,7 @@
       },
       "poolAddress": "7NL2VJr35Afnd7Ba3kFMsqp4HfUaVr9x57WNCTp1LBDpS3X3",
       "poolType": "Xyk",
-      "balance": "52908456749204495",
+      "balance": "56628863287893184",
       "existentialDeposit": "200000000000000"
     }
   },
@@ -2898,7 +2898,7 @@
       },
       "poolAddress": "7JWYQ2DYprVUd9ZDrg4qaVK61uCK48Kf9Gpdx4R8CzTNfq9J",
       "poolType": "Xyk",
-      "balance": "2839662917309732278",
+      "balance": "2955728678944797378",
       "existentialDeposit": "1"
     }
   },
@@ -4221,7 +4221,7 @@
       },
       "poolAddress": "7KWuZGbZEsJaDcQANLdgG97Pwr75aXg7DS5Srvyj3tjV34tT",
       "poolType": "Xyk",
-      "balance": "99240696177391626",
+      "balance": "103201813262710151",
       "existentialDeposit": "1"
     }
   },
@@ -4284,7 +4284,7 @@
       },
       "poolAddress": "7Ly1vsyAV8eAc8QBnFCKWmt4b4GPtSnc72XvwKxEnKnjfyGw",
       "poolType": "Xyk",
-      "balance": "3626370009843376574",
+      "balance": "3622977864705614309",
       "existentialDeposit": "1"
     }
   },
@@ -4599,7 +4599,7 @@
       },
       "poolAddress": "7KzUj7umfp35swjku9WS22tFZrznAZ8FrYEdCAiJNCzsmXVb",
       "poolType": "Xyk",
-      "balance": "4670178969290764739",
+      "balance": "4669915842890833181",
       "existentialDeposit": "1"
     }
   },
@@ -4788,7 +4788,7 @@
       },
       "poolAddress": "7NAZGHJ9UhXJyhmUsg8dzmNULLCW6RHVb37PAeNFxgZpVCL5",
       "poolType": "Xyk",
-      "balance": "356736281476477836",
+      "balance": "371474621106631364",
       "existentialDeposit": "1"
     }
   },
@@ -5103,7 +5103,7 @@
       },
       "poolAddress": "7Hhnk53koe9tRVJ74FZfnZajrtp9Bpw9ZZwrGQc5GLMzzCCu",
       "poolType": "Xyk",
-      "balance": "192622160102546",
+      "balance": "201140201347699",
       "existentialDeposit": "1"
     }
   },
@@ -5292,7 +5292,7 @@
       },
       "poolAddress": "7JDNz4ULW2tXpvuztmkhvEtdS1MGNV9GeMjVwoJ8PLK19cZJ",
       "poolType": "Xyk",
-      "balance": "867805678284286",
+      "balance": "832061977290999",
       "existentialDeposit": "1"
     }
   },
@@ -5481,7 +5481,7 @@
       },
       "poolAddress": "7JDNz4ULW2tXpvuztmkhvEtdS1MGNV9GeMjVwoJ8PLK19cZJ",
       "poolType": "Xyk",
-      "balance": "151052091154535530509",
+      "balance": "157561350374153323103",
       "existentialDeposit": "1"
     }
   },
@@ -5544,7 +5544,7 @@
       },
       "poolAddress": "7Hnz4EvBwgWQ77CG2hy36dj29kKPEuP2x6aaRZozBPKyDhNf",
       "poolType": "Xyk",
-      "balance": "2132153608002003",
+      "balance": "2212402202415890",
       "existentialDeposit": "1"
     }
   },
@@ -5859,7 +5859,7 @@
       },
       "poolAddress": "7P9KqhSexz495v5Pd1iNbrE3yTPLKdd3yKqzdzjFBFFw79Tn",
       "poolType": "Xyk",
-      "balance": "14405766211565391",
+      "balance": "14982587472515958",
       "existentialDeposit": "1"
     }
   },
