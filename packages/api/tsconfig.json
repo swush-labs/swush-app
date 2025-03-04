@@ -9,8 +9,11 @@
     "moduleResolution": "node",
     "declaration": true,
     "noEmit": false,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./services/*"]
+    }
   },
-  "include": ["services/**/*"],
+  "include": ["services/**/*", "services/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 } 

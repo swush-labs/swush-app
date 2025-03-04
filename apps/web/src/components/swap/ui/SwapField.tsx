@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { TokenButton } from '../TokenButton';
 import { AssetList } from './AssetList';
-import { SwapFieldProps, TokenInfo } from '../types';
+import { SwapFieldProps } from '../types';
 import { Loader2 } from 'lucide-react';
 
 // Helper function to format balance display

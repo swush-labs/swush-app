@@ -1,105 +1,15 @@
-//main function to test the asset service
+import { ConnectionManager } from "@/network/ConnectionManager";
 
-import { FetchAssetService } from './FetchAssetService';
-import { initializeSDK } from '../index';
-import { ConnectionManager } from '../network/ConnectionManager';
-import { AssetHubRouter } from './router/AssetHubRouter';
-import { CACHE_KEYS } from '../constants';
-import { CacheService } from '../cache/CacheService';
-import { TokenGraph } from './router/TokenGraph';
-import { Asset } from './types';
-
-
-// add main function        
-async function testAssetHubQuotes() {
-    try {
-        // Get required services
-        const assetService = FetchAssetService.getInstance();
-        const connectionManager = ConnectionManager.getInstance();
-        const cacheManager = CacheService.getInstance();
-
-        // Get assets and API
-        const assets = await assetService.getAssets();
-        const api = connectionManager.getAssetHubApi();
-        if (!api) throw new Error('Asset Hub API not initialized');
-
-        // Get cached token graph
-        const tokenGraph = cacheManager.get<TokenGraph>(CACHE_KEYS.TOKEN_GRAPH);
-        if (!tokenGraph) throw new Error('Token graph not initialized');
-        
-        const router = new AssetHubRouter(api, tokenGraph);
-
-        // Helper function to find asset by symbol
-        const findAssetBySymbol = (symbol: string): [string, Asset] | undefined => {
-            return Array.from(assets.entries()).find(([_, asset]) => 
-                asset.metadata.symbol.toLowerCase() === symbol.toLowerCase()
-            );
-        };
-
-        // Find actual assets for testing
-        const dotAsset = findAssetBySymbol('DOT');
-        const usdcAsset = findAssetBySymbol('USDC');
-        const mythAsset = findAssetBySymbol('MYTH');
-        const wudAsset = findAssetBySymbol('WUD');
-
-        console.log('\n=== Testing Asset Hub Router Quotes ===\n');
-        
-            const route = await router.findBestRoute(
-                usdcAsset?.[0] ?? '',
-                mythAsset?.[0] ?? '',
-                1
-            );
-
-            if (route) {
-                console.log('\nRoute found:');
-                console.log('Path:', route.path.map(id => {
-                    const asset = assets.get(id);
-                    return asset ? asset.metadata.symbol : id;
-                }).join(' -> '));
-                
-                console.log('Expected Output:', route.expectedOutput.toString());
-                
-                console.log('\nDEX Used:', route.dex);
-            } else {
-                console.log('No route found!');
-            }
-            console.log('\n-------------------\n');
-
-            const routeSecond = await router.findBestRoute(
-                usdcAsset?.[0] ?? '',
-                wudAsset?.[0] ?? '',
-                1
-            );
-
-            if (routeSecond) {
-                console.log('\nRoute found:');
-                console.log('Path:', routeSecond.path.map(id => {
-                    const asset = assets.get(id);
-                    return asset ? asset.metadata.symbol : id;
-                }).join(' -> '));
-                
-                console.log('Expected Output:', routeSecond.expectedOutput.toString());
-                
-                console.log('\nDEX Used:', routeSecond.dex);
-            } else {
-                console.log('No route found!');
-            }
-            console.log('\n-------------------\n');
-
-    } catch (error) {
-        console.error('Error testing Asset Hub quotes:', error);
-    }
-}
-
-
-// Main function to test the asset service
 async function main() {
-    try {
-        await initializeSDK();
-        await testAssetHubQuotes();
+    console.log("Initializing connection manager...");
+    const connectionManager = ConnectionManager.getInstance();
+    await connectionManager.initialize();
 
-    } catch (error) {
-        console.error('Error in main:', error);
+    console.log("Getting Asset Hub API...");
+    const api = connectionManager.getAssetHubApi();
+
+    if (!api) {
+        throw new Error("Failed to get Asset Hub API");
     }
 }
 

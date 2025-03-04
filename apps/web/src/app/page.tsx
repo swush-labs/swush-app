@@ -23,9 +23,6 @@ import {
   mockBlockchainTransaction
 } from '@/components/swap'
 import type { TokenInfo } from '@/components/swap/types'
-import {
-  calculateOutputAmount
-} from '@/components/swap'
 import { BALANCE_FETCH_TIMEOUT, ROUTE_FETCH_TIMEOUT } from '@/lib/const'
 
 export default function SwapPage() {
