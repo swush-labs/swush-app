@@ -42,7 +42,6 @@
     "@galacticcouncil/xcm-cfg": "^6.0.1",
     "@galacticcouncil/xcm-sdk": "^7.0.1",
     "@polkadot-api/descriptors": "file:../.papi/descriptors",
-    "@swush/core": "workspace:*",
     "polkadot-api": "^1.8.2",
     "@polkadot-labs/hdkd": "^0.0.10",
     "@polkadot-labs/hdkd-helpers": "^0.0.10",

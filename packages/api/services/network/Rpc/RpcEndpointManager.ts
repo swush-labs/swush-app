@@ -44,27 +44,71 @@ export class RpcEndpointManager extends EventEmitter {
     for (const endpoint of config.endpoints) {
       try {
         const ws = new WebSocket(endpoint.url);
+        let isConnectionClosed = false;
+
         await new Promise((resolve, reject) => {
           const timeout = setTimeout(() => {
-            ws.close();
-            reject(new Error('Health check timeout'));
+            if (!isConnectionClosed) {
+              ws.close();
+              reject(new Error('Health check timeout'));
+            }
           }, config.healthCheck.timeout);
 
           ws.onopen = () => {
-            clearTimeout(timeout);
-            ws.close();
-            resolve(true);
+            // Send a basic request to check if the node responds
+            ws.send(JSON.stringify({
+              id: 1,
+              jsonrpc: '2.0',
+              method: 'system_health',
+              params: []
+            }));
+          };
+
+          ws.onmessage = (event) => {
+            try {
+              const response = JSON.parse(event.data.toString());
+              if (response.result || response.error) {
+                clearTimeout(timeout);
+                isConnectionClosed = true;
+                ws.close();
+                resolve(true);
+              }
+            } catch (error) {
+              // If we can't parse the response, consider it a failure
+              clearTimeout(timeout);
+              isConnectionClosed = true;
+              ws.close();
+              reject(new Error('Invalid response from node'));
+            }
           };
 
           ws.onerror = (event: WebSocket.ErrorEvent) => {
             clearTimeout(timeout);
+            isConnectionClosed = true;
+            ws.close();
             reject(new Error(event.message || 'WebSocket connection failed'));
+          };
+
+          ws.onclose = (event) => {
+            if (!isConnectionClosed) {
+              clearTimeout(timeout);
+              isConnectionClosed = true;
+              reject(new Error(`Connection closed with code ${event.code}: ${event.reason || 'Unknown reason'}`));
+            }
           };
         });
 
         endpoint.isActive = true;
         endpoint.lastChecked = new Date();
         endpoint.lastError = undefined;
+        
+        // If this endpoint was previously marked as error, emit a recovery event
+        if (endpoint.lastError) {
+          this.emit('endpointRecovered', {
+            network,
+            url: endpoint.url
+          });
+        }
       } catch (error) {
         endpoint.isActive = false;
         endpoint.lastChecked = new Date();
@@ -75,6 +119,9 @@ export class RpcEndpointManager extends EventEmitter {
           url: endpoint.url,
           error: endpoint.lastError
         } as EndpointEvent);
+
+        // Log the error for debugging
+        console.warn(`Health check failed for ${endpoint.url}: ${endpoint.lastError}`);
       }
     }
   }

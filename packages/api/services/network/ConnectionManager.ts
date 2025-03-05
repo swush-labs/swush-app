@@ -51,6 +51,11 @@ export class ConnectionManager {
 
     private async handleConnectionError(network: string, error: Error): Promise<void> {
         console.error(`Connection error for ${network}:`, error);
+        
+        // Mark the current endpoint as having an error
+        const currentEndpoint = this.rpcManager.getEndpoint(network);
+        this.rpcManager.markEndpointError(network, currentEndpoint, error);
+        
         this.reconnectAttempts[network]++;
 
         // Clear any existing reconnection timeout
@@ -61,23 +66,37 @@ export class ConnectionManager {
         // If we haven't exceeded max attempts, schedule reconnection
         if (this.reconnectAttempts[network] <= CONNECTION_CONFIG.MAX_RECONNECT_ATTEMPTS) {
             const delay = this.calculateReconnectDelay(network);
-            console.log(`Scheduling reconnection for ${network} in ${delay}ms (attempt ${this.reconnectAttempts[network]})`);
+            console.log(`Scheduling reconnection for ${network} in ${delay}ms (attempt ${this.reconnectAttempts[network]}/${CONNECTION_CONFIG.MAX_RECONNECT_ATTEMPTS})`);
             
             this.reconnectTimeouts[network] = setTimeout(async () => {
-                await this.reconnectNetwork(network);
+                try {
+                    await this.reconnectNetwork(network);
+                } catch (reconnectError) {
+                    console.error(`Reconnection attempt failed for ${network}:`, reconnectError);
+                    // If reconnection fails, try the next endpoint
+                    if (reconnectError instanceof Error) {
+                        await this.handleConnectionError(network, reconnectError);
+                    }
+                }
             }, delay);
         } else {
             console.error(`Max reconnection attempts reached for ${network}`);
             // Reset attempts after a longer timeout
             setTimeout(() => {
                 this.reconnectAttempts[network] = 0;
+                // Try one more time after resetting
+                this.reconnectNetwork(network).catch(error => {
+                    console.error(`Failed to reconnect to ${network} after reset:`, error);
+                });
             }, CONNECTION_CONFIG.ATTEMPT_RESET_TIMEOUT);
         }
     }
 
     private async reconnectNetwork(network: string): Promise<void> {
         try {
+            // Get a new endpoint, potentially different from the failed one
             const endpoint = this.rpcManager.getEndpoint(network);
+            console.log(`Attempting to reconnect to ${network} using endpoint ${endpoint}`);
             
             // Cleanup existing connection
             await this.cleanupConnection(network);
@@ -96,8 +115,8 @@ export class ConnectionManager {
             console.log(`Successfully reconnected to ${network} using endpoint ${endpoint}`);
         } catch (error) {
             if (error instanceof Error) {
-                await this.handleConnectionError(network, error);
-                this.rpcManager.markEndpointError(network, this.rpcManager.getEndpoint(network), error);
+                console.error(`Failed to reconnect to ${network}:`, error);
+                throw error; // Propagate the error to be handled by handleConnectionError
             }
         }
     }
