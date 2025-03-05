@@ -43,14 +43,14 @@ export const SwapDetails = ({
           </div>
         </div>
 
-        <Collapsible>
+{/* TODO: figure out path for asset hub and hydra dx, also is this necessary? 
+    <Collapsible>
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-center gap-2 pt-2 text-sm text-slate-400 hover:text-slate-300 transition-colors">
               <span>Show more details</span>
               <Search className="w-4 h-4" />
             </div>
           </CollapsibleTrigger>
-          {/* TODO: add more details for asset hub */}
           <CollapsibleContent>
             <div className="space-y-3 pt-3 border-t border-slate-700/50">
               <div className="space-y-1">
@@ -65,7 +65,7 @@ export const SwapDetails = ({
               </div>
             </div>
           </CollapsibleContent>
-        </Collapsible>
+        </Collapsible> */}
       </div>
     </motion.div>
   );

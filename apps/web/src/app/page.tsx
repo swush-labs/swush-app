@@ -399,7 +399,7 @@ export default function SwapPage() {
       </div>
 
       {/* Main Content */}
-      <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-cyan-900 to-slate-900 flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-cyan-900 to-slate-900 flex flex-col items-center justify-start pt-8">
         <div className="w-full max-w-md space-y-8">
           <SwapHeader
             slippageTolerance={slippageTolerance}
