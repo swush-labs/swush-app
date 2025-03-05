@@ -196,6 +196,13 @@ export const WalletButton = ({
     setIsConnected(true);
     setWalletAddress(assetHubAddress); // Use the Asset Hub formatted address
     setIsOpen(false);
+    //add success toast
+    toast.success('Wallet connected successfully!', {
+      icon: '✅',
+      style: {
+        borderLeft: '4px solid #4caf50',
+      },
+    });
 
     // If you need to use the PAPI signer, you can access it through account.wallet
     if (account.wallet && account.signer) {

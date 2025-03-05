@@ -68,7 +68,7 @@ export const RPC_ENDPOINTS =  {
         { url: 'wss://hydration.dotters.network', priority: 3, isActive: true },   // IBP2
         
         // Tertiary endpoint
-       { url: 'wss://rpc.helikon.io/hydradx', priority: 4, isActive: true }      // Helikon
+  //     { url: 'wss://rpc.helikon.io/hydradx', priority: 4, isActive: true }      // Helikon
       ],
       currentIndex: 0,
       healthCheck: {

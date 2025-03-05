@@ -50,6 +50,7 @@ export const SwapDetails = ({
               <Search className="w-4 h-4" />
             </div>
           </CollapsibleTrigger>
+          {/* TODO: add more details for asset hub */}
           <CollapsibleContent>
             <div className="space-y-3 pt-3 border-t border-slate-700/50">
               <div className="space-y-1">
@@ -58,7 +59,7 @@ export const SwapDetails = ({
                 </div>
                 <div className="">
                   <p className="text-xs text-slate-300 font-medium leading-relaxed">
-                    {`${inputToken.name} → USDC → ${outputToken.name}`}
+                    {`${inputToken.symbol} → ${outputToken.symbol}`}
                   </p>
                 </div>
               </div>

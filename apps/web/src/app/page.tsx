@@ -75,6 +75,8 @@ export default function SwapPage() {
     error: null,
     data: null
   });
+  //set route dex
+  const [routeDex, setRouteDex] = useState('');
 
   const [inputBalance, setInputBalance] = useState('0');
   const [outputBalance, setOutputBalance] = useState('0');
@@ -150,6 +152,7 @@ export default function SwapPage() {
   const fetchRouteAndUpdateOutput = useCallback(async (currentInputAmount: string) => {
     if (!inputToken || !outputToken || !currentInputAmount || parseFloat(currentInputAmount) <= 0) {
       setOutputAmount('0');
+      setRouteDex('');
       setRouteState(prev => ({ ...prev, isLoading: false, error: null }));
       return;
     }
@@ -158,6 +161,7 @@ export default function SwapPage() {
     setRouteState(prev => ({ ...prev, isLoading: true, error: null }));
     // Clear previous output amount while loading
     setOutputAmount('0');
+    setRouteDex('');
 
     try {
       const route = await api.assets.findRoute({
@@ -165,7 +169,7 @@ export default function SwapPage() {
         toAsset: outputToken.id,
         amountIn: currentInputAmount
       });
-
+      setRouteDex(route.dex);
       // Only update if the input amount hasn't changed during the request
       if (currentInputAmount === inputAmount) {
         setRouteState({
@@ -190,6 +194,7 @@ export default function SwapPage() {
           error: errorMessage,
           data: null
         });
+        setRouteDex('');
         setOutputAmount('0');
       }
     }
@@ -202,6 +207,7 @@ export default function SwapPage() {
         fetchRouteAndUpdateOutput(amount);
       } else {
         setOutputAmount('0');
+        setRouteDex('');
         setRouteState(prev => ({ ...prev, isLoading: false, error: null }));
       }
     }, ROUTE_FETCH_TIMEOUT),
@@ -438,7 +444,7 @@ export default function SwapPage() {
             outputToken={outputToken}
             inputToken={inputToken}
             maxTransactionFee="0.004005"
-            route="Moonbeam"
+            route={routeDex}
           />
 
           <SwapAction
