@@ -14,8 +14,7 @@
     "dev:all": "turbo run dev --parallel --filter=@swush/api --filter=@swush/web",
     "lint": "turbo run lint",
     "clean": "turbo run clean",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "postinstall": "cd packages/api && pnpm run build:descriptors"
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.21.0",
