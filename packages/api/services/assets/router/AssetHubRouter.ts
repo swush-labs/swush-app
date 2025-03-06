@@ -209,16 +209,7 @@ export class AssetHubRouter {
                 
                 const fromXcmLocation = fromAsset.rawXcmLocation;
                 const toXcmLocation = toAsset.rawXcmLocation;
-                
-                const toAssetInfo = await this.api.query.ForeignAssets.Asset.getValue(toXcmLocation);   
-                console.log('toAssetInfo', toAssetInfo);
-
-                // Log the actual XCM locations being used in the API call
-                console.log(`API call XCM locations:`, {
-                    from: safeStringify(fromXcmLocation),
-                    to: safeStringify(toXcmLocation)
-                });
-
+       
                 console.log('currentAmount ', currentAmount);
                 const quote = await this.api.apis.AssetConversionApi.quote_price_exact_tokens_for_tokens(
                     fromXcmLocation,

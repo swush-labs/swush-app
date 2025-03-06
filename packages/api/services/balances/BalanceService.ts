@@ -48,8 +48,6 @@ export class BalanceService {
 
     private async fetchBalanceByType(asset: Asset, address: string, assetId: number | string): Promise<RawBalanceResponse> {
         const api = await this.ensureConnection();
-        console.log("address", address);
-        console.log("assetId", assetId);
 
         if (asset.assetType === AssetType.Native) {
             if (assetId === "DOT") {

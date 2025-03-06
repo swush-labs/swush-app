@@ -309,8 +309,6 @@ export class FetchAssetService {
             const tradeRouter = TradeRouterService.getInstance().getTradeRouter();
             const hydradxPools = await tradeRouter.getPools();
 
-            console.log('First HydraDX Pool:', JSON.stringify(hydradxPools[0], null, 2));
-
             // Process all HydraDX pools
             for (const pool of hydradxPools) {
                 for (const token of pool.tokens) {
@@ -332,11 +330,9 @@ export class FetchAssetService {
 
                             if (existingAsset) {
                                 existingAsset.hydradx = hydradxInfo;
-                                console.log('Updated existing Asset Hub asset with HydraDX info:', nativeAssetId);
                             } else {
                                 const newAsset = { ...nativeAsset, hydradx: hydradxInfo };
                                 mergedAssets.set(nativeAssetId, newAsset);
-                                console.log('Added new native asset from HydraDX:', nativeAssetId);
                             }
                             continue;
                         }
@@ -350,11 +346,9 @@ export class FetchAssetService {
                             const existingAsset = mergedAssets.get(foreignId);
                             if (existingAsset) {
                                 existingAsset.hydradx = hydradxInfo;
-                                console.log('Updated existing foreign Asset Hub asset with HydraDX info:', foreignId);
                             } else {
                                 const newAsset = { ...foreignAsset, hydradx: hydradxInfo };
                                 mergedAssets.set(foreignId, newAsset);
-                                console.log('Added new foreign asset from HydraDX:', foreignId);
                             }
                         }
                     }
