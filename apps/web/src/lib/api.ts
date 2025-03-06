@@ -1,6 +1,9 @@
 import type { Asset } from '@swush/api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const API_HOST = process.env.NEXT_PUBLIC_API_HOST || 'localhost';
+const API_VERSION = 'v1';
+const API_PORT = '3001';
+const API_BASE_URL = `http://${API_HOST}:${API_PORT}/api/${API_VERSION}`;
 
 interface ApiResponse<T> {
   status: 'success' | 'error';
