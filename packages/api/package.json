@@ -30,7 +30,8 @@
     "test": "jest",
     "papi": "papi",
     "start": "node dist/server.js",
-    "dev:server": "tsx watch src/server.ts"
+    "dev:server": "tsx watch src/server.ts",
+    "postinstall": "papi"
   },
   "dependencies": {
     "@acala-network/chopsticks": "^1.0.1",
@@ -47,6 +48,7 @@
     "@polkadot/types": "^15.1.1",
     "@polkadot/types-augment": "^15.2.1",
     "@polkadot/util": "^13.2.3",
+    "polkadot-api": "^1.9.4",
     "@polkadot-api/descriptors": "file:../../.papi/descriptors",
     "cors": "^2.8.5",
     "express": "^4.18.2",
