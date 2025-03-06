@@ -9,7 +9,7 @@
     "clean": "rimraf dist .papi",
     "lint": "eslint services --ext .ts",
     "test": "jest --config=jest.config.js",
-    "postinstall": "if [ \"$INIT_CWD\" = \"$PWD\" ]; then papi; fi"
+    "postinstall": "papi"
   },
   "dependencies": {
     "@acala-network/chopsticks": "^1.0.1",
