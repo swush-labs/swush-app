@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { api } from '@/lib/api';
 import type { RouteQuote } from '@/lib/api';
 import type { TokenInfo } from '@/components/swap/types';
@@ -24,6 +24,9 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
     data: null
   });
 
+  // Use ref to track latest input amount for stale closure detection
+  const latestInputAmountRef = useRef<string>('');
+
   // Reset states when tokens change
   useEffect(() => {
     setOutputAmount('0');
@@ -43,6 +46,9 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
       return;
     }
 
+    // Update latest input amount ref
+    latestInputAmountRef.current = currentInputAmount;
+
     setRouteState(prev => ({ ...prev, isLoading: true, error: null }));
     setOutputAmount('0');
     setRouteDex('');
@@ -53,9 +59,10 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
         toAsset: outputToken.id,
         amountIn: currentInputAmount
       });
-      setRouteDex(getNetworkDisplayName(route.dex));
       
-      if (currentInputAmount === currentInputAmount) { // Compare with latest input
+      // Only update if this is still the latest input amount
+      if (latestInputAmountRef.current === currentInputAmount) {
+        setRouteDex(getNetworkDisplayName(route.dex));
         setRouteState({
           isLoading: false,
           error: null,
@@ -71,7 +78,8 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
         errorMessage = `No route available from ${inputToken.symbol} to ${outputToken.symbol}`;
       }
 
-      if (currentInputAmount === currentInputAmount) { // Compare with latest input
+      // Only update if this is still the latest input amount
+      if (latestInputAmountRef.current === currentInputAmount) {
         setRouteState({
           isLoading: false,
           error: errorMessage,
@@ -83,18 +91,27 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
     }
   }, [inputToken, outputToken]);
 
-  const debouncedFetchRoute = useCallback(
-    debounce((amount: string) => {
-      if (parseFloat(amount) > 0) {
-        fetchRouteAndUpdateOutput(amount);
-      } else {
-        setOutputAmount('0');
-        setRouteDex('');
-        setRouteState(prev => ({ ...prev, isLoading: false, error: null }));
-      }
-    }, ROUTE_FETCH_TIMEOUT),
+  const debouncedFetchRoute = useMemo(
+    () =>
+      debounce((amount: string) => {
+        if (parseFloat(amount) > 0) {
+          fetchRouteAndUpdateOutput(amount);
+        } else {
+          setOutputAmount('0');
+          setRouteDex('');
+          setRouteState(prev => ({ ...prev, isLoading: false, error: null }));
+        }
+      }, ROUTE_FETCH_TIMEOUT),
     [fetchRouteAndUpdateOutput]
   );
+
+  // Cleanup debounced function and reset ref on unmount or when debounced function changes
+  useEffect(() => {
+    return () => {
+      debouncedFetchRoute.cancel();
+      latestInputAmountRef.current = '';
+    };
+  }, [debouncedFetchRoute]);
 
   return {
     outputAmount,

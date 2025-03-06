@@ -1,6 +1,4 @@
 import { motion } from 'framer-motion';
-import { Search } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TokenInfo } from '../types';
 
 interface SwapDetailsProps {

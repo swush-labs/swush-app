@@ -8,7 +8,6 @@ import { NATIVE_DOT_ASSET } from './metadata';
 import { TradeRouterService } from './router/TradeRouterService';
 import { CacheService } from '../cache/CacheService';
 import { TokenGraph } from './router/TokenGraph';
-import { saveAssetsToFile } from '@/utils';
 
 export class FetchAssetService {
     private static instance: FetchAssetService;

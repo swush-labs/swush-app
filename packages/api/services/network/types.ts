@@ -37,8 +37,7 @@ export function isPapiConnection(result: unknown): result is PapiConnection {
 
 // Generic connection creator
 export function createConnection<T extends NetworkType>(
-    connection: { api: TypedApi<any>; client: PolkadotClient },
-    chainType: T
+    connection: { api: TypedApi<any>; client: PolkadotClient }
 ): PapiConnection<typeof CHAIN_DESCRIPTORS[T]> {
     return {
         api: connection.api as TypedApi<typeof CHAIN_DESCRIPTORS[T]>,
@@ -58,7 +57,7 @@ export async function connectPapi<T extends NetworkType>(
         throw new Error('Invalid connection type');
     }
     
-    return createConnection(result, chainType);
+    return createConnection(result);
 }
 
 //write a connection for polkadotjs using below example

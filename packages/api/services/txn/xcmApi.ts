@@ -5,10 +5,6 @@ import { XcmVersionedLocation } from '@polkadot-api/descriptors';
 import { AccountId, Binary, SS58String } from 'polkadot-api';
 import { XcmV4Location } from '../assets/types';
 
-type AssetInfo = {
-	assetType: 'relay' | 'native' | 'foreign'
-	assetLocation : XcmV4Location
-}
 
 //create asset location for foreign asset from parachain, palletInstance, assetId
 export function getXcmV3Multilocation(parents: number, parachain: number, palletInstance: number, assetId: bigint | number): XcmV4Location {

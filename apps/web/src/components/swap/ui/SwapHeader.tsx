@@ -12,15 +12,11 @@ import {
 interface SwapHeaderProps {
   slippageTolerance: number;
   setSlippageTolerance: (value: number) => void;
-  transactionDeadline: number;
-  setTransactionDeadline: (value: number) => void;
 }
 
 export const SwapHeader = ({
   slippageTolerance,
-  setSlippageTolerance,
-  transactionDeadline,
-  setTransactionDeadline
+  setSlippageTolerance
 }: SwapHeaderProps) => {
   return (
     <div className="flex justify-between items-center px-1">

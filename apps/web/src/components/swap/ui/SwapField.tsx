@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { TokenButton } from '../TokenButton';
 import { AssetList } from './AssetList';
 import { SwapFieldProps } from '../types';
-import { Loader2 } from 'lucide-react';
 
 // Helper function to format balance display
 function formatBalance(balance: string | undefined, isLoading: boolean | undefined): string {

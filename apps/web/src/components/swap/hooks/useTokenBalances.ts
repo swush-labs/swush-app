@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import type { TokenInfo } from '@/components/swap/types';
@@ -21,7 +21,7 @@ export function useTokenBalances({
   const [outputBalance, setOutputBalance] = useState('0');
   const [isBalanceLoading, setIsBalanceLoading] = useState(false);
 
-  const fetchBalances = async () => {
+  const fetchBalances = useCallback(async () => {
     if (!isConnected || !walletAddress || !inputToken?.id || !outputToken?.id) return;
 
     setIsBalanceLoading(true);
@@ -48,7 +48,7 @@ export function useTokenBalances({
     } finally {
       setIsBalanceLoading(false);
     }
-  };
+  }, [isConnected, walletAddress, inputToken?.id, outputToken?.id]);
 
   useEffect(() => {
     // Only fetch balances if wallet is connected and we have both tokens
@@ -62,13 +62,13 @@ export function useTokenBalances({
       // Reset balance loading state when not connected
       setIsBalanceLoading(false);
     }
-  }, [isConnected, walletAddress, inputToken?.id, outputToken?.id]);
+  }, [isConnected, walletAddress, inputToken?.id, outputToken?.id, fetchBalances]);
 
-  const resetBalances = () => {
+  const resetBalances = useCallback(() => {
     setInputBalance('0');
     setOutputBalance('0');
     setIsBalanceLoading(false);
-  };
+  }, []);
 
   return {
     inputBalance,

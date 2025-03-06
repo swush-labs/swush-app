@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { History } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -65,46 +65,45 @@ export default function SwapPage() {
   // Effect to reset states when tokens change
   useEffect(() => {
     // Reset amounts and route state
- //   setInputAmount('0')
-    setInsufficientBalance(false)
+    setInsufficientBalance(false);
     
     // If we have both tokens and an input amount, fetch new route
     if (inputToken && outputToken && parseFloat(inputAmount) > 0) {
-      debouncedFetchRoute(inputAmount)
+      debouncedFetchRoute(inputAmount);
     }
-  }, [inputToken?.id, outputToken?.id]) // Only trigger on token ID changes
+  }, [inputToken, outputToken, inputAmount, debouncedFetchRoute]); // Added missing dependencies
 
   // Event handlers
-  const handleInputChange = (value: string) => {
+  const handleInputChange = useCallback((value: string) => {
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setInputAmount(value)
+      setInputAmount(value);
 
       if (value && parseFloat(value) > 0) {
-        debouncedFetchRoute(value)
+        debouncedFetchRoute(value);
       }
 
-      setInsufficientBalance(value !== '' && parseFloat(value) > parseFloat(inputBalance))
+      setInsufficientBalance(value !== '' && parseFloat(value) > parseFloat(inputBalance));
     }
-  }
+  }, [debouncedFetchRoute, inputBalance]);
 
-  const handleDisconnect = () => {
-    setIsConnected(false)
-    setWalletAddress('')
-    resetBalances()
+  const handleDisconnect = useCallback(() => {
+    setIsConnected(false);
+    setWalletAddress('');
+    resetBalances();
     toast.success('Wallet disconnected', {
       icon: '👋',
       style: {
         borderLeft: '4px solid #64748b',
       },
-    })
-  }
+    });
+  }, [resetBalances]);
 
-  const percentageOptions = [
+  const percentageOptions = useMemo(() => [
     { label: '25%', value: 0.25 },
     { label: '50%', value: 0.50 },
     { label: '75%', value: 0.75 },
     { label: 'MAX', value: 1 },
-  ]
+  ], []);
 
   if (!inputToken || !outputToken) {
      return <LoadState />
@@ -145,8 +144,6 @@ export default function SwapPage() {
           <SwapHeader
             slippageTolerance={slippageTolerance}
             setSlippageTolerance={setSlippageTolerance}
-            transactionDeadline={transactionDeadline}
-            setTransactionDeadline={setTransactionDeadline}
           />
 
           <div className="space-y-6">

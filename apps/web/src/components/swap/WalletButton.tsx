@@ -129,12 +129,7 @@ export const WalletButton = ({
   // Determine network based on address and source
   const determineNetwork = (address: string, source: string) => {
     try {
-      // Decode the address to get the public key
-      const publicKey = decodeAddress(address);
-      
-      // Re-encode with Polkadot prefix to check if it matches the original
-      const polkadotAddress = encodeAddress(publicKey, NETWORK_CONFIG.POLKADOT.prefix);
-      
+
       // If the address starts with a '1', it's likely Polkadot
       if (address.startsWith('1')) {
         return NETWORK_CONFIG.POLKADOT;

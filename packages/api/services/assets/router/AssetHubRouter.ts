@@ -5,7 +5,7 @@ import { TradeRouterService } from './TradeRouterService';
 import { CacheService } from '../../cache/CacheService';
 import { CACHE_KEYS, NETWORKS_SUPPORTED, NUMBER_FORMAT_OPTIONS } from '../../constants';
 import { Asset } from '../types';
-import { convertToPlank, formatAmount, safeStringify } from '../utils';
+import { convertToPlank, formatAmount } from '../utils';
 
 export interface RouteQuote {
     path: string[];

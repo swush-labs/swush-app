@@ -1,4 +1,3 @@
-import { Asset, AssetType } from '../assets/types';
 
 export interface BalanceResponse {
   balance: number;

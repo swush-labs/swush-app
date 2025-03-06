@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { api } from '@/lib/api';
 import type { AssetWithId } from '@/lib/api';
 import type { TokenInfo } from '@/components/swap/types';
@@ -70,14 +70,14 @@ export function useSwapTokens() {
     };
 
     fetchAssets();
-  }, []);
+  }, [inputToken, outputToken]);
 
-  const tokens = assets.map(asset => ({
+  const tokens = useMemo(() => assets.map(asset => ({
     id: asset.id,
     name: asset.metadata.name,
     symbol: asset.metadata.symbol,
     icon: asset.metadata.symbol.charAt(0),
-  }));
+  })), [assets]);
 
   return {
     inputToken,
