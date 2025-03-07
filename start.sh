@@ -1,2 +1,1 @@
-# Start development
-nohup NEXT_PUBLIC_API_HOST=139.84.164.3 pnpm dev > output.log 2>&1 &
+nohup env NEXT_PUBLIC_API_HOST=139.84.164.3 pnpm dev > output.log 2>&1 &
