@@ -1,8 +1,8 @@
 import { XcmV3Junction } from '@polkadot-api/descriptors';
 import { XcmV3Junctions } from '@polkadot-api/descriptors';
 import { Asset, XcmV4Location } from './types';
-import { CacheService } from 'services/cache/CacheService';
-import { CACHE_KEYS } from 'services/constants';
+import { CacheService } from '@/cache/CacheService';
+import { CACHE_KEYS } from '@/constants';
 import { Binary } from 'polkadot-api';
 
 export function getXcmV3Multilocation(assetId: bigint | number): XcmV4Location {

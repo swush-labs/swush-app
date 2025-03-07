@@ -1,0 +1,27 @@
+FROM node:20-slim
+
+WORKDIR /app
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@9.13.0 --activate
+
+# Copy workspace files
+COPY pnpm-workspace.yaml ./
+COPY apps/web/tsconfig.json ./
+COPY tsconfig.base.json ./
+
+# Set working directory for web
+WORKDIR /app/apps/web
+
+# Copy package files
+COPY apps/web/package.json ./
+
+# Install dependencies
+RUN pnpm install
+
+# Default to localhost for development
+ENV NEXT_PUBLIC_API_HOST=localhost
+
+EXPOSE 3000
+
+CMD ["pnpm", "dev"] 
