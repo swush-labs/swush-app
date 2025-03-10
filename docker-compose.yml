@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile.dev
+    volumes:
+      - ./packages/api:/app/packages/api
+      - /app/packages/api/node_modules
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+    command: pnpm dev
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    volumes:
+      - ./apps/web:/app/apps/web
+      - /app/apps/web/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_HOST=${NEXT_PUBLIC_API_HOST:-localhost}
+    depends_on:
+      - api
+    command: pnpm dev 

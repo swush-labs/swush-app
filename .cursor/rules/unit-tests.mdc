@@ -1,0 +1,6 @@
+---
+description: unit test instructions
+globs: 
+alwaysApply: false
+---
+-write simple and concise unit tests in jest at __tests__ folder

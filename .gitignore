@@ -34,3 +34,29 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#vscode
+.vscode*
+
+apps/web/node_modules
+apps/web/.next
+apps/web/dist
+apps/web/build
+apps/web/public
+apps/web/src/app/api/
+
+packages/api/node_modules
+packages/api/.next
+packages/api/dist
+packages/api/build
+packages/api/public
+packages/api/src/app/api/
+
+#ignore all node_modules inside packages
+**/node_modules
+**/dist
+**/build
+**/public
+
+.turbo
+output.log
