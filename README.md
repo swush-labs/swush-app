@@ -1,66 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+## Prerequisites
+
+- Node.js >= 20.17.0 
+- pnpm >= 9.13.0
+- Docker & Docker Compose (for containerized development)
 
 ## Getting Started
 
-### Development
+### Local Development
 
-First, run the development server:
-
+1. Install dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm i
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Start the development servers:
+```bash
+# Start both web and API services
+pnpm dev
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The web application will be available at [http://localhost:3000](http://localhost:3000)
+The API server will be available at [http://localhost:3001](http://localhost:3001)
 
 ### Docker Development Environment
 
-This project can be run in a Docker development environment:
+The project includes a Docker setup for consistent development environments:
 
 ```bash
-# Build and run using Docker Compose
-./docker/build-and-run.sh
+# Start all services
+docker-compose up --build
 
-# Or directly with Docker Compose
-docker-compose -f docker/docker-compose.yml up -d
-
-# To stop and remove the container
-./docker/stop-and-remove.sh
+# Stop services
+docker compose down
 ```
 
-The Docker development environment:
-- Mounts your code as volumes, so changes are reflected in real-time
-- Runs both the web and API services in development mode
-- Provides hot reloading for a smooth development experience
+### Environment Variables
 
-For more details on the Docker setup, see the [Docker README](docker/README.md).
+Create a `.env` file in the root directory:
 
-## Project Structure
+```env
+NEXT_PUBLIC_API_HOST=localhost  # API host for web application
+```
 
-- `apps/web`: Next.js web application
-- `packages/api`: Express API server
-- `docker`: Docker configuration files
+## Development Tools
+
+- TypeScript for type safety
+- ESLint for code linting
+- Jest for testing
+- PAPI for Polkadot chain interactions
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Polkadot-API Documentation](https://papi.how/)
