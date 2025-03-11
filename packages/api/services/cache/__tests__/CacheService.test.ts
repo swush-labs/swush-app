@@ -6,7 +6,7 @@ describe('CacheService', () => {
 
     beforeEach(() => {
         // Reset the singleton instance before each test
-        // @ts-ignore - accessing private static for testing
+        // @ts-expect-error - accessing private static for testing
         CacheService['instance'] = undefined;
         cacheService = CacheService.getInstance();
         
