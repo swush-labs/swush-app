@@ -21,7 +21,7 @@ Handles chain connectivity and network operations:
 - Chain metadata synchronization
 - Health checks
 
-More info on network service can be found in the [Network Service](./NETWORK_RPC.md) documentation.
+More info on network service can be found in the [Network Service docs](./NETWORK_RPC.md) documentation.
 
 ### Transaction Service (`/services/txn/`)
 Manages transaction-related operations:
@@ -38,20 +38,6 @@ Implements caching strategies:
 Key Features:
 - In-memory caching
 - Cache refresh callbacks
-
-### Utility Services (`/services/utils.ts`)
-Common utilities and helper functions:
-- Type conversions
-- Data formatting
-- Chain-specific utilities
-- Common calculations
-
-### Constants (`/services/constants.ts`)
-System-wide constants and configurations:
-- Chain identifiers
-- Asset identifiers
-- Network endpoints
-- System parameters
 
 ## Service Integration Flow
 

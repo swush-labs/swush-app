@@ -6,21 +6,13 @@ The application consists of two main components:
 1. Next.js Web Application (`apps/web`)
 2. Polkadot API Server (`packages/api`)
 
-```mermaid
-graph TD
-    UI  --> API[Polkadot API Server]
-    API --> AssetHub[Asset Hub]
-    API --> Hydration[Hydration Network]
-```
-
 ## API Server Architecture
 
-The API server is built using Express.js and integrates with multiple Polkadot-based chains using PAPI (Polkadot API).
+The API server is built using Express.js and integrates with multiple Polkadot-based chains using PAPI (Polkadot API) and Polkadot JS API.
 
 ### Supported Chains
 
 The API server connects to multiple chains:
-- Polkadot Relay Chain
 - Polkadot Asset Hub
 - Hydration Network
 
@@ -58,4 +50,4 @@ The API implements several security measures:
 - CORS protection
 - Input validation using `zod`
 
-Backend services overview can be found in the [Backend Services](./BACKEND_SERVICES.md) documentation.
+Backend services overview can be found in the [Backend Services docs](./BACKEND_SERVICES.md).
