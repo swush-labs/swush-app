@@ -17,7 +17,6 @@ import {
 import { toast } from 'react-hot-toast';
 import { encodeAddress, decodeAddress } from '@polkadot/util-crypto';
 import { WalletButtonProps } from './types';
-import { PolkadotSigner } from 'polkadot-api';
 import { FrontendConnectionManager } from '@/services/FrontendConnectionManager';
 import { FrontendTransactionService } from '@/services/FrontendTransactionService';
 import { Binary } from 'polkadot-api';

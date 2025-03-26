@@ -1,19 +1,13 @@
-import { Binary, TypedApi, PolkadotSigner } from 'polkadot-api';
-import { FrontendConnectionManager, PapiConnection } from './FrontendConnectionManager';
-import { TransactionRequest, TransactionStatus, TransactionCallbacks, TxOptions } from './types';
+import { PolkadotSigner } from 'polkadot-api';
+import { TransactionStatus, TransactionCallbacks, TxOptions } from './types';
 
 // Use PolkadotSigner type directly instead of our custom interface
 type Signer = PolkadotSigner;
 
-type Transaction = Awaited<ReturnType<PapiConnection['api']['tx']['System']['remark']>>;
-type TxFunction = (...args: any[]) => Promise<Transaction>;
-
 export class FrontendTransactionService {
-    private static connectionManager = FrontendConnectionManager.getInstance();
 
     static async estimateFees(
-        connection: PapiConnection,
-        transaction: Transaction,
+        transaction: any,
         address: string,
         options?: TxOptions
     ): Promise<bigint> {
@@ -26,7 +20,7 @@ export class FrontendTransactionService {
     }
 
     static async signAndSubmit(
-        transaction: Transaction,
+        transaction: any,
         signer: Signer,
         options?: TxOptions
     ): Promise<string> {
@@ -39,7 +33,7 @@ export class FrontendTransactionService {
     }
 
     static async signSubmitAndWatch(
-        transaction: Transaction,
+        transaction: any,
         signer: Signer,
         callbacks?: TransactionCallbacks,
         options?: TxOptions
