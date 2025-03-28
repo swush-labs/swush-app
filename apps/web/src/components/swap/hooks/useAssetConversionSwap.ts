@@ -8,8 +8,7 @@ import { getPolkadotSignerFromPjs, SignPayload, SignRaw } from 'polkadot-api/pjs
 import { getWalletBySource } from '@talismn/connect-wallets';
 import type { Signer } from '@polkadot/api/types';
 import { FrontendConnectionManager } from '@/services/FrontendConnectionManager';
-import { encodeAddress, decodeAddress } from '@polkadot/util-crypto';
-import type { TransactionCallbacks } from '@/services/types';
+import type { TransactionCallbacks, TransactionStatus } from '@/services/types';
 import { safeParse } from '@/components/swap/utils';
 import type { XcmV4Location } from '@swush/api';
 
@@ -43,6 +42,7 @@ export function useAssetConversionSwap({
   const [isSwapping, setIsSwapping] = useState(false);
   const [swapHash, setSwapHash] = useState<string | null>(null);
   const [swapStatus, setSwapStatus] = useState<string | null>(null);
+  const [dispatchError, setDispatchError] = useState<any>(null);
 
   // Get assets with XCM location information
   const getAssetsWithXcmLocations = useCallback(async (): Promise<Map<string, AssetWithId>> => {
@@ -101,6 +101,43 @@ export function useAssetConversionSwap({
     }
   }, []);
 
+  // Helper function to format dispatch errors for better readability
+  const formatDispatchError = useCallback((error: any): string => {
+    if (!error) return 'Unknown error';
+    
+    // Log the raw error object for debugging
+    console.log('Raw dispatch error:', JSON.stringify(error, null, 2));
+    
+    try {
+      if (error.type === 'Module') {
+        // Handle module-specific errors in a more detailed way
+        const moduleError = error.value;
+        const moduleName = moduleError.type || 'Unknown';
+        const errorName = moduleError.name || moduleError.message || 'Unknown';
+        
+        // Format detailed error message
+        return `${moduleName} Error: ${errorName}`;
+      } else if (error.type === 'Token') {
+        return `Token Error: ${error.value || 'Unknown token error'}`;
+      } else if (error.type === 'Arithmetic') {
+        return `Arithmetic Error: ${error.value || 'Calculation failed'}`;
+      } else if (error.type === 'BadOrigin') {
+        return 'Bad Origin: Transaction not permitted from this account';
+      } else if (error.type === 'CannotLookup') {
+        return 'Cannot Lookup: Referenced data not found';
+      } else if (error.type === 'TooManyConsumers') {
+        return 'Too Many Consumers';
+      } else if (error.type === 'Other') {
+        return `Other Error: ${error.value || 'Unknown'}`;
+      } else {
+        return `Unknown Error Type: ${error.type}`;
+      }
+    } catch (e) {
+      console.error('Error parsing dispatch error:', e);
+      return `Failed to parse error: ${JSON.stringify(error)}`;
+    }
+  }, []);
+  
   // Execute the swap
   const executeSwap = useCallback(async () => {
     if (!inputToken || !outputToken || !walletAddress || !inputAmount || parseFloat(inputAmount) <= 0) {
@@ -111,6 +148,7 @@ export function useAssetConversionSwap({
     try {
       setIsSwapping(true);
       setSwapStatus('Preparing swap...');
+      setDispatchError(null);
       
       // Get wallet source from localStorage
       const walletSource = localStorage.getItem('walletSource');
@@ -228,7 +266,7 @@ export function useAssetConversionSwap({
       
       // Define transaction callbacks
       const callbacks: TransactionCallbacks = {
-        onStatusChange: (status) => {
+        onStatusChange: (status: TransactionStatus) => {
           console.log('Swap transaction status:', status);
           
           switch (status.type) {
@@ -251,8 +289,19 @@ export function useAssetConversionSwap({
                 toast.loading(`Transaction included in block ${status.blockNumber}, waiting for finalization...`, { id: 'swap-status' });
                 
                 if (!status.success) {
-                  toast.error('Transaction failed in block', { id: 'swap-status' });
-                  setSwapStatus(`Transaction failed: ${status.error || 'Unknown error'}`);
+                  // Store the dispatch error for detailed logging
+                  if (status.error) {
+                    console.error('Transaction failed with dispatch error:', status.error);
+                    setDispatchError(status.error);
+                    
+                    // Format the error for user display
+                    const errorMessage = formatDispatchError(status.error);
+                    toast.error(`Transaction failed: ${errorMessage}`, { id: 'swap-status' });
+                    setSwapStatus(`Transaction failed: ${errorMessage}`);
+                  } else {
+                    toast.error('Transaction failed in block', { id: 'swap-status' });
+                    setSwapStatus(`Transaction failed: Unknown error`);
+                  }
                 }
               }
               break;
@@ -266,17 +315,35 @@ export function useAssetConversionSwap({
                   duration: 5000,
                   icon: '✅'
                 });
+                
+                // Log transaction events for debugging purposes
+                if (status.events && status.events.length > 0) {
+                  console.log('Transaction events:', status.events);
+                }
+              } else if (status.error) {
+                // Handle finalized but failed transaction
+                console.error('Transaction finalized but failed with error:', status.error);
+                setDispatchError(status.error);
+                const errorMessage = formatDispatchError(status.error);
+                toast.error(`Swap failed: ${errorMessage}`, { id: 'swap-status' });
+                setSwapStatus(`Failed: ${errorMessage}`);
               }
               break;
           }
         },
-        onSuccess: () => {
-          console.log('Swap transaction successful');
+        onSuccess: (status: TransactionStatus) => {
+          console.log('Swap transaction successful', status);
           setIsSwapping(false);
           if (onSuccess) onSuccess();
         },
-        onError: (error) => {
+        onError: (error: Error) => {
           console.error('Swap transaction error:', error);
+          
+          // Check if this is a dispatch error from the blockchain
+          if (error.message && error.message.includes('dispatch error')) {
+            console.error('Dispatch error details:', dispatchError);
+          }
+          
           setSwapStatus(`Failed: ${error.message}`);
           toast.error(`Swap failed: ${error.message}`, { id: 'swap-status' });
           setIsSwapping(false);
@@ -303,13 +370,14 @@ export function useAssetConversionSwap({
     inputToken, outputToken, walletAddress, inputAmount, outputAmount,
     slippageTolerance, routeState, getAssetsWithXcmLocations, 
     calculateMinimumOutput, toAssetPlanckFormat, parseXcmLocation,
-    onSuccess, onError
+    formatDispatchError, dispatchError, onSuccess, onError
   ]);
 
   return {
     isSwapping,
     swapHash,
     swapStatus,
+    dispatchError,
     executeSwap
   };
 } 

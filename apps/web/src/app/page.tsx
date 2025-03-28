@@ -31,7 +31,7 @@ export default function SwapPage() {
 
   // UI state
   const [inputAmount, setInputAmount] = useState('0')
-  const [slippageTolerance, setSlippageTolerance] = useState(0.5)
+  const [slippageTolerance, setSlippageTolerance] = useState(50)
   const [transactionDeadline, setTransactionDeadline] = useState(20)
   const [insufficientBalance, setInsufficientBalance] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
