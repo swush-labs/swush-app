@@ -81,42 +81,22 @@ export function useAssetConversionSwap({
     return BigInt(Math.floor(amountPlanck));
   }, []);
 
-  // Format XCM location for the extrinsic
-  const formatXcmLocation = useCallback((rawLocation: any): any => {
+  // Parse XCM location safely
+  const parseXcmLocation = useCallback((rawLocation: any): any => {
     try {
-      console.log('Raw XCM location input:', rawLocation);
+      // If it's already an object, parse its stringified form
+      const locationStr = typeof rawLocation === 'string' 
+        ? rawLocation 
+        : JSON.stringify(rawLocation);
       
-      // The rawXcmLocation from the API has already been processed by safeStringify
-      // We just need to ensure it's in the correct format for the extrinsic
-      const formatted = {
-        parents: Number(rawLocation.parents || 0),
-        interior: rawLocation.interior || { here: null }
-      };
+      // Parse the location while preserving the exact structure
+      const parsed = safeParse<XcmV4Location>(locationStr);
       
-      // Handle any bigint strings that might be in the interior
-      if (formatted.interior && typeof formatted.interior === 'object') {
-        const processValue = (value: any): any => {
-          if (typeof value === 'string' && value.startsWith('bigint:')) {
-            return BigInt(value.slice(7));
-          }
-          if (Array.isArray(value)) {
-            return value.map(processValue);
-          }
-          if (typeof value === 'object' && value !== null) {
-            return Object.fromEntries(
-              Object.entries(value).map(([k, v]) => [k, processValue(v)])
-            );
-          }
-          return value;
-        };
-        
-        formatted.interior = processValue(formatted.interior);
-      }
-      
-      console.log('Formatted XCM location:', formatted);
-      return formatted;
+      // Return the raw parsed structure without modification
+      // This preserves the exact format expected by the pallet
+      return parsed;
     } catch (error) {
-      console.error('Failed to format XCM location:', error);
+      console.error('Failed to parse XCM location:', error);
       throw new Error('Invalid XCM location format');
     }
   }, []);
@@ -189,8 +169,8 @@ export function useAssetConversionSwap({
             throw new Error(`Missing XCM location for asset in path: ${assetId}`);
           }
           
-          // Format the XCM location for the extrinsic
-          path.push(formatXcmLocation(asset.rawXcmLocation));
+          // Parse and add the XCM location exactly as is
+          path.push(parseXcmLocation(asset.rawXcmLocation));
         }
         
         // Get the last asset in the path for output amount calculation
@@ -212,8 +192,8 @@ export function useAssetConversionSwap({
         }
         
         path = [
-          formatXcmLocation(inputAsset.rawXcmLocation),
-          formatXcmLocation(outputAsset.rawXcmLocation)
+          parseXcmLocation(inputAsset.rawXcmLocation),
+          parseXcmLocation(outputAsset.rawXcmLocation)
         ];
       }
       
@@ -322,7 +302,7 @@ export function useAssetConversionSwap({
   }, [
     inputToken, outputToken, walletAddress, inputAmount, outputAmount,
     slippageTolerance, routeState, getAssetsWithXcmLocations, 
-    calculateMinimumOutput, toAssetPlanckFormat, formatXcmLocation,
+    calculateMinimumOutput, toAssetPlanckFormat, parseXcmLocation,
     onSuccess, onError
   ]);
 
