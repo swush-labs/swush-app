@@ -105,6 +105,17 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
     [fetchRouteAndUpdateOutput]
   );
 
+  // Add resetRoute function
+  const resetRoute = useCallback(() => {
+    setOutputAmount('0');
+    setRouteDex('');
+    setRouteState({
+      isLoading: false,
+      error: null,
+      data: null
+    });
+  }, []);
+
   // Cleanup debounced function and reset ref on unmount or when debounced function changes
   useEffect(() => {
     return () => {
@@ -118,5 +129,6 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
     routeDex,
     routeState,
     debouncedFetchRoute,
+    resetRoute
   };
 }

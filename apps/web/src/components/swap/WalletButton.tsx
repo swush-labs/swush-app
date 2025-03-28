@@ -349,7 +349,7 @@ export const WalletButton = ({
   const initializeRpcConnection = async (networkName: string) => {
     try {
       setIsInitializing(true);
-      toast.loading('Initializing network connection...', { id: 'connection-toast' });
+      // toast.loading('Initializing network connection...', { id: 'connection-toast' });
       
       // Map the network name to the connection id expected by the service
       const networkMapping: Record<string, string> = {
@@ -366,7 +366,6 @@ export const WalletButton = ({
       const connection = await connectionManager.getConnection(networkId);
       
       console.log(`RPC connection initialized for ${networkName} (${networkId})`);
-      toast.success('Network connection established', { id: 'connection-toast' });
       
       // Store the connection info in localStorage for reuse
       localStorage.setItem('activeConnection', networkId);

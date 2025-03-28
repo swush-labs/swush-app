@@ -46,7 +46,13 @@ export default function SwapPage() {
     inputToken,
     outputToken
   })
-  const { outputAmount, routeDex, routeState, debouncedFetchRoute } = useSwapRoute({
+  const {
+    outputAmount,
+    routeDex,
+    routeState,
+    debouncedFetchRoute,
+    resetRoute
+  } = useSwapRoute({
     inputToken,
     outputToken
   })
@@ -75,14 +81,43 @@ export default function SwapPage() {
     outputAmount,
     routeState,
     onSuccess: () => {
-      // Reset states after successful swap
+      // Store swap details before resetting
+      const swapDetails = {
+        inputAmount,
+        inputSymbol: inputToken?.symbol,
+        outputAmount,
+        outputSymbol: outputToken?.symbol
+      };
+
+      // Reset all swap-related states
       setInputAmount('0');
+      resetRoute(); // This will reset the output amount and route state
       resetBalances();
-      closeSwapProgress();
+      
+/*       // Show success message with swap details
+      toast.success(
+        `Swap completed!\n${swapDetails.inputAmount} ${swapDetails.inputSymbol} → ${swapDetails.outputAmount} ${swapDetails.outputSymbol}`,
+        {
+          duration: 5000,
+          icon: '✅',
+          style: {
+            borderLeft: '4px solid #22c55e',
+          },
+        }
+      ); */
+      
+      // Slight delay before closing the progress modal to show success state
+      setTimeout(() => {
+        closeSwapProgress();
+      }, 1500);
     },
     onError: (error) => {
       console.error('Swap execution error:', error);
-      toast.error(`Swap failed: ${error.message}`);
+      toast.error(`Swap failed: ${error.message}`, {
+        style: {
+          borderLeft: '4px solid #ef4444',
+        },
+      });
       setIsSwapping(false);
       closeSwapProgress();
     }
