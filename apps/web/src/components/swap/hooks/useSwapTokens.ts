@@ -26,7 +26,7 @@ export function useSwapTokens() {
           
           // Find default output token (ETH)
           const defaultOutput = fetchedAssets.find(asset => 
-            asset.metadata.symbol.toUpperCase() === 'ETH'
+            asset.metadata.symbol.toUpperCase() === 'USDT'
           );
           const outputTokenToSet = defaultOutput || fetchedAssets[1];
 

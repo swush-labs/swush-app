@@ -10,6 +10,8 @@ import type { Signer } from '@polkadot/api/types';
 import { FrontendConnectionManager } from '@/services/FrontendConnectionManager';
 import { encodeAddress, decodeAddress } from '@polkadot/util-crypto';
 import type { TransactionCallbacks } from '@/services/types';
+import { safeParse } from '@/components/swap/utils';
+import type { XcmV4Location } from '@swush/api';
 
 interface UseAssetConversionSwapProps {
   inputToken: TokenInfo | null;
@@ -79,23 +81,44 @@ export function useAssetConversionSwap({
     return BigInt(Math.floor(amountPlanck));
   }, []);
 
-  // Parse XCM location from path entry
-  const parseXcmFromPathEntry = useCallback((pathEntry: string): { parents: number; interior: any } | null => {
-    // Check if the entry might be a JSON string containing XCM location
-    if (typeof pathEntry === 'string' && pathEntry.startsWith('{') && pathEntry.includes('parents') && pathEntry.includes('interior')) {
-      try {
-        // Parse the JSON string directly
-        const xcmLocation = JSON.parse(pathEntry);
-        return {
-          parents: Number(xcmLocation.parents) || 0,
-          interior: xcmLocation.interior || { here: null }
+  // Format XCM location for the extrinsic
+  const formatXcmLocation = useCallback((rawLocation: any): any => {
+    try {
+      console.log('Raw XCM location input:', rawLocation);
+      
+      // The rawXcmLocation from the API has already been processed by safeStringify
+      // We just need to ensure it's in the correct format for the extrinsic
+      const formatted = {
+        parents: Number(rawLocation.parents || 0),
+        interior: rawLocation.interior || { here: null }
+      };
+      
+      // Handle any bigint strings that might be in the interior
+      if (formatted.interior && typeof formatted.interior === 'object') {
+        const processValue = (value: any): any => {
+          if (typeof value === 'string' && value.startsWith('bigint:')) {
+            return BigInt(value.slice(7));
+          }
+          if (Array.isArray(value)) {
+            return value.map(processValue);
+          }
+          if (typeof value === 'object' && value !== null) {
+            return Object.fromEntries(
+              Object.entries(value).map(([k, v]) => [k, processValue(v)])
+            );
+          }
+          return value;
         };
-      } catch (error) {
-        console.error('Failed to parse XCM location from path:', error);
-        return null;
+        
+        formatted.interior = processValue(formatted.interior);
       }
+      
+      console.log('Formatted XCM location:', formatted);
+      return formatted;
+    } catch (error) {
+      console.error('Failed to format XCM location:', error);
+      throw new Error('Invalid XCM location format');
     }
-    return null;
   }, []);
 
   // Execute the swap
@@ -151,19 +174,7 @@ export function useAssetConversionSwap({
       setSwapStatus('Fetching asset information...');
       const assetsMap = await getAssetsWithXcmLocations();
       
-      // Prepare swap parameters
-      const inputAsset = assetsMap.get(inputToken.id);
-      if (!inputAsset) {
-        throw new Error('Failed to find input asset information');
-      }
-      
-      const inputAmountPlanck = toAssetPlanckFormat(inputAmount, inputAsset.metadata.decimals);
-      
-      // For output asset and path, we have two approaches:
-      // 1. Use the route from routeState if available (potentially multi-hop)
-      // 2. Fallback to direct swap if routeState is not available
-      
-      let path: { parents: number; interior: any }[] = [];
+      let path: any[] = [];
       let outputAsset;
       
       if (routeState.data && routeState.data.path.length > 0) {
@@ -171,81 +182,48 @@ export function useAssetConversionSwap({
         setSwapStatus('Preparing optimal swap path...');
         console.log('Using path from route:', routeState.data.path);
         
-        // Process each entry in the path
-        for (const pathEntry of routeState.data.path) {
-          // Try to parse as XCM location JSON string first
-          const xcmFromJson = parseXcmFromPathEntry(pathEntry);
-          
-          if (xcmFromJson) {
-            // It's a JSON string with XCM location
-            path.push(xcmFromJson);
-          } else {
-            // It's an asset ID, look it up in the assets map
-            const asset = assetsMap.get(pathEntry);
-            if (!asset || !asset.rawXcmLocation) {
-              throw new Error(`Missing XCM location for asset in path: ${pathEntry}`);
-            }
-            
-            // Format the XCM location
-            path.push({
-              parents: Number(asset.rawXcmLocation.parents) || 0,
-              interior: asset.rawXcmLocation.interior || { here: null }
-            });
+        // Map each asset ID in the path to its XCM location
+        for (const assetId of routeState.data.path) {
+          const asset = assetsMap.get(assetId);
+          if (!asset?.rawXcmLocation) {
+            throw new Error(`Missing XCM location for asset in path: ${assetId}`);
           }
+          
+          // Format the XCM location for the extrinsic
+          path.push(formatXcmLocation(asset.rawXcmLocation));
         }
         
-        // Get the output asset info for minimum amount calculation
-        const lastPathEntry = routeState.data.path[routeState.data.path.length - 1];
-        const xcmFromLastEntry = parseXcmFromPathEntry(lastPathEntry);
+        // Get the last asset in the path for output amount calculation
+        const lastAssetId = routeState.data.path[routeState.data.path.length - 1];
+        outputAsset = assetsMap.get(lastAssetId);
         
-        if (xcmFromLastEntry) {
-          // The last entry is an XCM location, try to find a matching asset
-          const matchingAsset = Array.from(assetsMap.values()).find(asset => 
-            asset.rawXcmLocation && 
-            asset.rawXcmLocation.parents === xcmFromLastEntry.parents &&
-            JSON.stringify(asset.rawXcmLocation.interior) === JSON.stringify(xcmFromLastEntry.interior)
-          );
-          
-          if (matchingAsset) {
-            outputAsset = matchingAsset;
-          } else {
-            // Fallback to output token
-            console.warn('Could not find matching asset for last XCM location in path');
-            outputAsset = assetsMap.get(outputToken.id);
-          }
-        } else {
-          // Regular asset ID
-          outputAsset = assetsMap.get(lastPathEntry);
+        if (!outputAsset) {
+          throw new Error(`Failed to find output asset information for ID: ${lastAssetId}`);
         }
       } else {
         // Fallback to direct path if no route data available
         setSwapStatus('Preparing direct swap path...');
+        
+        const inputAsset = assetsMap.get(inputToken.id);
         outputAsset = assetsMap.get(outputToken.id);
         
-        if (!inputAsset.rawXcmLocation || !outputAsset?.rawXcmLocation) {
+        if (!inputAsset?.rawXcmLocation || !outputAsset?.rawXcmLocation) {
           throw new Error('Missing XCM location information for assets');
         }
         
         path = [
-          {
-            parents: Number(inputAsset.rawXcmLocation.parents) || 0,
-            interior: inputAsset.rawXcmLocation.interior || { here: null }
-          },
-          {
-            parents: Number(outputAsset.rawXcmLocation.parents) || 0,
-            interior: outputAsset.rawXcmLocation.interior || { here: null }
-          }
+          formatXcmLocation(inputAsset.rawXcmLocation),
+          formatXcmLocation(outputAsset.rawXcmLocation)
         ];
       }
       
-      // If we still don't have an output asset, use the output token
-      if (!outputAsset) {
-        console.warn('Could not determine output asset from path, using output token');
-        outputAsset = assetsMap.get(outputToken.id);
-        if (!outputAsset) {
-          throw new Error('Failed to find output asset information');
-        }
+      // Calculate input amount in planck format
+      const inputAsset = assetsMap.get(inputToken.id);
+      if (!inputAsset) {
+        throw new Error('Failed to find input asset information');
       }
+      
+      const inputAmountPlanck = toAssetPlanckFormat(inputAmount, inputAsset.metadata.decimals);
       
       // Calculate minimum output amount with slippage
       const minOutputAmountPlanck = calculateMinimumOutput(
@@ -344,7 +322,7 @@ export function useAssetConversionSwap({
   }, [
     inputToken, outputToken, walletAddress, inputAmount, outputAmount,
     slippageTolerance, routeState, getAssetsWithXcmLocations, 
-    calculateMinimumOutput, toAssetPlanckFormat, parseXcmFromPathEntry,
+    calculateMinimumOutput, toAssetPlanckFormat, formatXcmLocation,
     onSuccess, onError
   ]);
 

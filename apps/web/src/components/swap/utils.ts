@@ -1,3 +1,5 @@
+import { Binary } from "polkadot-api";
+
 export const shortenAddress = (address: string): string => {
   if (!address) return '';
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -41,3 +43,25 @@ export function formatBalance(balance: string | undefined, isLoading: boolean | 
   
   return numBalance.toFixed(2);
 }
+
+/**
+ * Parse a string created with safeStringify back to its original form
+ * @param text The string to parse
+ * @returns The parsed value
+ */
+export const safeParse = <T = unknown>(value: string): T => {
+  return JSON.parse(value, (key, value) => {
+    if (typeof value === "string") {
+      if (value.startsWith("bigint:")) return BigInt(value.slice(7));
+      if (value.startsWith("binary:")) return Binary.fromHex(value.slice(7));
+    }
+    
+    // Handle the specific case for AccountKey20's network property which should be an Option
+    if (key === "network" && value === null) {
+      // Return undefined to indicate that this is None/null Option
+      return undefined;
+    }
+    
+    return value;
+  });
+};

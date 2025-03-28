@@ -289,7 +289,7 @@ export default function SwapPage() {
       />
 
       {/* Swap Progress Modal */}
-      {showSwapProgress && (
+{/*       {showSwapProgress && (
         <SwapProgress
           steps={swapSteps}
           onClose={closeSwapProgress}
@@ -301,7 +301,7 @@ export default function SwapPage() {
           isSwapping={isSwapping}
           setIsSwapping={setIsSwapping}
         />
-      )}
+      )} */}
     </>
   )
 }
