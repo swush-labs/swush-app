@@ -6,6 +6,7 @@ import { TokenButton } from '../TokenButton';
 import { AssetList } from './AssetList';
 import { SwapFieldProps } from '../types';
 import { formatBalance } from '../utils';
+import { Loader2 } from 'lucide-react';
 
 export function SwapField({
   type,
@@ -24,7 +25,7 @@ export function SwapField({
 }: SwapFieldProps) {
   const isInput = type === 'input';
   const bgColor = isInput ? 'bg-pink-500' : 'bg-blue-500';
-  const displayBalance = formatBalance(balance, isLoading);
+  const displayBalance = formatBalance(balance);
 
   // Handle input change with validation
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

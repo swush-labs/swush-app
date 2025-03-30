@@ -21,8 +21,7 @@ export const calculateMinimumReceived = (outputAmount: string): string => {
 
 
 // Helper function to format balance display
-export function formatBalance(balance: string | undefined, isLoading: boolean | undefined): string {
-  if (isLoading === true) return '...';
+export function formatBalance(balance: string | undefined): string {
   if (!balance || balance === '0') return '0';
   
   const numBalance = parseFloat(balance);

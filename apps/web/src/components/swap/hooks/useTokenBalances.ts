@@ -68,6 +68,7 @@ export function useTokenBalances({
     setInputBalance('0');
     setOutputBalance('0');
     setIsBalanceLoading(false);
+    fetchBalances();
   }, []);
 
   return {

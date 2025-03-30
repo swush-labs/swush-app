@@ -68,7 +68,7 @@ export default function SwapPage() {
     inputToken: inputToken?.symbol || 'TOKEN',
     outputToken: outputToken?.symbol || 'TOKEN'
   })
-  
+
   // Asset conversion swap hook
   const {
     executeSwap: executeAssetConversionSwap,
@@ -81,41 +81,44 @@ export default function SwapPage() {
     outputAmount,
     routeState,
     onSuccess: () => {
+      /* 
       // Store swap details before resetting
       const swapDetails = {
         inputAmount,
         inputSymbol: inputToken?.symbol,
         outputAmount,
         outputSymbol: outputToken?.symbol
-      };
+        };
+
+      // Show success message with swap details
+            toast.success(
+              `Swap completed!\n${swapDetails.inputAmount} ${swapDetails.inputSymbol} → ${swapDetails.outputAmount} ${swapDetails.outputSymbol}`,
+              {
+                duration: 5000,
+                icon: '✅',
+                style: {
+                  borderLeft: '4px solid #22c55e',
+                },
+              }
+            ); */
 
       // Reset all swap-related states
       setInputAmount('0');
       resetRoute(); // This will reset the output amount and route state
-      resetBalances();
-      
-/*       // Show success message with swap details
-      toast.success(
-        `Swap completed!\n${swapDetails.inputAmount} ${swapDetails.inputSymbol} → ${swapDetails.outputAmount} ${swapDetails.outputSymbol}`,
-        {
-          duration: 5000,
-          icon: '✅',
-          style: {
-            borderLeft: '4px solid #22c55e',
-          },
-        }
-      ); */
-      
+      // Add a delay before fetching new balances to allow the blockchain to update
+      setTimeout(() => {
+        resetBalances();
+      }, 1000); // 2 second delay
+
       // Slight delay before closing the progress modal to show success state
       setTimeout(() => {
         closeSwapProgress();
       }, 1500);
     },
     onError: (error) => {
-      
       // Reset all swap-related states
       setInputAmount('0');
-      resetRoute(); 
+      resetRoute();
       setIsSwapping(false);
       closeSwapProgress();
     }
@@ -146,7 +149,7 @@ export default function SwapPage() {
     try {
       // Show the swap progress modal
       handleSwap(isUserConnected);
-      
+
       // Execute the actual swap
       await executeAssetConversionSwap();
     } catch (error) {
@@ -159,7 +162,7 @@ export default function SwapPage() {
       closeSwapProgress();
     }
   }, [
-    inputToken, outputToken, inputAmount, insufficientBalance, 
+    inputToken, outputToken, inputAmount, insufficientBalance,
     handleSwap, executeAssetConversionSwap, setIsSwapping, closeSwapProgress
   ]);
 
@@ -167,7 +170,7 @@ export default function SwapPage() {
   useEffect(() => {
     // Reset amounts and route state
     setInsufficientBalance(false);
-    
+
     // If we have both tokens and an input amount, fetch new route
     if (inputToken && outputToken && parseFloat(inputAmount) > 0) {
       debouncedFetchRoute(inputAmount);
@@ -207,7 +210,7 @@ export default function SwapPage() {
   ], []);
 
   if (!inputToken || !outputToken) {
-     return <LoadState />
+    return <LoadState />
   }
 
   return (
@@ -325,7 +328,7 @@ export default function SwapPage() {
       />
 
       {/* Swap Progress Modal */}
-{/*       {showSwapProgress && (
+      {/*       {showSwapProgress && (
         <SwapProgress
           steps={swapSteps}
           onClose={closeSwapProgress}
