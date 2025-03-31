@@ -109,7 +109,7 @@ export default function SwapPage() {
       // Add a delay before fetching new balances to allow the blockchain to update
       setTimeout(() => {
         resetBalances();
-      }, BALANCE_REFRESH_TIMEOUT); 
+      }, 2500); 
 
       // Slight delay before closing the progress modal to show success state
       setTimeout(() => {
