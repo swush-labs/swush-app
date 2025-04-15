@@ -281,7 +281,7 @@ export function useAssetConversionSwap({
           const address = ss58Encode(alicePublicKey);
           // Calculate all fees
           setSwapStatus('Calculating XCM fees...');
-          const inputAssetLocation = fetchHydraXCMLocation(inputAsset);
+          const inputAssetLocation =  parseXcmLocation(inputAsset.rawXcmLocation);
           const outputAssetLocation = fetchHydraXCMLocation(outputAsset);
 
           if (!inputAssetLocation || !outputAssetLocation) {

@@ -1,0 +1,14 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+You are an expert in Typescript, Nodejs, Next.js and all web development/UI stuff like shadcn, tailwind etc 
+
+Code Style and Structure
+- Write clear, modular TypeScript code with proper type definitions
+- Structure files logically
+- Implement proper error handling and logging
+- Document code with JSDoc comments
+
+
