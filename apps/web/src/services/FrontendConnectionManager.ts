@@ -3,11 +3,12 @@ import { polkadot_asset_hub } from '@polkadot-api/descriptors';
 import { getWsProvider } from 'polkadot-api/ws-provider/web';
 import { withPolkadotSdkCompat } from 'polkadot-api/polkadot-sdk-compat';
 import { RPC_ENDPOINTS } from './constants';
+import { SupportedChains } from '@swush/api/network/types';
 
 type Client = ReturnType<typeof createClient>;
 
 export type PapiConnection = {
-    api: TypedApi<typeof polkadot_asset_hub>;
+    api: TypedApi<SupportedChains>;
     client: Client;
 };
 
@@ -25,7 +26,7 @@ export class FrontendConnectionManager {
         return this.instance;
     }
 
-    async getConnection(network: string = 'asset_hub'): Promise<PapiConnection> {
+    async getConnection(network: string): Promise<PapiConnection> {
         // Return existing connection if active
         const existing = this.connections.get(network);
         if (existing) {

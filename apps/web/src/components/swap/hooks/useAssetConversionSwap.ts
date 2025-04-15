@@ -12,6 +12,23 @@ import type { TransactionCallbacks, TransactionStatus } from '@/services/types';
 import { safeParse } from '@/components/swap/utils';
 import type { XcmV4Location } from '@swush/api';
 import { TransactionErrorService, SwushError } from '@/services/TransactionErrorService';
+import { Binary, TypedApi } from 'polkadot-api';
+import {
+  XcmVersionedLocation,
+  XcmVersionedAssets,
+  XcmVersionedAssetId,
+  XcmV3WeightLimit,
+  XcmV3Junction,
+  XcmV3Junctions,
+  XcmV3MultiassetAssetId,
+  XcmV3MultiassetFungibility,
+  XcmVersionedXcm,
+  XcmV4Instruction,
+  XcmV4AssetAssetFilter,
+  XcmV4AssetWildAsset,
+  polkadot_asset_hub,
+  hydration
+} from '@polkadot-api/descriptors';
 
 interface UseAssetConversionSwapProps {
   inputToken: TokenInfo | null;
@@ -62,12 +79,12 @@ export function useAssetConversionSwap({
   // Calculate minimum output amount based on slippage tolerance
   const calculateMinimumOutput = useCallback((amount: string, slippagePercent: number, decimals: number): bigint => {
     if (!amount || parseFloat(amount) <= 0) return BigInt(0);
-    
+
     // Convert to a number, apply slippage, then convert back to string
     const amountFloat = parseFloat(amount);
     const slippageFactor = 1 - (slippagePercent / 100);
     const minimumAmount = amountFloat * slippageFactor;
-    
+
     // Convert to bigint with appropriate precision
     // We multiply by 10^decimals to get the planck format
     return BigInt(Math.floor(minimumAmount * 10 ** decimals));
@@ -76,7 +93,7 @@ export function useAssetConversionSwap({
   // Convert decimal amount to planck format
   const toAssetPlanckFormat = useCallback((amount: string, decimals: number): bigint => {
     if (!amount || parseFloat(amount) <= 0) return BigInt(0);
-    
+
     const amountFloat = parseFloat(amount);
     const amountPlanck = amountFloat * 10 ** decimals;
     return BigInt(Math.floor(amountPlanck));
@@ -86,13 +103,13 @@ export function useAssetConversionSwap({
   const parseXcmLocation = useCallback((rawLocation: any): any => {
     try {
       // If it's already an object, parse its stringified form
-      const locationStr = typeof rawLocation === 'string' 
-        ? rawLocation 
+      const locationStr = typeof rawLocation === 'string'
+        ? rawLocation
         : JSON.stringify(rawLocation);
-      
+
       // Parse the location while preserving the exact structure
       const parsed = safeParse<XcmV4Location>(locationStr);
-      
+
       // Return the raw parsed structure without modification
       // This preserves the exact format expected by the pallet
       return parsed;
@@ -101,15 +118,15 @@ export function useAssetConversionSwap({
       throw new Error('Invalid XCM location format');
     }
   }, []);
-  
+
   const handleError = useCallback((error: Error) => {
     const swushError = TransactionErrorService.handleTransactionError(error);
     setSwapError(swushError);
     setSwapStatus(`Failed: ${swushError.message}`);
     toast.dismiss('swap-status');
-    toast.error(`Swap failed: ${swushError.message}`, { 
+    toast.error(`Swap failed: ${swushError.message}`, {
       id: 'swap-error',
-      duration: 5000 
+      duration: 5000
     });
     setIsSwapping(false);
     if (onError) onError(swushError);
@@ -130,121 +147,187 @@ export function useAssetConversionSwap({
       setIsSwapping(true);
       setSwapStatus('Preparing swap...');
       setSwapError(null);
-      
+
       // Get wallet source from localStorage
       const walletSource = localStorage.getItem('walletSource');
       if (!walletSource) {
         throw new Error('Wallet not connected');
       }
-      
+
       // Get wallet and prepare signer
       const wallet = getWalletBySource(walletSource);
       if (!wallet) {
         throw new Error('Wallet not found');
       }
-      
+
       // Enable wallet if not already enabled
       if (!wallet.extension) {
         await wallet.enable('Swush');
       }
-      
+
       // Get signer
       const signer = wallet.signer as Signer;
       const signPayload = signer.signPayload as SignPayload;
       const signRaw = signer.signRaw as SignRaw;
       const polkadotSigner = getPolkadotSignerFromPjs(walletAddress, signPayload, signRaw);
-      
+
       if (!polkadotSigner) {
         throw new Error('Signer not available');
       }
-      
-      // Get connection
+
+      // Get Asset Hub connection
       const connectionManager = FrontendConnectionManager.getInstance();
-      const networkId = localStorage.getItem('activeConnection') || 'asset_hub';
-      const connection = await connectionManager.getConnection(networkId);
-      
-      if (!connection || !connection.api) {
-        throw new Error('RPC connection is not active. Please reconnect your wallet.');
+      const assetHubConnection = await connectionManager.getConnection('asset_hub');
+
+      if (!assetHubConnection || !assetHubConnection.api) {
+        throw new Error('Asset Hub RPC connection is not active. Please reconnect your wallet.');
       }
-      
-      const polkadotApi = connection.api;
-      
+
+      const assetHubApi = assetHubConnection.api as TypedApi<typeof polkadot_asset_hub>;
+
       // Fetch assets with XCM locations
       setSwapStatus('Fetching asset information...');
       const assetsMap = await getAssetsWithXcmLocations();
-      
-      let path: any[] = [];
-      let outputAsset;
-      
-      if (routeState.data && routeState.data.path.length > 0) {
-        // Using the route from routeState (which contains the path)
-        setSwapStatus('Preparing optimal swap path...');
-        console.log('Using path from route:', routeState.data.path);
-        
-        // Map each asset ID in the path to its XCM location
-        for (const assetId of routeState.data.path) {
-          const asset = assetsMap.get(assetId);
-          if (!asset?.rawXcmLocation) {
-            throw new Error(`Missing XCM location for asset in path: ${assetId}`);
-          }
-          
-          // Parse and add the XCM location exactly as is
-          path.push(parseXcmLocation(asset.rawXcmLocation));
-        }
-        
-        // Get the last asset in the path for output amount calculation
-        const lastAssetId = routeState.data.path[routeState.data.path.length - 1];
-        outputAsset = assetsMap.get(lastAssetId);
-        
-        if (!outputAsset) {
-          throw new Error(`Failed to find output asset information for ID: ${lastAssetId}`);
-        }
-      } else {
-        // Fallback to direct path if no route data available
-        setSwapStatus('Preparing direct swap path...');
-        
-        const inputAsset = assetsMap.get(inputToken.id);
-        outputAsset = assetsMap.get(outputToken.id);
-        
-        if (!inputAsset?.rawXcmLocation || !outputAsset?.rawXcmLocation) {
-          throw new Error('Missing XCM location information for assets');
-        }
-        
-        path = [
-          parseXcmLocation(inputAsset.rawXcmLocation),
-          parseXcmLocation(outputAsset.rawXcmLocation)
-        ];
-      }
-      
-      // Calculate input amount in planck format
+
+      // Get input and output asset details
       const inputAsset = assetsMap.get(inputToken.id);
-      if (!inputAsset) {
-        throw new Error('Failed to find input asset information');
+      const outputAsset = assetsMap.get(outputToken.id);
+
+      if (!inputAsset?.rawXcmLocation || !outputAsset?.rawXcmLocation) {
+        throw new Error('Missing XCM location information for assets');
       }
-      
+
+      try {
+        console.log('Input XCM Location:', inputAsset.rawXcmLocation);
+        console.log('Output XCM Location:', outputAsset.rawXcmLocation);
+      } catch (e: unknown) {
+        console.error('Error logging XCM locations:', e);
+      }
+
+      // Calculate input amount in planck format
       const inputAmountPlanck = toAssetPlanckFormat(inputAmount, inputAsset.metadata.decimals);
-      
+
       // Calculate minimum output amount with slippage
       const minOutputAmountPlanck = calculateMinimumOutput(
         outputAmount,
         slippageTolerance,
         outputAsset.metadata.decimals
       );
-      
-      setSwapStatus('Creating transaction...');
-      console.log('Swap path:', path);
-      
-      // Build the swap transaction with properly formatted parameters
-      const transaction = await polkadotApi.tx.AssetConversion.swap_exact_tokens_for_tokens({
-        amount_in: inputAmountPlanck,
-        amount_out_min: minOutputAmountPlanck,
-        path: path,
-        keep_alive: true,
-        send_to: walletAddress
-      });
-      
+
+      let transaction;
+
+      // Check if we're using Asset Hub or HydraDX
+      if (!routeState.data || routeState.data.dex === 'assetHub') {
+        // Asset Hub swap logic
+        setSwapStatus('Preparing Asset Hub swap...');
+
+        let path: any[] = [];
+        try {
+          if (routeState.data && routeState.data.path.length > 0) {
+            // Using the route from routeState
+            setSwapStatus('Preparing optimal swap path...');
+
+            // Map each asset ID in the path to its XCM location
+            for (const assetId of routeState.data.path) {
+              const asset = assetsMap.get(assetId);
+              if (!asset?.rawXcmLocation) {
+                throw new Error(`Missing XCM location for asset in path: ${assetId}`);
+              }
+              const parsedLocation = parseXcmLocation(asset.rawXcmLocation);
+              console.log(`Parsed XCM location for ${assetId}:`, parsedLocation);
+              path.push(parsedLocation);
+            }
+          } else {
+            // Fallback to direct path
+            path = [
+              parseXcmLocation(inputAsset.rawXcmLocation),
+              parseXcmLocation(outputAsset.rawXcmLocation)
+            ];
+          }
+        } catch (e: unknown) {
+          console.error('Error constructing swap path:', e);
+          throw new Error(`Failed to construct swap path: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        }
+
+        try {
+          // Build the Asset Hub swap transaction
+          transaction = await assetHubApi.tx.AssetConversion.swap_exact_tokens_for_tokens({
+            amount_in: inputAmountPlanck,
+            amount_out_min: minOutputAmountPlanck,
+            path: path,
+            keep_alive: true,
+            send_to: walletAddress
+          });
+        } catch (e: unknown) {
+          console.error('Error constructing Asset Hub transaction:', e);
+          throw new Error(`Failed to construct Asset Hub transaction: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        }
+      } else {
+        // HydraDX swap logic
+        setSwapStatus('Preparing HydraDX XCM swap...');
+        try {
+          // Get HydraDX connection
+          const hydraDxConnection = await connectionManager.getConnection('hydra_dx');
+          if (!hydraDxConnection || !hydraDxConnection.api) {
+            throw new Error('HydraDX RPC connection is not active.');
+          }
+          const hydraDxApi = hydraDxConnection.api as TypedApi<typeof hydration>;
+
+          // Define DOT asset ID for fees
+          const dotAssetId = {
+            parents: 1,
+            interior: { Here: null }
+          };
+
+          // Get the public key as Binary
+          const publicKey = Binary.fromBytes(wallet.extension.publicKey);
+
+          // Calculate all fees
+          setSwapStatus('Calculating XCM fees...');
+          const fees = await calculateHydraDxXcmFees(
+            assetHubApi,
+            hydraDxApi,
+            parseXcmLocation(inputAsset.rawXcmLocation),
+            parseXcmLocation(outputAsset.rawXcmLocation),
+            inputAmountPlanck,
+            publicKey,
+            dotAssetId
+          );
+
+          // Construct XCM message
+          setSwapStatus('Constructing XCM message...');
+          const xcmMessage = await constructHydraDxXcmMessage(
+            fees,
+            parseXcmLocation(inputAsset.rawXcmLocation),
+            parseXcmLocation(outputAsset.rawXcmLocation),
+            inputAmountPlanck,
+            minOutputAmountPlanck,
+            publicKey,
+            dotAssetId
+          );
+
+          // Calculate final weight for the complete message
+          const xcmWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(xcmMessage);
+          if (!xcmWeight.success) {
+            throw new Error("Failed to calculate total XCM weight");
+          }
+
+          // Build the HydraDX XCM transaction
+          transaction = assetHubApi.tx.PolkadotXcm.execute({
+            message: xcmMessage,
+            max_weight: {
+              ref_time: xcmWeight.value.ref_time,
+              proof_size: xcmWeight.value.proof_size
+            }
+          });
+        } catch (e: unknown) {
+          console.error('Error in HydraDX swap preparation:', e);
+          throw new Error(`Failed to prepare HydraDX swap: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        }
+      }
+
       setSwapStatus('Signing transaction...');
-      
+
       // Define transaction callbacks
       const callbacks: TransactionCallbacks = {
         onStatusChange: (status: TransactionStatus) => {
@@ -256,19 +339,19 @@ export function useAssetConversionSwap({
                 toast.loading('Transaction signed, waiting for broadcast...', { id: 'swap-status' });
               }
               break;
-              
+
             case 'broadcasted':
               setSwapStatus('Transaction broadcasted! Waiting for confirmation...');
               toast.loading('Transaction broadcasted, waiting for confirmation...', { id: 'swap-status' });
               break;
-              
+
             case 'txBestBlocksState':
               if (status.blockNumber) {
                 setSwapStatus(`Transaction included in block ${status.blockNumber}`);
                 toast.loading(`Transaction included in block ${status.blockNumber}, waiting for finalization...`, { id: 'swap-status' });
               }
               break;
-              
+
             case 'finalized':
               toast.dismiss('swap-status');
               console.log('Swap transaction status:', status);
@@ -276,7 +359,7 @@ export function useAssetConversionSwap({
               if (status.success) {
                 const blockNum = status.blockNumber ? ` in block ${status.blockNumber}` : '';
                 setSwapStatus(`Swap complete${blockNum}!`);
-                toast.success('Swap completed successfully! 🎉', { 
+                toast.success('Swap completed successfully! 🎉', {
                   id: 'swap-status',
                   duration: 5000,
                   icon: '✅'
@@ -284,11 +367,6 @@ export function useAssetConversionSwap({
               }
               break;
           }
-
-          // // Handle any error state
-          // if (status.error) {
-          //   handleError(new Error(status.error));
-          // }
         },
         onSuccess: (status: TransactionStatus) => {
           setIsSwapping(false);
@@ -296,21 +374,21 @@ export function useAssetConversionSwap({
         },
         onError: handleError
       };
-      
+
       // Execute the transaction
       await FrontendTransactionService.signSubmitAndWatch(
         transaction,
         polkadotSigner,
         callbacks
       );
-      
+
     } catch (error) {
       console.error('Error:', error);
       handleError(error as Error);
     }
   }, [
     inputToken, outputToken, walletAddress, inputAmount, outputAmount,
-    slippageTolerance, routeState, getAssetsWithXcmLocations, 
+    slippageTolerance, routeState, getAssetsWithXcmLocations,
     calculateMinimumOutput, toAssetPlanckFormat, parseXcmLocation,
     onSuccess, handleError
   ]);
@@ -322,4 +400,350 @@ export function useAssetConversionSwap({
     swapError,
     executeSwap
   };
+}
+
+// Helper function to calculate fees for HydraDX XCM swap
+async function calculateHydraDxXcmFees(
+  assetHubApi: TypedApi<typeof polkadot_asset_hub>,
+  hydraDxApi: TypedApi<typeof hydration>,
+  inputAssetLocation: any,
+  outputAssetLocation: any,
+  inputAmountPlanck: bigint,
+  beneficiaryAccountId: Binary,
+  dotAssetId: any
+): Promise<{
+  initialExecution: bigint;
+  initialDelivery: bigint;
+  hydradxExecution: bigint;
+  returnDelivery: bigint;
+  finalExecution: bigint;
+  initialWeight: any;
+}> {
+
+  try {
+    // Construct the initial XCM message for weight calculation
+    const message = XcmVersionedXcm.V4([
+      XcmV4Instruction.WithdrawAsset([{
+        id: inputAssetLocation,
+        fun: XcmV3MultiassetFungibility.Fungible(inputAmountPlanck)
+      }]),
+      XcmV4Instruction.DepositReserveAsset({
+        assets: XcmV4AssetAssetFilter.Definite([{
+          id: inputAssetLocation,
+          fun: XcmV3MultiassetFungibility.Fungible(inputAmountPlanck)
+        }]),
+        dest: {
+          parents: 1,
+          interior: XcmV3Junctions.X1(
+            XcmV3Junction.Parachain(2034) // HydraDX parachain ID
+          )
+        },
+        xcm: [
+          XcmV4Instruction.BuyExecution({
+            fees: {
+              id: dotAssetId,
+              fun: XcmV3MultiassetFungibility.Fungible(BigInt(0))
+            },
+            weight_limit: XcmV3WeightLimit.Unlimited()
+          }),
+          XcmV4Instruction.ExchangeAsset({
+            give: XcmV4AssetAssetFilter.Definite([{
+              id: inputAssetLocation,
+              fun: XcmV3MultiassetFungibility.Fungible(inputAmountPlanck)
+            }]),
+            want: [{
+              id: outputAssetLocation,
+              fun: XcmV3MultiassetFungibility.Fungible(BigInt(0))
+            }],
+            maximal: true
+          }),
+          XcmV4Instruction.InitiateReserveWithdraw({
+            assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+            reserve: {
+              parents: 1,
+              interior: XcmV3Junctions.X1(
+                XcmV3Junction.Parachain(1000) // Asset Hub parachain ID
+              )
+            },
+            xcm: [
+              XcmV4Instruction.BuyExecution({
+                fees: {
+                  id: dotAssetId,
+                  fun: XcmV3MultiassetFungibility.Fungible(BigInt(0))
+                },
+                weight_limit: XcmV3WeightLimit.Unlimited()
+              }),
+              XcmV4Instruction.DepositAsset({
+                assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                beneficiary: {
+                  parents: 0,
+                  interior: XcmV3Junctions.X1(
+                    XcmV3Junction.AccountId32({
+                      network: undefined,
+                      id: beneficiaryAccountId
+                    })
+                  )
+                }
+              })
+            ]
+          })
+        ]
+      })
+    ]);
+
+    // Calculate initial weight
+    const xcmWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(message);
+    if (!xcmWeight.success) {
+      throw new Error("Failed to calculate total XCM weight");
+    }
+
+    // Calculate initial execution fee
+    const xcmFee = await assetHubApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
+      xcmWeight.value,
+      dotAssetId
+    );
+    const initialExecutionFee = extractFeeValue(xcmFee);
+
+    // Calculate delivery fees to HydraDX
+    const deliveryFeesResult = await assetHubApi.apis.XcmPaymentApi.query_delivery_fees(
+      XcmVersionedLocation.V4({
+        parents: 1,
+        interior: XcmV3Junctions.X1(
+          XcmV3Junction.Parachain(2034) // HydraDX parachain ID
+        )
+      }),
+      message
+    );
+    const deliveryFees = extractFeeValue(deliveryFeesResult);
+
+    // Calculate HydraDX execution fees
+    const remoteXcmWeight = await hydraDxApi.apis.XcmPaymentApi.query_xcm_weight(message);
+    if (!remoteXcmWeight.success) {
+      throw new Error("Failed to calculate HydraDX execution weight");
+    }
+
+    const remoteXcmFee = await hydraDxApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
+      remoteXcmWeight.value,
+      dotAssetId
+    );
+    const hydraDxExecutionFee = extractFeeValue(remoteXcmFee);
+
+    // Calculate return fees
+    const returnMessage = XcmVersionedXcm.V4([
+      XcmV4Instruction.InitiateReserveWithdraw({
+        assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+        reserve: {
+          parents: 1,
+          interior: XcmV3Junctions.X1(
+            XcmV3Junction.Parachain(1000) // Asset Hub parachain ID
+          )
+        },
+        xcm: [
+          XcmV4Instruction.BuyExecution({
+            fees: {
+              id: dotAssetId,
+              fun: XcmV3MultiassetFungibility.Fungible(BigInt(10000000000))
+            },
+            weight_limit: XcmV3WeightLimit.Unlimited()
+          }),
+          XcmV4Instruction.DepositAsset({
+            assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+            beneficiary: {
+              parents: 0,
+              interior: XcmV3Junctions.X1(
+                XcmV3Junction.AccountId32({
+                  network: undefined,
+                  id: beneficiaryAccountId
+                })
+              )
+            }
+          })
+        ]
+      })
+    ]);
+
+    const returnDeliveryFeesResult = await hydraDxApi.apis.XcmPaymentApi.query_delivery_fees(
+      XcmVersionedLocation.V4({
+        parents: 1,
+        interior: XcmV3Junctions.X1(
+          XcmV3Junction.Parachain(1000) // Asset Hub parachain ID
+        )
+      }),
+      returnMessage
+    );
+    const returnDeliveryFees = extractFeeValue(returnDeliveryFeesResult);
+
+    // Calculate final Asset Hub execution fees
+    const finalAssetHubWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(returnMessage);
+    if (!finalAssetHubWeight.success) {
+      throw new Error("Failed to calculate final Asset Hub execution weight");
+    }
+
+    const finalAssetHubFee = await assetHubApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
+      finalAssetHubWeight.value,
+      dotAssetId
+    );
+    const finalExecutionFee = extractFeeValue(finalAssetHubFee);
+    return {
+      initialExecution: initialExecutionFee,
+      initialDelivery: deliveryFees,
+      hydradxExecution: hydraDxExecutionFee,
+      returnDelivery: returnDeliveryFees,
+      finalExecution: finalExecutionFee,
+      initialWeight: xcmWeight.value
+    };
+  } catch (e: unknown) {
+    console.error('Error in HydraDX swap preparation:', e);
+    throw new Error(`Failed to prepare HydraDX swap: ${e instanceof Error ? e.message : 'Unknown error'}`);
+  }
+
+}
+
+// Helper function to construct HydraDX XCM message
+async function constructHydraDxXcmMessage(
+  fees: {
+    initialExecution: bigint;
+    initialDelivery: bigint;
+    hydradxExecution: bigint;
+    returnDelivery: bigint;
+    finalExecution: bigint;
+  },
+  inputAssetLocation: any,
+  outputAssetLocation: any,
+  inputAmountPlanck: bigint,
+  minOutputAmountPlanck: bigint,
+  beneficiaryAccountId: Binary,
+  dotAssetId: any
+) {
+  try {
+    // Calculate total fees
+    const totalFees = fees.initialExecution +
+      fees.initialDelivery +
+      fees.hydradxExecution +
+      fees.returnDelivery +
+      fees.finalExecution;
+
+    const withdrawAmount = inputAmountPlanck + totalFees;
+
+    return XcmVersionedXcm.V4([
+      // 1. Withdraw asset from Asset Hub (including all fees)
+      XcmV4Instruction.WithdrawAsset([{
+        id: inputAssetLocation,
+        fun: XcmV3MultiassetFungibility.Fungible(withdrawAmount)
+      }]),
+      // 2. Send to HydraDX with instructions
+      XcmV4Instruction.DepositReserveAsset({
+        assets: XcmV4AssetAssetFilter.Definite([{
+          id: inputAssetLocation,
+          fun: XcmV3MultiassetFungibility.Fungible(withdrawAmount)
+        }]),
+        dest: {
+          parents: 1,
+          interior: XcmV3Junctions.X1(
+            XcmV3Junction.Parachain(2034) // HydraDX parachain ID
+          )
+        },
+        xcm: [
+          // 2a. Pay for HydraDX execution
+          XcmV4Instruction.BuyExecution({
+            fees: {
+              id: dotAssetId,
+              fun: XcmV3MultiassetFungibility.Fungible(fees.hydradxExecution + fees.initialDelivery)
+            },
+            weight_limit: XcmV3WeightLimit.Unlimited()
+          }),
+          // 2b. Exchange asset
+          XcmV4Instruction.ExchangeAsset({
+            give: XcmV4AssetAssetFilter.Definite([{
+              id: inputAssetLocation,
+              fun: XcmV3MultiassetFungibility.Fungible(inputAmountPlanck)
+            }]),
+            want: [{
+              id: outputAssetLocation,
+              fun: XcmV3MultiassetFungibility.Fungible(minOutputAmountPlanck)
+            }],
+            maximal: true
+          }),
+          // 2c. Send swapped assets back to Asset Hub
+          XcmV4Instruction.InitiateReserveWithdraw({
+            assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+            reserve: {
+              parents: 1,
+              interior: XcmV3Junctions.X1(
+                XcmV3Junction.Parachain(1000) // Asset Hub parachain ID
+              )
+            },
+            xcm: [
+              // Pay for final Asset Hub execution
+              XcmV4Instruction.BuyExecution({
+                fees: {
+                  id: dotAssetId,
+                  fun: XcmV3MultiassetFungibility.Fungible(fees.finalExecution + fees.returnDelivery)
+                },
+                weight_limit: XcmV3WeightLimit.Unlimited()
+              }),
+              XcmV4Instruction.DepositAsset({
+                assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                beneficiary: {
+                  parents: 0,
+                  interior: XcmV3Junctions.X1(
+                    XcmV3Junction.AccountId32({
+                      network: undefined,
+                      id: beneficiaryAccountId
+                    })
+                  )
+                }
+              })
+            ]
+          })
+        ]
+      })
+    ]);
+  } catch (e: unknown) {
+    console.error('Error in HydraDX swap preparation:', e);
+    throw new Error(`Failed to prepare HydraDX swap: ${e instanceof Error ? e.message : 'Unknown error'}`);
+  }
+}
+
+// Helper function to extract fee value from API response
+function extractFeeValue(feeResult: any): bigint {
+  if (!feeResult || !feeResult.success) {
+    throw new Error(`Fee calculation was not successful: ${JSON.stringify(feeResult)}`);
+  }
+
+  // Handle XCM versioned assets (delivery fees)
+  if (feeResult.value?.type === 'V4' && Array.isArray(feeResult.value.value)) {
+    // Sum up all fee values in the array
+    return feeResult.value.value.reduce((sum: bigint, item: any) => {
+      if (item && item.fun?.type === 'Fungible') {
+        // Convert the value to string first to handle both string and number cases
+        const value = item.fun.value.toString();
+        return sum + BigInt(value);
+      }
+      return sum;
+    }, BigInt(0));
+  }
+
+  // Handle direct bigint value
+  if (typeof feeResult.value === 'bigint') {
+    return feeResult.value;
+  }
+
+  // Handle numeric value
+  if (typeof feeResult.value === 'number') {
+    return BigInt(feeResult.value);
+  }
+
+  // Handle case where value is a string
+  if (typeof feeResult.value === 'string') {
+    return BigInt(feeResult.value);
+  }
+
+  // Handle case where value is an object with a toString method
+  if (typeof feeResult.value === 'object' && feeResult.value !== null && 'toString' in feeResult.value) {
+    return BigInt(feeResult.value.toString());
+  }
+
+  console.log("Problematic fee result:", JSON.stringify(feeResult));
+  throw new Error(`Unexpected fee result structure: ${JSON.stringify(feeResult)}`);
 } 
