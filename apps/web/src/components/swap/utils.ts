@@ -64,3 +64,60 @@ export const safeParse = <T = unknown>(value: string): T => {
     return value;
   });
 };
+
+
+
+// Helper function to check if a value is a BigInt
+export const isBigInt = (value: unknown): value is bigint => {
+  return typeof value === 'bigint';
+};
+
+// Helper function to check if a value is a Binary type from Polkadot API
+export const isBinary = (value: unknown): boolean => {
+  return value !== null && 
+         typeof value === 'object' && 
+         'asHex' in value && 
+         typeof value.asHex === 'function';
+};
+
+/**
+ * Safely stringify complex objects including BigInt and Binary values
+ * @param value The value to stringify
+ * @param format Whether to format the JSON with indentation
+ * @returns A string representation of the value
+ */
+export const safeStringify = (value: unknown, format?: boolean): string => {
+  if (!value) return value?.toString() ?? "";
+
+  return JSON.stringify(
+    value,
+    (key, value) => {
+      if (isBigInt(value)) {
+        return `bigint:${value.toString()}`;
+      } else if (isBinary(value)) {
+        return `binary:${value.asHex()}`;
+      }
+      return value;
+    },
+    format ? 2 : undefined,
+  );
+};
+
+
+export function serializeKey(key: any): string {
+  if (typeof key === 'number' || typeof key === 'bigint') {
+      return key.toString();
+  }
+
+  if (key && typeof key === 'object') {
+      const replacer = (_: string, value: any) => {
+          if (typeof value === 'bigint') {
+              return value.toString();
+          }
+          return value;
+      };
+      return JSON.stringify(key, replacer);
+  }
+
+  return JSON.stringify(key);
+}

@@ -9,10 +9,10 @@ import { getWalletBySource } from '@talismn/connect-wallets';
 import type { Signer } from '@polkadot/api/types';
 import { FrontendConnectionManager } from '@/services/FrontendConnectionManager';
 import type { TransactionCallbacks, TransactionStatus } from '@/services/types';
-import { safeParse } from '@/components/swap/utils';
-import type { XcmV4Location } from '@swush/api';
+import { safeParse, safeStringify, serializeKey } from '@/components/swap/utils';
+import { type XcmV4Location } from '@swush/api';
 import { TransactionErrorService, SwushError } from '@/services/TransactionErrorService';
-import { Binary, TypedApi } from 'polkadot-api';
+import { Binary, TypedApi, FixedSizeBinary } from 'polkadot-api';
 import {
   XcmVersionedLocation,
   XcmVersionedAssets,
@@ -217,7 +217,7 @@ export function useAssetConversionSwap({
       let transaction;
 
       // Check if we're using Asset Hub or HydraDX
-      if (!routeState.data || routeState.data.dex === 'assetHub') {
+      if (!routeState.data || routeState.data.dex === 'asset_hub') {
         // Asset Hub swap logic
         setSwapStatus('Preparing Asset Hub swap...');
 
@@ -290,6 +290,7 @@ export function useAssetConversionSwap({
             parseXcmLocation(inputAsset.rawXcmLocation),
             parseXcmLocation(outputAsset.rawXcmLocation),
             inputAmountPlanck,
+            minOutputAmountPlanck,
             publicKey,
             dotAssetId
           );
@@ -406,10 +407,11 @@ export function useAssetConversionSwap({
 async function calculateHydraDxXcmFees(
   assetHubApi: TypedApi<typeof polkadot_asset_hub>,
   hydraDxApi: TypedApi<typeof hydration>,
-  inputAssetLocation: any,
-  outputAssetLocation: any,
+  inputAssetLocation: XcmV4Location,
+  outputAssetLocation: XcmV4Location,
   inputAmountPlanck: bigint,
-  beneficiaryAccountId: Binary,
+  minOutputAmountPlanck: bigint,
+  beneficiaryAccountId: FixedSizeBinary<32>,
   dotAssetId: any
 ): Promise<{
   initialExecution: bigint;
@@ -421,87 +423,120 @@ async function calculateHydraDxXcmFees(
 }> {
 
   try {
-    // Construct the initial XCM message for weight calculation
-    const message = XcmVersionedXcm.V4([
-      XcmV4Instruction.WithdrawAsset([{
+    console.log('Debug: Input parameters:', {
+      inputAssetLocation: serializeKey(inputAssetLocation),
+      outputAssetLocation: serializeKey(outputAssetLocation),
+      inputAmountPlanck: inputAmountPlanck.toString(),
+      minOutputAmountPlanck: minOutputAmountPlanck.toString(),
+      dotAssetId: serializeKey(dotAssetId)
+    });
+
+    // Step 1: Construct WithdrawAsset instruction
+    console.log('Debug: Constructing WithdrawAsset...');
+    const withdrawAsset = {
+      id: inputAssetLocation,
+      fun: XcmV3MultiassetFungibility.Fungible(inputAmountPlanck)
+    };
+    console.log('Debug: WithdrawAsset constructed:', serializeKey(withdrawAsset));
+
+    // Step 2: Construct BuyExecution instruction
+    console.log('Debug: Constructing BuyExecution...');
+    const buyExecution = XcmV4Instruction.BuyExecution({
+      fees: {
+        id: dotAssetId,
+        fun: XcmV3MultiassetFungibility.Fungible(inputAmountPlanck)
+      },
+      weight_limit: XcmV3WeightLimit.Unlimited()
+    });
+    console.log('Debug: BuyExecution constructed:', serializeKey(buyExecution));
+
+    // Step 3: Construct ExchangeAsset instruction
+    console.log('Debug: Constructing ExchangeAsset...');
+    const exchangeAsset = XcmV4Instruction.ExchangeAsset({
+      give: XcmV4AssetAssetFilter.Definite([{
         id: inputAssetLocation,
         fun: XcmV3MultiassetFungibility.Fungible(inputAmountPlanck)
       }]),
+      want: [{
+        id: outputAssetLocation,
+        fun: XcmV3MultiassetFungibility.Fungible(minOutputAmountPlanck)
+      }],
+      maximal: true
+    });
+    console.log('Debug: ExchangeAsset constructed:', serializeKey(exchangeAsset));
+
+    // Step 4: Construct InitiateReserveWithdraw instruction
+    console.log('Debug: Constructing InitiateReserveWithdraw...');
+    const initiateReserveWithdraw = XcmV4Instruction.InitiateReserveWithdraw({
+      assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+      reserve: {
+        parents: 1,
+        interior: XcmV3Junctions.X1(
+          XcmV3Junction.Parachain(1000) // Asset Hub parachain ID
+        )
+      },
+      xcm: [
+        XcmV4Instruction.BuyExecution({
+          fees: {
+            id: dotAssetId,
+            fun: XcmV3MultiassetFungibility.Fungible(inputAmountPlanck)
+          },
+          weight_limit: XcmV3WeightLimit.Unlimited()
+        }),
+        // XcmV4Instruction.DepositAsset({
+        //   assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+        //   beneficiary: {
+        //     parents: 0,
+        //     interior: XcmV3Junctions.X1(
+        //       XcmV3Junction.AccountId32({
+        //         network: undefined,
+        //         id: Binary.fromBytes(beneficiaryAccountId)
+        //       })
+        //     )
+        //   }
+        // })
+      ]
+    });
+    console.log('Debug: InitiateReserveWithdraw constructed:', serializeKey(initiateReserveWithdraw));
+
+    // Step 5: Construct the complete XCM message
+    console.log('Debug: Constructing complete XCM message...');
+    const message = XcmVersionedXcm.V4([
+      XcmV4Instruction.WithdrawAsset([withdrawAsset]),
       XcmV4Instruction.DepositReserveAsset({
-        assets: XcmV4AssetAssetFilter.Definite([{
-          id: inputAssetLocation,
-          fun: XcmV3MultiassetFungibility.Fungible(inputAmountPlanck)
-        }]),
+        assets: XcmV4AssetAssetFilter.Definite([withdrawAsset]),
         dest: {
           parents: 1,
           interior: XcmV3Junctions.X1(
             XcmV3Junction.Parachain(2034) // HydraDX parachain ID
           )
         },
-        xcm: [
-          XcmV4Instruction.BuyExecution({
-            fees: {
-              id: dotAssetId,
-              fun: XcmV3MultiassetFungibility.Fungible(BigInt(0))
-            },
-            weight_limit: XcmV3WeightLimit.Unlimited()
-          }),
-          XcmV4Instruction.ExchangeAsset({
-            give: XcmV4AssetAssetFilter.Definite([{
-              id: inputAssetLocation,
-              fun: XcmV3MultiassetFungibility.Fungible(inputAmountPlanck)
-            }]),
-            want: [{
-              id: outputAssetLocation,
-              fun: XcmV3MultiassetFungibility.Fungible(BigInt(0))
-            }],
-            maximal: true
-          }),
-          XcmV4Instruction.InitiateReserveWithdraw({
-            assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-            reserve: {
-              parents: 1,
-              interior: XcmV3Junctions.X1(
-                XcmV3Junction.Parachain(1000) // Asset Hub parachain ID
-              )
-            },
-            xcm: [
-              XcmV4Instruction.BuyExecution({
-                fees: {
-                  id: dotAssetId,
-                  fun: XcmV3MultiassetFungibility.Fungible(BigInt(0))
-                },
-                weight_limit: XcmV3WeightLimit.Unlimited()
-              }),
-              XcmV4Instruction.DepositAsset({
-                assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-                beneficiary: {
-                  parents: 0,
-                  interior: XcmV3Junctions.X1(
-                    XcmV3Junction.AccountId32({
-                      network: undefined,
-                      id: beneficiaryAccountId
-                    })
-                  )
-                }
-              })
-            ]
-          })
-        ]
+        xcm: [buyExecution, exchangeAsset, initiateReserveWithdraw]
       })
     ]);
+  console.log('Debug: Complete XCM message constructed:', serializeKey(message));
 
     // Calculate initial weight
+    console.log('Debug: Calculating initial weight...');
     const xcmWeight = await assetHubApi.apis.XcmPaymentApi.query_xcm_weight(message);
     if (!xcmWeight.success) {
+      console.error('Debug: Failed to calculate XCM weight:', xcmWeight);
       throw new Error("Failed to calculate total XCM weight");
     }
+    console.log('Debug: Initial weight calculated:', serializeKey(xcmWeight.value));
 
     // Calculate initial execution fee
     const xcmFee = await assetHubApi.apis.XcmPaymentApi.query_weight_to_asset_fee(
       xcmWeight.value,
       dotAssetId
     );
+
+    if (!xcmFee.success) {
+      throw new Error("Failed to calculate initial execution fee");
+    } else {
+      console.log('Debug: Initial execution fee calculated:', serializeKey(xcmFee.value));
+    }
+
     const initialExecutionFee = extractFeeValue(xcmFee);
 
     // Calculate delivery fees to HydraDX
@@ -514,6 +549,12 @@ async function calculateHydraDxXcmFees(
       }),
       message
     );
+
+    if (!deliveryFeesResult.success) {
+      throw new Error("Failed to calculate delivery fees");
+    } else {
+      console.log('Debug: Delivery fees calculated:', serializeKey(deliveryFeesResult.value));
+    }
     const deliveryFees = extractFeeValue(deliveryFeesResult);
 
     // Calculate HydraDX execution fees
@@ -526,6 +567,11 @@ async function calculateHydraDxXcmFees(
       remoteXcmWeight.value,
       dotAssetId
     );
+    if (!remoteXcmFee.success) {
+      throw new Error("Failed to calculate HydraDX execution fee");
+    } else {
+      console.log('Debug: HydraDX execution fee calculated:', serializeKey(remoteXcmFee.value));
+    }
     const hydraDxExecutionFee = extractFeeValue(remoteXcmFee);
 
     // Calculate return fees
@@ -553,7 +599,7 @@ async function calculateHydraDxXcmFees(
               interior: XcmV3Junctions.X1(
                 XcmV3Junction.AccountId32({
                   network: undefined,
-                  id: beneficiaryAccountId
+                  id: Binary.fromBytes(beneficiaryAccountId.asBytes())
                 })
               )
             }
@@ -594,9 +640,12 @@ async function calculateHydraDxXcmFees(
     };
   } catch (e: unknown) {
     console.error('Error in HydraDX swap preparation:', e);
+    if (e instanceof Error) {
+      console.error('Error stack:', e.stack);
+      console.error('Error message:', e.message);
+    }
     throw new Error(`Failed to prepare HydraDX swap: ${e instanceof Error ? e.message : 'Unknown error'}`);
   }
-
 }
 
 // Helper function to construct HydraDX XCM message
@@ -612,7 +661,7 @@ async function constructHydraDxXcmMessage(
   outputAssetLocation: any,
   inputAmountPlanck: bigint,
   minOutputAmountPlanck: bigint,
-  beneficiaryAccountId: Binary,
+  beneficiaryAccountId: FixedSizeBinary<32>,
   dotAssetId: any
 ) {
   try {
@@ -689,7 +738,7 @@ async function constructHydraDxXcmMessage(
                   interior: XcmV3Junctions.X1(
                     XcmV3Junction.AccountId32({
                       network: undefined,
-                      id: beneficiaryAccountId
+                      id: Binary.fromBytes(beneficiaryAccountId.asBytes())
                     })
                   )
                 }
@@ -708,7 +757,7 @@ async function constructHydraDxXcmMessage(
 // Helper function to extract fee value from API response
 function extractFeeValue(feeResult: any): bigint {
   if (!feeResult || !feeResult.success) {
-    throw new Error(`Fee calculation was not successful: ${JSON.stringify(feeResult)}`);
+    throw new Error(`Fee calculation was not successful: ${serializeKey(feeResult)}`);
   }
 
   // Handle XCM versioned assets (delivery fees)
@@ -744,6 +793,6 @@ function extractFeeValue(feeResult: any): bigint {
     return BigInt(feeResult.value.toString());
   }
 
-  console.log("Problematic fee result:", JSON.stringify(feeResult));
-  throw new Error(`Unexpected fee result structure: ${JSON.stringify(feeResult)}`);
+  console.log("Problematic fee result:", serializeKey(feeResult));
+  throw new Error(`Unexpected fee result structure: ${serializeKey(feeResult)}`);
 } 

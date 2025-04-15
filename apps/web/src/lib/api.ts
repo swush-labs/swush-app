@@ -31,7 +31,7 @@ export interface RouteQuote {
     amountIn: string;
     amountOut: string;
   }[];
-  dex: 'assetHub' | 'hydraDx';
+  dex: 'asset_hub' | 'hydra_dx';
 }
 
 export interface Balance {

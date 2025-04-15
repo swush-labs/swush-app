@@ -1,4 +1,9 @@
 ---
+description: 
+globs: 
+alwaysApply: false
+---
+---
 description: high-level overview of codebase structure
 globs: 
 alwaysApply: false

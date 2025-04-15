@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+use `import { serializeKey } from '@swush/api';` serializeKey instead of JSON.stringify() for debubgging purposes
