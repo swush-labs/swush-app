@@ -274,7 +274,7 @@ export function useAssetConversionSwap({
           const hydraDxApi = hydraDxConnection.api as TypedApi<typeof hydration>;
 
           // Get the public key as Binary
-          const publicKey = Binary.fromBytes(wallet.extension.publicKey);
+          const alicePublicKey = polkadotSigner.publicKey;
 
           // Calculate all fees
           setSwapStatus('Calculating XCM fees...');
@@ -285,7 +285,7 @@ export function useAssetConversionSwap({
             parseXcmLocation(outputAsset.rawXcmLocation),
             inputAmountPlanck,
             minOutputAmountPlanck,
-            publicKey
+            alicePublicKey
           );
 
           // Construct XCM message
@@ -296,7 +296,7 @@ export function useAssetConversionSwap({
             parseXcmLocation(outputAsset.rawXcmLocation),
             inputAmountPlanck,
             minOutputAmountPlanck,
-            publicKey
+            alicePublicKey
           );
 
           // Calculate final weight for the complete message
@@ -403,7 +403,7 @@ async function calculateHydraDxXcmFees(
   outputAssetLocation: XcmV4Location,
   inputAmountPlanck: bigint,
   minOutputAmountPlanck: bigint,
-  beneficiaryAccountId: FixedSizeBinary<32>,
+  beneficiaryAccountId: Uint8Array<ArrayBufferLike>
 ): Promise<{
   initialExecution: bigint;
   initialDelivery: bigint;
@@ -491,18 +491,18 @@ async function calculateHydraDxXcmFees(
           },
           weight_limit: XcmV3WeightLimit.Unlimited()
         }),
-        // XcmV4Instruction.DepositAsset({
-        //   assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-        //   beneficiary: {
-        //     parents: 0,
-        //     interior: XcmV3Junctions.X1(
-        //       XcmV3Junction.AccountId32({
-        //         network: undefined,
-        //         id: Binary.fromBytes(beneficiaryAccountId)
-        //       })
-        //     )
-        //   }
-        // })
+        XcmV4Instruction.DepositAsset({
+          assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+          beneficiary: {
+            parents: 0,
+            interior: XcmV3Junctions.X1(
+              XcmV3Junction.AccountId32({
+                network: undefined,
+                id: Binary.fromBytes(beneficiaryAccountId)
+              })
+            )
+          }
+        })
       ]
     });
     console.log('Debug: InitiateReserveWithdraw constructed:', serializeKey(initiateReserveWithdraw));
@@ -603,18 +603,18 @@ async function calculateHydraDxXcmFees(
             },
             weight_limit: XcmV3WeightLimit.Unlimited()
           }),
-          // XcmV4Instruction.DepositAsset({
-          //   assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
-          //   beneficiary: {
-          //     parents: 0,
-          //     interior: XcmV3Junctions.X1(
-          //       XcmV3Junction.AccountId32({
-          //         network: undefined,
-          //         id: Binary.fromBytes(beneficiaryAccountId.asBytes())
-          //       })
-          //     )
-          //   }
-          // })
+          XcmV4Instruction.DepositAsset({
+            assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+            beneficiary: {
+              parents: 0,
+              interior: XcmV3Junctions.X1(
+                XcmV3Junction.AccountId32({
+                  network: undefined,
+                  id: Binary.fromBytes(beneficiaryAccountId)
+                })
+              )
+            }
+          })
         ]
       })
     ]);
@@ -674,7 +674,7 @@ async function constructHydraDxXcmMessage(
   outputAssetLocation: any,
   inputAmountPlanck: bigint,
   minOutputAmountPlanck: bigint,
-  beneficiaryAccountId: FixedSizeBinary<32>,
+  beneficiaryAccountId: Uint8Array<ArrayBufferLike>
 ) {
   try {
     const dotAssetId = {
@@ -755,7 +755,7 @@ async function constructHydraDxXcmMessage(
                   interior: XcmV3Junctions.X1(
                     XcmV3Junction.AccountId32({
                       network: undefined,
-                      id: Binary.fromBytes(beneficiaryAccountId.asBytes())
+                      id: Binary.fromBytes(beneficiaryAccountId)
                     })
                   )
                 }
