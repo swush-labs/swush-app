@@ -269,13 +269,26 @@ export function useAssetConversionSwap({
           const address = ss58Encode(alicePublicKey);
           // Calculate all fees
           setSwapStatus('Calculating XCM fees...');
-          const inputAssetLocation =  parseXcmLocation(inputAsset.rawXcmLocation);
-          const outputAssetLocation = fetchHydraXCMLocation(outputAsset);
+          const inputAssetHubLocation =  parseXcmLocation(inputAsset.rawXcmLocation);
+          const outputAssetHubLocation = parseXcmLocation(outputAsset.rawXcmLocation);
+          const inputHydraDxLocation = fetchHydraXCMLocation(inputAsset);
+          const outputHydraDxLocation = fetchHydraXCMLocation(outputAsset);
 
-          if (!inputAssetLocation || !outputAssetLocation) {
-            throw new Error('Missing XCM location information for assets');
-          } 
-          
+          // Check if all locations are valid before proceeding
+          if (!inputAssetHubLocation || !outputAssetHubLocation) {
+            throw new Error(`Missing required Asset Hub XCM location for ${!inputAssetHubLocation ? inputAsset.id : outputAsset.id}`);
+          }
+          if (!inputHydraDxLocation) {
+             throw new Error(`Could not determine HydraDX-relative XCM location for input asset ${inputAsset.id}`);
+          }
+           if (!outputHydraDxLocation) {
+             throw new Error(`Could not determine HydraDX-relative XCM location for output asset ${outputAsset.id}`);
+           }
+          // //check if output asset is DOT
+          // if (outputAsset.id != 'DOT') {
+          //   outputAssetLocation = fetchHydraXCMLocation(outputAsset)
+          // }
+
           // const fees = await calculateHydraDxXcmFees(
           //   assetHubApi,
           //   hydraDxApi,
@@ -299,8 +312,10 @@ export function useAssetConversionSwap({
           setSwapStatus('Constructing XCM message...');
           const xcmMessage = await constructHydraDxXcmMessage(
             fees,
-            inputAssetLocation,
-            outputAssetLocation,
+            inputAssetHubLocation,
+            outputAssetHubLocation,
+            inputHydraDxLocation,
+            outputHydraDxLocation,
             inputAmountPlanck,
             minOutputAmountPlanck,
             alicePublicKey

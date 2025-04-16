@@ -1,4 +1,4 @@
-import { safeStringify } from "@swush/api";
+import { safeStringify, serializeKey } from '@/components/swap/utils';
 import { Binary, TypedApi } from "polkadot-api";
 import {
     XcmVersionedLocation,
@@ -14,10 +14,9 @@ import {
     polkadot_asset_hub,
     hydration,
     PolkadotRuntimeOriginCaller
-  } from '@polkadot-api/descriptors';
-import { XcmV4Location } from "@swush/api";
+} from '@polkadot-api/descriptors';
+import { type XcmV4Location } from "@swush/api";
 import { AssetWithId } from "@/lib/api";
-import { serializeKey } from "../..";
 
 // Helper function to calculate fees for HydraDX XCM swap
 export async function calculateHydraDxXcmFees(
@@ -303,7 +302,6 @@ export async function calculateHydraDxXcmFees(
         initialWeight: xcmWeight.value
     };
 }
-
 // Helper function to construct HydraDX XCM message
 export async function constructHydraDxXcmMessage(
     fees: {
@@ -313,55 +311,69 @@ export async function constructHydraDxXcmMessage(
         returnDelivery: bigint;
         finalExecution: bigint;
     },
-    inputAssetLocation: any,
-    outputAssetLocation: any,
+    assetHubInputLocation: XcmV4Location,  // Asset Hub relative location for input asset
+    assetHubOutputLocation: XcmV4Location, // Asset Hub relative location for output asset (unused here, but good for context)
+    hydraDxInputLocation: XcmV4Location,   // HydraDX relative location for input asset
+    hydraDxOutputLocation: XcmV4Location,  // HydraDX relative location for output asset
     inputAmountPlanck: bigint,
     minOutputAmountPlanck: bigint,
     beneficiaryAccountId: Uint8Array<ArrayBufferLike>
 ) {
+    console.log('Constructing XCM: Debug Fees:', fees);
+    console.log('Constructing XCM: Asset Hub Input Location:', safeStringify(assetHubInputLocation, true));
+    console.log('Constructing XCM: HydraDX Input Location:', safeStringify(hydraDxInputLocation, true));
+    console.log('Constructing XCM: HydraDX Output Location:', safeStringify(hydraDxOutputLocation, true));
 
-    //print all the fees  
-    console.log('Debug: Fees:', fees);
-
-    const dotAssetId = {
+    // Define Asset Hub relative location for DOT (used for fee payments on Asset Hub)
+    const dotAssetHubLocation: XcmV4Location = {
         parents: 1,
         interior: XcmV3Junctions.Here()
     };
 
-    // const inputAssetLocation = {
-    //   parents: 1,
-    //   interior: XcmV3Junctions.Here()
-    // };
-    // const outputAssetLocation = {
-    //   parents: 1,
-    //   interior: XcmV3Junctions.X3([
-    //     XcmV3Junction.Parachain(1000),
-    //     XcmV3Junction.PalletInstance(50),
-    //     XcmV3Junction.GeneralIndex(BigInt(1984))
-    //   ])
-    // };
-
-    // Calculate total fees
+    // Calculate total fees (to be paid in DOT)
     const totalFees = fees.initialExecution +
         fees.initialDelivery +
         fees.hydradxExecution +
         fees.returnDelivery +
         fees.finalExecution;
 
-    const withdrawAmount = inputAmountPlanck + totalFees;
+    // Assets to withdraw from Asset Hub
+    // We need the input amount of the input asset AND the total fees in DOT.
+    const assetsToWithdraw = [];
+    const isInputDot = safeStringify(assetHubInputLocation) === safeStringify(dotAssetHubLocation);
+
+    if (isInputDot) {
+        // Input is DOT: Withdraw total amount (input + fees) in DOT
+        console.log('Debug: Withdrawing DOT (Input + Fees)');
+        assetsToWithdraw.push({
+            id: dotAssetHubLocation,
+            fun: XcmV3MultiassetFungibility.Fungible(inputAmountPlanck + totalFees)
+        });
+    } else {
+        // Input is not DOT: Withdraw input amount of input asset AND total fees in DOT
+        console.log('Debug: Withdrawing Non-DOT Input Asset + DOT Fees');
+        assetsToWithdraw.push({
+            id: assetHubInputLocation, // Use Asset Hub relative location
+            fun: XcmV3MultiassetFungibility.Fungible(inputAmountPlanck)
+        });
+        assetsToWithdraw.push({
+            id: dotAssetHubLocation,
+            fun: XcmV3MultiassetFungibility.Fungible(totalFees)
+        });
+    }
+
+    console.log('Debug: Assets to Withdraw:', safeStringify(assetsToWithdraw, true));
+
+    // Assets to deposit on HydraDX (will be filtered from withdrawn assets)
+    const assetsToDepositOnHydra = XcmV4AssetAssetFilter.Definite(assetsToWithdraw.map(a => ({ ...a }))); // Use a copy
 
     return XcmVersionedXcm.V4([
-        // 1. Withdraw asset from Asset Hub (including all fees)
-        XcmV4Instruction.WithdrawAsset([{
-            id: inputAssetLocation,
-            fun: XcmV3MultiassetFungibility.Fungible(withdrawAmount)
-        }]),
-        // 2. Send to HydraDX with instructions
+        // 1. Withdraw asset(s) from Asset Hub (using Asset Hub relative locations)
+        XcmV4Instruction.WithdrawAsset(assetsToWithdraw),
+
+        // 2. Deposit on HydraDX reserve account and execute instructions there
         XcmV4Instruction.DepositReserveAsset({
-            assets: XcmV4AssetAssetFilter.Definite([{
-                id: inputAssetLocation,
-                fun: XcmV3MultiassetFungibility.Fungible(withdrawAmount)
-            }]),
+            assets: assetsToDepositOnHydra,
             dest: {
                 parents: 1,
                 interior: XcmV3Junctions.X1(
@@ -369,29 +381,31 @@ export async function constructHydraDxXcmMessage(
                 )
             },
             xcm: [
-                // 2a. Pay for HydraDX execution
+                // 2a. Pay for HydraDX execution + incoming delivery fees (using HydraDX relative location for DOT)
                 XcmV4Instruction.BuyExecution({
                     fees: {
-                        id: dotAssetId,
+                        id: dotAssetHubLocation, // DOT from HydraDX's perspective
                         fun: XcmV3MultiassetFungibility.Fungible(fees.hydradxExecution + fees.initialDelivery)
                     },
                     weight_limit: XcmV3WeightLimit.Unlimited()
                 }),
-                // 2b. Exchange asset
+
+                // 2b. Exchange asset on HydraDX (using HydraDX relative locations)
                 XcmV4Instruction.ExchangeAsset({
-                    give: XcmV4AssetAssetFilter.Definite([{
-                        id: inputAssetLocation,
+                    give: XcmV4AssetAssetFilter.Definite([{ // Give the input asset amount
+                        id: hydraDxInputLocation, // Use HydraDX relative location
                         fun: XcmV3MultiassetFungibility.Fungible(inputAmountPlanck)
                     }]),
-                    want: [{
-                        id: outputAssetLocation,
+                    want: [{ // Expect the minimum output amount
+                        id: hydraDxOutputLocation, // Use HydraDX relative location
                         fun: XcmV3MultiassetFungibility.Fungible(minOutputAmountPlanck)
                     }],
-                    maximal: true
+                    maximal: true // We provided the exact input amount
                 }),
-                // 2c. Send swapped assets back to Asset Hub
+
+                // 2c. Send *all* resulting assets back to Asset Hub reserve account
                 XcmV4Instruction.InitiateReserveWithdraw({
-                    assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
+                    assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()), // Withdraw whatever the exchange resulted in
                     reserve: {
                         parents: 1,
                         interior: XcmV3Junctions.X1(
@@ -399,14 +413,15 @@ export async function constructHydraDxXcmMessage(
                         )
                     },
                     xcm: [
-                        // Pay for final Asset Hub execution
+                        // 2c.i Pay for final Asset Hub execution + return delivery fees (using Asset Hub relative location for DOT)
                         XcmV4Instruction.BuyExecution({
                             fees: {
-                                id: dotAssetId,
+                                id: dotAssetHubLocation, // DOT from Asset Hub's perspective
                                 fun: XcmV3MultiassetFungibility.Fungible(fees.finalExecution + fees.returnDelivery)
                             },
                             weight_limit: XcmV3WeightLimit.Unlimited()
                         }),
+                        // 2c.ii Deposit the final assets to the beneficiary on Asset Hub
                         XcmV4Instruction.DepositAsset({
                             assets: XcmV4AssetAssetFilter.Wild(XcmV4AssetWildAsset.All()),
                             beneficiary: {
@@ -429,7 +444,7 @@ export async function constructHydraDxXcmMessage(
 // Helper function to extract fee value from API response
 function extractFeeValue(feeResult: any): bigint {
     if (!feeResult || !feeResult.success) {
-        throw new Error(`Fee calculation was not successful: ${serializeKey(feeResult)}`);
+        throw new Error(`Fee calculation was not successful: ${safeStringify(feeResult)}`);
     }
 
     // Handle XCM versioned assets (delivery fees)
@@ -443,6 +458,12 @@ function extractFeeValue(feeResult: any): bigint {
             }
             return sum;
         }, BigInt(0));
+    }
+
+    // Handle direct bigint value from query_weight_to_asset_fee
+    if (feeResult.value?.fun?.type === 'Fungible') {
+        const value = feeResult.value.fun.value.toString();
+        return BigInt(value);
     }
 
     // Handle direct bigint value
@@ -465,8 +486,8 @@ function extractFeeValue(feeResult: any): bigint {
         return BigInt(feeResult.value.toString());
     }
 
-    console.log("Problematic fee result:", serializeKey(feeResult));
-    throw new Error(`Unexpected fee result structure: ${serializeKey(feeResult)}`);
+    console.log("Problematic fee result:", safeStringify(feeResult));
+    throw new Error(`Unexpected fee result structure: ${safeStringify(feeResult)}`);
 }
 
 // Helper function to convert XCM junction
@@ -476,6 +497,7 @@ const convertJunction = (junction: any): XcmV3Junction => {
     }
 
     // Handle both camelCase and PascalCase formats
+    // Prioritize specific keys if present
     if (junction.parachain !== undefined) {
         return XcmV3Junction.Parachain(junction.parachain);
     }
@@ -483,16 +505,26 @@ const convertJunction = (junction: any): XcmV3Junction => {
         return XcmV3Junction.PalletInstance(junction.palletInstance);
     }
     if (junction.generalIndex !== undefined) {
+        // Ensure GeneralIndex is treated as BigInt
         return XcmV3Junction.GeneralIndex(BigInt(junction.generalIndex));
     }
     if (junction.accountId32 !== undefined) {
         return XcmV3Junction.AccountId32({
-            network: junction.accountId32.network,
-            id: Binary.fromBytes(junction.accountId32.id)
+            network: junction.accountId32.network, // Network may be undefined
+            id: typeof junction.accountId32.id === 'string'
+                ? Binary.fromHex(junction.accountId32.id)
+                : Binary.fromBytes(junction.accountId32.id)
         });
     }
 
-    // Handle PascalCase format as fallback
+    // Handle { type: 'Here', value: undefined } or { Here: null }
+    if (junction.type === 'Here' || junction.Here !== undefined) {
+        // There's no specific 'Here' junction type, it's represented by the Junctions enum
+        // This case should be handled by convertJunctions
+        throw new Error(`'Here' junction should be handled by convertJunctions`);
+    }
+
+    // Handle type/value format (often from older representations or serialization)
     if (junction.type) {
         switch (junction.type) {
             case 'Parachain':
@@ -502,43 +534,46 @@ const convertJunction = (junction: any): XcmV3Junction => {
             case 'GeneralIndex':
                 return XcmV3Junction.GeneralIndex(BigInt(junction.value));
             case 'AccountId32':
-                return XcmV3Junction.AccountId32({
-                    network: junction.value.network,
-                    id: Binary.fromBytes(junction.value.id)
-                });
+                const network = junction.value.network; // May be undefined
+                const idBytes = typeof junction.value.id === 'string'
+                    ? Binary.fromHex(junction.value.id)
+                    : Binary.fromBytes(junction.value.id);
+                return XcmV3Junction.AccountId32({ network, id: idBytes });
         }
     }
 
     throw new Error(`Unsupported junction format: ${safeStringify(junction)}`);
 };
 
-// Helper function to convert XCM junctions
+// Helper function to convert XCM junctions (interior)
 const convertJunctions = (interior: any): XcmV3Junctions => {
     if (!interior) {
         throw new Error(`Invalid interior: ${safeStringify(interior)}`);
     }
 
-    // Handle camelCase format (x1, x2, x3, x4)
-    if (interior.here !== undefined) {
+    // Handle specific keys first (camelCase, preferred)
+    if (interior.here !== undefined || interior.Here !== undefined) {
         return XcmV3Junctions.Here();
     }
     if (interior.x1 !== undefined) {
-        return XcmV3Junctions.X1(convertJunction(interior.x1));
+        // Ensure x1 is treated as a single junction object, not an array
+        const junction = Array.isArray(interior.x1) ? interior.x1[0] : interior.x1;
+        return XcmV3Junctions.X1(convertJunction(junction));
     }
-    if (interior.x2 !== undefined) {
+    if (interior.x2 !== undefined && Array.isArray(interior.x2) && interior.x2.length === 2) {
         return XcmV3Junctions.X2([
             convertJunction(interior.x2[0]),
             convertJunction(interior.x2[1])
         ]);
     }
-    if (interior.x3 !== undefined) {
+    if (interior.x3 !== undefined && Array.isArray(interior.x3) && interior.x3.length === 3) {
         return XcmV3Junctions.X3([
             convertJunction(interior.x3[0]),
             convertJunction(interior.x3[1]),
             convertJunction(interior.x3[2])
         ]);
     }
-    if (interior.x4 !== undefined) {
+    if (interior.x4 !== undefined && Array.isArray(interior.x4) && interior.x4.length === 4) {
         return XcmV3Junctions.X4([
             convertJunction(interior.x4[0]),
             convertJunction(interior.x4[1]),
@@ -547,25 +582,36 @@ const convertJunctions = (interior: any): XcmV3Junctions => {
         ]);
     }
 
-    // Handle PascalCase format as fallback
+    // Handle type/value format (PascalCase, fallback)
     if (interior.type) {
         switch (interior.type) {
             case 'Here':
                 return XcmV3Junctions.Here();
             case 'X1':
-                return XcmV3Junctions.X1(convertJunction(interior.value));
+                // Ensure value is treated as a single junction object
+                const junction = Array.isArray(interior.value) ? interior.value[0] : interior.value;
+                return XcmV3Junctions.X1(convertJunction(junction));
             case 'X2':
+                if (!Array.isArray(interior.value) || interior.value.length !== 2) {
+                    throw new Error(`Invalid interior format for X2: ${safeStringify(interior)}`);
+                }
                 return XcmV3Junctions.X2([
                     convertJunction(interior.value[0]),
                     convertJunction(interior.value[1])
                 ]);
             case 'X3':
+                if (!Array.isArray(interior.value) || interior.value.length !== 3) {
+                    throw new Error(`Invalid interior format for X3: ${safeStringify(interior)}`);
+                }
                 return XcmV3Junctions.X3([
                     convertJunction(interior.value[0]),
                     convertJunction(interior.value[1]),
                     convertJunction(interior.value[2])
                 ]);
             case 'X4':
+                if (!Array.isArray(interior.value) || interior.value.length !== 4) {
+                    throw new Error(`Invalid interior format for X4: ${safeStringify(interior)}`);
+                }
                 return XcmV3Junctions.X4([
                     convertJunction(interior.value[0]),
                     convertJunction(interior.value[1]),
@@ -578,25 +624,33 @@ const convertJunctions = (interior: any): XcmV3Junctions => {
     throw new Error(`Invalid interior format: ${safeStringify(interior)}`);
 };
 
+// Fetch HydraDX relative location using data from AssetWithId
 export function fetchHydraXCMLocation(asset: AssetWithId): XcmV4Location | null {
     try {
+        // Check if hydradx specific location data exists
         if (!asset?.hydradx?.location) {
+            console.warn(`Asset ${asset.id} (${asset.metadata.symbol}) has no hydradx location data.`);
             return null;
         }
 
         const location = asset.hydradx.location;
-        console.log('Raw location:', safeStringify(location, true));
+        console.log(`Raw HydraDX location for ${asset.id}:`, safeStringify(location, true));
 
         // Construct the XcmV4Location using the helper functions
+        // Ensure the structure matches XcmV4Location
         const xcmLocation: XcmV4Location = {
             parents: location.parents,
-            interior: convertJunctions(location.interior)
+            interior: convertJunctions(location.interior) // Use the robust converter
         };
 
+        console.log(`Constructed HydraDX XCM Location for ${asset.id}:`, safeStringify(xcmLocation, true));
         return xcmLocation;
 
     } catch (error) {
-        console.error('Error constructing XCM location:', error);
-        throw new Error(`Failed to construct XCM location: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error(`Error constructing HydraDX XCM location for asset ${asset.id}:`, error);
+        // Return null or throw, depending on desired error handling
+        // Returning null allows the caller (useAssetConversionSwap) to handle it gracefully
+        return null;
+        // throw new Error(`Failed to construct HydraDX XCM location for ${asset.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 }
