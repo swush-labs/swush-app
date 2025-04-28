@@ -23,6 +23,7 @@ import {
 } from "@polkadot-labs/hdkd-helpers"
 import { constructHydraDxXcmMessage, fetchHydraXCMLocation } from './utils/xcmUtils';
 import { SimulationResult } from '../ui/SwapConfirmSheet';
+import { monitorXcmFlow } from './utils/xcmMonitor';
 
 interface UseAssetConversionSwapProps {
   inputToken: TokenInfo | null;
@@ -434,24 +435,36 @@ export function useAssetConversionSwap({
               break;
 
             case 'finalized':
-              toast.dismiss('swap-status');
               console.log('Swap transaction status:', status);
 
               if (status.success) {
                 const blockNum = status.blockNumber ? ` in block ${status.blockNumber}` : '';
-                setSwapStatus(`Swap complete${blockNum}!`);
-                toast.success('Swap completed successfully! 🎉', {
-                  id: 'swap-status',
-                  duration: 5000,
-                  icon: '✅'
-                });
+                
+                // For regular swaps, show completion immediately
+                if (!routeState.data?.dex || routeState.data.dex !== 'hydra_dx') {
+                  toast.dismiss('swap-status');
+                  setSwapStatus(`Swap complete${blockNum}!`);
+                  toast.success('Swap completed successfully! 🎉', {
+                    id: 'swap-success',
+                    duration: 5000,
+                    icon: '✅'
+                  });
+                } else {
+                  // For XCM swaps, update status but keep loading state
+                  setSwapStatus('Transaction finalized, monitoring XCM transfer...');
+                  toast.loading('Transaction finalized, monitoring XCM transfer...', { id: 'swap-status' });
+                }
               }
               break;
           }
         },
         onSuccess: (status: TransactionStatus) => {
-          setIsSwapping(false);
-          if (onSuccess) onSuccess();
+          // For regular swaps, complete immediately
+          if (!routeState.data?.dex || routeState.data.dex !== 'hydra_dx') {
+            setIsSwapping(false);
+            if (onSuccess) onSuccess();
+          }
+          // For XCM swaps, we'll call onSuccess after XCM monitoring completes
         },
         onError: handleError
       };
@@ -462,6 +475,43 @@ export function useAssetConversionSwap({
         polkadotSigner,
         callbacks
       );
+
+      // Add XCM monitoring for HydraDX swaps
+      if (routeState.data?.dex === 'hydra_dx') {
+        try {
+          setSwapStatus('Monitoring XCM transaction...');
+          const xcmSuccess = await monitorXcmFlow(
+            assetHubApi,
+            walletAddress
+          );
+
+          if (!xcmSuccess) {
+            throw new Error('XCM transaction monitoring failed or timed out');
+          }
+
+          // XCM completed successfully, now show final success message
+          toast.dismiss('swap-status');
+          setSwapStatus('XCM transfer complete!');
+          toast.success('Swap and XCM transfer completed successfully! 🎉', {
+            id: 'swap-success',
+            duration: 5000,
+            icon: '✅'
+          });
+          
+          // Now we can call onSuccess and complete the swap
+          setIsSwapping(false);
+          if (onSuccess) onSuccess();
+
+        } catch (error) {
+          console.error('XCM monitoring error:', error);
+          // Create a more user-friendly error message
+          const errorMessage = error instanceof Error ? 
+            error.message : 
+            'Failed to monitor XCM transaction';
+          
+          handleError(new Error(`XCM monitoring failed: ${errorMessage}`));
+        }
+      }
 
     } catch (error) {
       console.error('Error:', error);
