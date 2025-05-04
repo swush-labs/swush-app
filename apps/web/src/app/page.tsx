@@ -154,27 +154,7 @@ export default function SwapPage() {
     outputAmount,
     routeState,
     onSuccess: () => {
-      /* 
-      // Store swap details before resetting
-      const swapDetails = {
-        inputAmount,
-        inputSymbol: inputToken?.symbol,
-        outputAmount,
-        outputSymbol: outputToken?.symbol
-        };
-
-      // Show success message with swap details
-            toast.success(
-              `Swap completed!\n${swapDetails.inputAmount} ${swapDetails.inputSymbol} → ${swapDetails.outputAmount} ${swapDetails.outputSymbol}`,
-              {
-                duration: 5000,
-                icon: '✅',
-                style: {
-                  borderLeft: '4px solid #22c55e',
-                },
-              }
-            ); */
-
+  
       // Reset all swap-related states
       setInputAmount('0');
       resetRoute(); // This will reset the output amount and route state

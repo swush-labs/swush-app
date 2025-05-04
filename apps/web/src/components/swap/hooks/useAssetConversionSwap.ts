@@ -15,12 +15,8 @@ import { TransactionErrorService, SwushError } from '@/services/TransactionError
 import { TypedApi } from 'polkadot-api';
 import {
   polkadot_asset_hub,
-  hydration,
   PolkadotRuntimeOriginCaller
 } from '@polkadot-api/descriptors';
-import {
-  ss58Encode
-} from "@polkadot-labs/hdkd-helpers"
 import { constructHydraDxXcmMessage, fetchHydraXCMLocation } from './utils/xcmUtils';
 import { SimulationResult } from '../ui/SwapConfirmSheet';
 import { monitorXcmFlow } from './utils/xcmMonitor';
