@@ -510,8 +510,8 @@ export function useAssetConversionSwap({
                   clearBalanceCache(swapHash || undefined);
                 } else {
                   // For XCM swaps, update status but keep loading state
-                  setSwapStatus('Transaction finalized, monitoring XCM transfer...');
-                  toast.loading('Transaction finalized, monitoring XCM transfer...', { id: 'swap-status' });
+                  setSwapStatus('Transaction initialized, monitoring XCM transfer...');
+                  toast.loading('Transaction initialized, monitoring XCM transfer...', { id: 'swap-status' });
                 }
               } else {
                 // Update swap history status to failed
