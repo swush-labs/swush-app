@@ -10,7 +10,6 @@ export class BalanceService {
     private static instance: BalanceService;
     private connectionManager: FrontendConnectionManager;
     private assetsCache: Map<string, Asset> = new Map();
-    private lastTxHash: string | null = null;
 
     private constructor() {
         this.connectionManager = FrontendConnectionManager.getInstance();
@@ -24,18 +23,11 @@ export class BalanceService {
     }
 
     /**
-     * Clear the asset and balance caches
-     * Call this method after transactions that modify balances
+     * Clear the asset cache
+     * This is now just for API compatibility - no actual caching of balance values
      */
     public clearCache(txHash?: string): void {
-        console.log(`Clearing balance cache${txHash ? ` after tx: ${txHash}` : ''}`);
-        // Store the transaction hash for debugging
-        if (txHash) {
-            this.lastTxHash = txHash;
-        }
-        
-        // Clear the assets cache to force a fresh fetch
-        this.assetsCache.clear();
+        // We won't cache balances anymore, but keep the method for compatibility
     }
 
     private async getApiForAsset(asset: Asset): Promise<TypedApi<typeof polkadot_asset_hub>> {
@@ -46,9 +38,8 @@ export class BalanceService {
 
     public async getBalance({ address, assetId }: BalanceRequest): Promise<BalanceResponse> {
         const assetKey = assetId.toString();
-        console.log(`Fetching balance for ${address} / ${assetKey}`);
         
-        // Get from cache first
+        // Get asset info from cache first
         let asset = this.assetsCache.get(assetKey);
         
         // If not in cache, fetch it
@@ -68,7 +59,7 @@ export class BalanceService {
         try {
             const rawBalance = await this.fetchBalanceByType(asset, address, assetId);
             const formattedBalance = this.formatBalanceResponse(rawBalance, asset);
-            console.log(`Balance for ${address} / ${assetKey} (${asset.metadata.symbol}): ${formattedBalance.balance}`);
+            
             return formattedBalance;
         } catch (error) {
             console.error(`Error fetching balance for ${address} / ${assetId}:`, error);

@@ -277,6 +277,9 @@ export function useAssetConversionSwap({
             keep_alive: true,
             send_to: walletAddress
           });
+
+          //print the transaction decodedCall
+          console.log('Asset Hub transaction:', transaction.decodedCall);
         } catch (e: unknown) {
           console.error('Error constructing Asset Hub transaction:', e);
           throw new Error(`Failed to construct Asset Hub transaction: ${e instanceof Error ? e.message : 'Unknown error'}`);

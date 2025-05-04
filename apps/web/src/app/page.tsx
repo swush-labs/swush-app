@@ -137,8 +137,7 @@ export default function SwapPage() {
 
   // Handle balance updates after swap
   const handleBalanceUpdateNeeded = useCallback((txHash?: string) => {
-    console.log(`Handling balance update request for tx: ${txHash || 'unknown'}`);
-    // Use the enhanced polling-based refresh rather than the simple timeout
+    // Use the simplified refresh approach
     refreshBalances(true, txHash);
   }, [refreshBalances]);
 
