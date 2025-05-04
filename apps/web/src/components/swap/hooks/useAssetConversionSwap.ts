@@ -127,7 +127,7 @@ export function useAssetConversionSwap({
     try {
       const balanceService = BalanceService.getInstance();
       balanceService.clearCache(txHash);
-      
+
       // Notify parent component to refresh balances with polling
       if (onBalanceUpdateNeeded) {
         onBalanceUpdateNeeded(txHash);
@@ -253,7 +253,6 @@ export function useAssetConversionSwap({
                 throw new Error(`Missing XCM location for asset in path: ${assetId}`);
               }
               const parsedLocation = parseXcmLocation(asset.rawXcmLocation);
-              console.log(`Parsed XCM location for ${assetId}:`, parsedLocation);
               path.push(parsedLocation);
             }
           } else {
@@ -293,13 +292,13 @@ export function useAssetConversionSwap({
           if (!hydraDxConnection || !hydraDxConnection.api) {
             throw new Error('HydraDX RPC connection is not active.');
           }
-          
+
           // Get the public key as Binary
           const alicePublicKey = polkadotSigner.publicKey;
 
           // Calculate all fees
           setSwapStatus('Calculating XCM fees...');
-          const inputAssetHubLocation =  parseXcmLocation(inputAsset.rawXcmLocation);
+          const inputAssetHubLocation = parseXcmLocation(inputAsset.rawXcmLocation);
           const outputAssetHubLocation = parseXcmLocation(outputAsset.rawXcmLocation);
           const inputHydraDxLocation = fetchHydraXCMLocation(inputAsset);
           const outputHydraDxLocation = fetchHydraXCMLocation(outputAsset);
@@ -309,11 +308,11 @@ export function useAssetConversionSwap({
             throw new Error(`Missing required Asset Hub XCM location for ${!inputAssetHubLocation ? inputAsset.id : outputAsset.id}`);
           }
           if (!inputHydraDxLocation) {
-             throw new Error(`Could not determine HydraDX-relative XCM location for input asset ${inputAsset.id}`);
+            throw new Error(`Could not determine HydraDX-relative XCM location for input asset ${inputAsset.id}`);
           }
-           if (!outputHydraDxLocation) {
-             throw new Error(`Could not determine HydraDX-relative XCM location for output asset ${outputAsset.id}`);
-           }
+          if (!outputHydraDxLocation) {
+            throw new Error(`Could not determine HydraDX-relative XCM location for output asset ${outputAsset.id}`);
+          }
           // //check if output asset is DOT
           // if (outputAsset.id != 'DOT') {
           //   outputAssetLocation = fetchHydraXCMLocation(outputAsset)
@@ -383,13 +382,23 @@ export function useAssetConversionSwap({
           {}
         );
 
-        // Extract relevant information from dry run result
+        let dryRunResult: boolean = false;
+        //handle the dry run result
+        if (dryRun.success) {
+          // Extract relevant information from dry run result
+          const executionResult = dryRun.value.execution_result;
+          if (executionResult.success) {
+            // then mark the simulation as successful
+            dryRunResult = true;
+          }
+        }
+
         // The actual structure may vary, so we're being careful with optional chaining
         const simulationResult: SimulationResult = {
-          success: dryRun.success,
+          success: dryRunResult,
           estimatedFee: '0.000001', // Estimated fee - hardcoded for now
-          willSucceed: dryRun.success, // Assume success if dry run worked
-          error: dryRun.success ? undefined : 'Transaction simulation failed'
+          willSucceed: dryRunResult, // Assume success if dry run worked
+          error: dryRunResult ? undefined : 'Transaction simulation failed'
         };
 
         // If the simulation result handler is present, call it and wait for user confirmation
@@ -407,7 +416,7 @@ export function useAssetConversionSwap({
         console.error('Dry run failed:', e);
         // Still proceed, but with a warning
         const errorMessage = e instanceof Error ? e.message : 'Unknown error during simulation';
-        
+
         // Create a failed simulation result
         const simulationResult: SimulationResult = {
           success: false,
@@ -459,7 +468,7 @@ export function useAssetConversionSwap({
                 setSwapHash(status.txHash);
                 setSwapStatus('Transaction signed, waiting for broadcast...');
                 toast.loading('Transaction signed, waiting for broadcast...', { id: 'swap-status' });
-                
+
                 // Clear balance cache when we have a transaction hash
                 clearBalanceCache(status.txHash);
               }
@@ -483,7 +492,7 @@ export function useAssetConversionSwap({
 
               if (status.success) {
                 const blockNum = status.blockNumber ? ` in block ${status.blockNumber}` : '';
-                
+
                 // Update swap history status
                 await SwapHistoryService.updateSwapStatus(swapRecord.id, 'success');
 
@@ -499,7 +508,7 @@ export function useAssetConversionSwap({
                     duration: 5000,
                     icon: '✅'
                   });
-                  
+
                   // Trigger another balance update here to ensure we get the latest values
                   // This is specifically for regular (non-XCM) swaps
                   clearBalanceCache(swapHash || undefined);
@@ -558,10 +567,10 @@ export function useAssetConversionSwap({
             duration: 5000,
             icon: '✅'
           });
-          
+
           // Trigger a final balance cache clear and refresh after XCM completes
           clearBalanceCache(swapHash || undefined);
-          
+
           // Now we can call onSuccess and complete the swap
           setIsSwapping(false);
           if (onSuccess) onSuccess();
@@ -569,10 +578,10 @@ export function useAssetConversionSwap({
         } catch (error) {
           console.error('XCM monitoring error:', error);
           // Create a more user-friendly error message
-          const errorMessage = error instanceof Error ? 
-            error.message : 
+          const errorMessage = error instanceof Error ?
+            error.message :
             'Failed to monitor XCM transaction';
-          
+
           // Update swap history status to failed
           await SwapHistoryService.updateSwapStatus(swapRecord.id, 'failed');
           handleError(new Error(`XCM monitoring failed: ${errorMessage}`));
