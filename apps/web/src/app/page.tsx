@@ -1,48 +1,23 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { History } from 'lucide-react'
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Toaster, toast } from 'react-hot-toast'
-import type { TokenInfo } from '@/components/swap/types'
-import type { SwapHistory } from '@/services/swapHistoryService'
-import {
-  ArrowSymbolDown,
-  WalletMenu,
-  SwapProgress,
-  SwapHeader,
-  SwapField,
-  SwapDetails,
-  SubmitButtonAction,
-  WalletButton,
-  calculateMinimumReceived,
-  SwapConfirmSheet
-} from '@/components/swap'
-import { SimulationResult } from '@/components/swap/ui/SwapConfirmSheet'
+import { Toaster } from 'react-hot-toast'
+import { SwapHeader } from '@/components/swap'
+import { HeaderActions } from '@/components/swap/ui/SwapHeader'
+import { SwapProgress, SwapConfirmSheet } from '@/components/swap'
 import { useSwapTokens } from '@/components/swap/hooks/useSwapTokens'
 import { useTokenBalances } from '@/components/swap/hooks/useTokenBalances'
 import { useSwapRoute } from '@/components/swap/hooks/useSwapRoute'
 import { useSwapSteps } from '@/components/swap/hooks/useSwapSteps'
 import { useAssetConversionSwap } from '@/components/swap/hooks/useAssetConversionSwap'
+import { useSwapConfirmation } from '@/components/swap/hooks/useSwapConfirmation'
+import { useSwapExecution } from '@/components/swap/hooks/useSwapExecution'
+import { useSwapHistory } from '@/components/swap/hooks/useSwapHistory'
 import { LoadState } from '@/components/swap/ui/LoadState'
-import { BALANCE_REFRESH_TIMEOUT } from '@/lib/const'
-import { SwapHistoryItem } from '@/components/ui/SwapHistoryItem'
-import { SwapHistoryService } from '@/services/swapHistoryService'
-import { Spinner } from '@/components/ui/spinner'
-
-// Define the global window type with our custom property
-declare global {
-  interface Window {
-    swapConfirmResolve?: (value: boolean) => void;
-  }
-}
+import { SwapForm } from '@/components/swap/ui/SwapForm'
+import { SwapHistoryDialog } from '@/components/swap/ui/SwapHistoryDialog'
 
 export default function SwapPage() {
-  // Wallet state
-  const [isConnected, setIsConnected] = useState(false)
-  const [walletAddress, setWalletAddress] = useState('')
-
   // UI state
   const [inputAmount, setInputAmount] = useState('0')
   const [slippageTolerance, setSlippageTolerance] = useState(10)
@@ -51,13 +26,15 @@ export default function SwapPage() {
   const [showHistory, setShowHistory] = useState(false)
   const [openInputDialog, setOpenInputDialog] = useState(false)
   const [openOutputDialog, setOpenOutputDialog] = useState(false)
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
-  // Add a separate state for the confirmation UI
-  const [isConfirmingSwap, setIsConfirmingSwap] = useState(false);
 
-  // Custom hooks
+  // Initialize wallet state first to avoid circular dependencies
+  const [isConnected, setIsConnected] = useState(false)
+  const [walletAddress, setWalletAddress] = useState('')
+
+  // Custom hooks - Token and Balance handling
   const { inputToken, setInputToken, outputToken, setOutputToken, tokens } = useSwapTokens()
+  
+  // Token balances
   const { 
     inputBalance, 
     outputBalance, 
@@ -70,6 +47,15 @@ export default function SwapPage() {
     inputToken,
     outputToken
   })
+  
+  // Handle wallet disconnect
+  const handleDisconnect = useCallback(() => {
+    setIsConnected(false);
+    setWalletAddress('');
+    resetBalances();
+  }, [resetBalances]);
+  
+  // Swap route
   const {
     outputAmount,
     routeDex,
@@ -80,6 +66,8 @@ export default function SwapPage() {
     inputToken,
     outputToken
   })
+  
+  // Swap steps
   const {
     swapSteps,
     isSwapping,
@@ -93,47 +81,18 @@ export default function SwapPage() {
     outputToken: outputToken?.symbol || 'TOKEN'
   })
 
-  // Handle simulation results and confirmation
-  const handleSimulationComplete = useCallback(async (result: SimulationResult) => {
-    setSimulationResult(result);
-    setShowConfirmation(true);
-    setIsConfirmingSwap(false); // Reset confirmation UI state
-    
-    // If simulation failed, we should prepare for user to potentially cancel
-    if (!result.success) {
-      console.warn('Simulation failed:', result.error);
-    }
-    
-    // Return a promise that resolves when user confirms or cancels
-    return new Promise<boolean>((resolve) => {
-      window.swapConfirmResolve = (value) => {
-        // If the user cancels, make sure we reset the swapping state
-        if (!value) {
-          setIsSwapping(false);
-        }
-        resolve(value);
-      };
-    });
-  }, []);
-  
-  const handleConfirmSwap = useCallback(() => {
-    setIsConfirmingSwap(true); // Set confirming state before closing sheet
-    setShowConfirmation(false);
-    if (window.swapConfirmResolve) {
-      window.swapConfirmResolve(true);
-      window.swapConfirmResolve = undefined;
-    }
-  }, []);
-  
-  const handleCancelSwap = useCallback(() => {
-    setShowConfirmation(false);
-    setIsConfirmingSwap(false); // Reset confirmation UI state on cancel
-    setIsSwapping(false); // Reset the main swap button state when canceling
-    if (window.swapConfirmResolve) {
-      window.swapConfirmResolve(false);
-      window.swapConfirmResolve = undefined;
-    }
-  }, []);
+  // Swap confirmation
+  const {
+    showConfirmation,
+    simulationResult,
+    isConfirmingSwap,
+    handleSimulationComplete,
+    handleConfirmSwap,
+    handleCancelSwap,
+    resetConfirmationState
+  } = useSwapConfirmation({
+    setIsSwapping
+  });
 
   // Handle balance updates after swap
   const handleBalanceUpdateNeeded = useCallback((txHash?: string) => {
@@ -154,7 +113,6 @@ export default function SwapPage() {
     outputAmount,
     routeState,
     onSuccess: () => {
-  
       // Reset all swap-related states
       setInputAmount('0');
       resetRoute(); // This will reset the output amount and route state
@@ -165,62 +123,40 @@ export default function SwapPage() {
       }, 1500);
       
       // Reset confirmation UI state
-      setIsConfirmingSwap(false);
+      resetConfirmationState();
     },
     onError: (error) => {
       // Reset all swap-related states
       setInputAmount('0');
       resetRoute();
       setIsSwapping(false);
-      setIsConfirmingSwap(false); // Reset confirmation UI state on error
+      resetConfirmationState();
       closeSwapProgress();
     },
     onSimulationComplete: handleSimulationComplete,
     onBalanceUpdateNeeded: handleBalanceUpdateNeeded
   });
 
-  // Updated handleSwap function that uses executeAssetConversionSwap
-  const handleSwapExecution = useCallback(async (isUserConnected: boolean) => {
-    if (!isUserConnected) {
-      toast.error('Please connect your wallet first');
-      return;
-    }
+  // Swap execution handling
+  const { handleSwapExecution } = useSwapExecution({
+    inputToken,
+    outputToken,
+    inputAmount,
+    insufficientBalance,
+    executeAssetConversionSwap,
+    handleSwap,
+    setIsSwapping,
+    setIsConfirmingSwap: resetConfirmationState,
+    closeSwapProgress
+  });
 
-    if (!inputToken || !outputToken) {
-      toast.error('Please select tokens for swap');
-      return;
+  // Handle wallet disconnect with confirmation state cleanup
+  const handleWalletDisconnect = useCallback(() => {
+    handleDisconnect();
+    if (showConfirmation) {
+      resetConfirmationState();
     }
-
-    if (!inputAmount || parseFloat(inputAmount) <= 0) {
-      toast.error('Please enter a valid amount to swap');
-      return;
-    }
-
-    if (insufficientBalance) {
-      toast.error('Insufficient balance');
-      return;
-    }
-
-    try {
-      // Show the swap progress modal
-      handleSwap(isUserConnected);
-
-      // Execute the actual swap
-      await executeAssetConversionSwap();
-    } catch (error) {
-      console.error('Error during swap execution:', error);
-      // Only show toast if not already shown with same ID
-      if (!document.getElementById('swap-error')) {
-        toast.error(`Swap failed: ${error instanceof Error ? error.message : 'Unknown error'}`, { id: 'swap-error' });
-      }
-      setIsSwapping(false);
-      setIsConfirmingSwap(false); // Reset confirmation UI state on error
-      closeSwapProgress();
-    }
-  }, [
-    inputToken, outputToken, inputAmount, insufficientBalance,
-    handleSwap, executeAssetConversionSwap, setIsSwapping, closeSwapProgress
-  ]);
+  }, [handleDisconnect, showConfirmation, resetConfirmationState]);
 
   // Effect to reset states when tokens change
   useEffect(() => {
@@ -231,7 +167,7 @@ export default function SwapPage() {
     if (inputToken && outputToken && parseFloat(inputAmount) > 0) {
       debouncedFetchRoute(inputAmount);
     }
-  }, [inputToken, outputToken, inputAmount, debouncedFetchRoute]); // Added missing dependencies
+  }, [inputToken, outputToken, inputAmount, debouncedFetchRoute]);
 
   // Event handlers
   const handleInputChange = useCallback((value: string) => {
@@ -246,27 +182,6 @@ export default function SwapPage() {
     }
   }, [debouncedFetchRoute, inputBalance]);
 
-  const handleDisconnect = useCallback(() => {
-    setIsConnected(false);
-    setWalletAddress('');
-    resetBalances();
-    setIsSwapping(false); // Reset swap button state when disconnecting wallet
-    setIsConfirmingSwap(false); // Reset confirmation state
-    if (showConfirmation) {
-      setShowConfirmation(false); // Close confirmation sheet if open
-      if (window.swapConfirmResolve) {
-        window.swapConfirmResolve(false);
-        window.swapConfirmResolve = undefined;
-      }
-    }
-    toast.success('Wallet disconnected', {
-      icon: '👋',
-      style: {
-        borderLeft: '4px solid #64748b',
-      },
-    });
-  }, [resetBalances, showConfirmation]);
-
   const percentageOptions = useMemo(() => [
     { label: '25%', value: 0.25 },
     { label: '50%', value: 0.50 },
@@ -274,30 +189,11 @@ export default function SwapPage() {
     { label: 'MAX', value: 1 },
   ], []);
 
-  // Add this inside your component, before the return statement
-  const [swapHistory, setSwapHistory] = useState<SwapHistory[]>([]);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-
-  useEffect(() => {
-    const fetchSwapHistory = async () => {
-      if (!walletAddress) return;
-      
-      setIsLoadingHistory(true);
-      try {
-        const history = await SwapHistoryService.getSwapHistoryByWalletAddress(walletAddress);
-        setSwapHistory(history);
-      } catch (error) {
-        console.error('Failed to fetch swap history:', error);
-        toast.error('Failed to load swap history');
-      } finally {
-        setIsLoadingHistory(false);
-      }
-    };
-
-    if (showHistory && walletAddress) {
-      fetchSwapHistory();
-    }
-  }, [showHistory, walletAddress]);
+  // Swap history hook
+  const { swapHistory, isLoadingHistory } = useSwapHistory({
+    walletAddress,
+    showHistory
+  });
 
   if (!inputToken || !outputToken) {
     return <LoadState />
@@ -306,37 +202,16 @@ export default function SwapPage() {
   return (
     <>
       {/* Header Actions */}
-      <div className="fixed top-4 right-4 hidden sm:flex items-center gap-4 z-50">
-        <Button
-          onClick={() => setShowHistory(true)}
-          variant="outline"
-          size="icon"
-          className="bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-slate-300 transition-all duration-200"
-        >
-          <History className="w-4 h-4" />
-        </Button>
-        {!isConnected ? (
-          <WalletButton
-            isConnected={isConnected}
-            setIsConnected={setIsConnected}
-            setWalletAddress={setWalletAddress}
-            variant="outline"
-            className="flex items-center gap-2 bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-slate-300 transition-all duration-200"
-            onWalletModalClose={() => {
-              // Reset swapping state if wallet modal is closed without connecting
-              if (isSwapping) {
-                setIsSwapping(false);
-              }
-            }}
-          />
-        ) : (
-          <WalletMenu
-            address={walletAddress}
-            onDisconnect={handleDisconnect}
-            className="bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-slate-300 transition-all duration-200"
-          />
-        )}
-      </div>
+      <HeaderActions
+        isConnected={isConnected}
+        setIsConnected={setIsConnected}
+        setWalletAddress={setWalletAddress}
+        walletAddress={walletAddress}
+        onDisconnect={handleWalletDisconnect}
+        onHistoryClick={() => setShowHistory(true)}
+        isSwapping={isSwapping}
+        setIsSwapping={setIsSwapping}
+      />
 
       {/* Main Content */}
       <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-cyan-900 to-slate-900 flex flex-col items-center justify-start pt-8">
@@ -346,79 +221,43 @@ export default function SwapPage() {
             setSlippageTolerance={setSlippageTolerance}
           />
 
-          <div className="space-y-6">
-            <SwapField
-              type="input"
-              token={inputToken}
-              amount={inputAmount}
-              balance={inputBalance}
-              onTokenSelect={(token: TokenInfo) => setInputToken(token)}
-              onAmountChange={handleInputChange}
-              openDialog={openInputDialog}
-              setOpenDialog={setOpenInputDialog}
-              availableTokens={tokens}
-              percentageOptions={percentageOptions}
-              onPercentageSelect={(value) => handleInputChange((parseFloat(inputBalance) * value).toString())}
-              isLoading={isConnected && isBalanceLoading}
-            />
-
-            <ArrowSymbolDown />
-
-            <SwapField
-              type="output"
-              token={outputToken}
-              amount={outputAmount}
-              balance={outputBalance}
-              onTokenSelect={(token: TokenInfo) => setOutputToken(token)}
-              openDialog={openOutputDialog}
-              setOpenDialog={setOpenOutputDialog}
-              availableTokens={tokens}
-              isLoading={routeState.isLoading || (isConnected && isBalanceLoading)}
-              error={routeState.error}
-            />
-          </div>
-
-          <SwapDetails
-            minimumReceived={calculateMinimumReceived(outputAmount)}
-            outputToken={outputToken}
+          <SwapForm
             inputToken={inputToken}
-            maxTransactionFee="0.004005"
-            route={routeDex}
-          />
-
-          <SubmitButtonAction
+            outputToken={outputToken}
+            inputAmount={inputAmount}
+            outputAmount={outputAmount}
+            inputBalance={inputBalance}
+            outputBalance={outputBalance}
+            routeDex={routeDex}
+            routeState={routeState}
+            insufficientBalance={insufficientBalance}
             isConnected={isConnected}
+            isBalanceLoading={isBalanceLoading}
+            onInputTokenSelect={setInputToken}
+            onOutputTokenSelect={setOutputToken}
+            handleInputChange={handleInputChange}
+            handlePercentageSelect={(value) => handleInputChange((parseFloat(inputBalance) * value).toString())}
+            handleSwapExecution={handleSwapExecution}
+            openInputDialog={openInputDialog}
+            setOpenInputDialog={setOpenInputDialog}
+            openOutputDialog={openOutputDialog}
+            setOpenOutputDialog={setOpenOutputDialog}
+            isSwapping={isSwapping}
             setIsConnected={setIsConnected}
             setWalletAddress={setWalletAddress}
-            onSwap={() => handleSwapExecution(isConnected)}
-            isSwapping={isSwapping}
-            insufficientBalance={insufficientBalance}
-            disabled={!inputAmount || parseFloat(inputAmount) <= 0 || insufficientBalance}
+            tokens={tokens}
+            percentageOptions={percentageOptions}
           />
         </div>
       </div>
 
       {/* History Dialog */}
-      <Dialog open={showHistory} onOpenChange={setShowHistory}>
-        <DialogContent className="bg-slate-900 border-slate-800 sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-white">Swap History</DialogTitle>
-          </DialogHeader>
-          <div className="mt-4 space-y-4 max-h-96 overflow-y-auto">
-            {isLoadingHistory ? (
-              <div className="flex justify-center">
-                <Spinner className="w-6 h-6" />
-              </div>
-            ) : swapHistory.length > 0 ? (
-              swapHistory.map((swap) => (
-                <SwapHistoryItem key={swap.id} swap={swap} />
-              ))
-            ) : (
-              <p className="text-slate-400 text-center">No swap history yet.</p>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SwapHistoryDialog
+        showHistory={showHistory}
+        setShowHistory={setShowHistory}
+        swapHistory={swapHistory}
+        isLoadingHistory={isLoadingHistory}
+      />
 
       {/* Toast Container */}
       <Toaster
@@ -446,7 +285,7 @@ export default function SwapPage() {
           isSwapping={isSwapping}
           setIsSwapping={setIsSwapping}
         />
-      )} */}
+      )}
 
       {/* Swap Confirmation Bottom Sheet */}
       <SwapConfirmSheet
