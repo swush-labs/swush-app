@@ -22,9 +22,11 @@ export function useTokenBalances({
 
   // Function to fetch balances directly from the API
   const fetchBalances = useCallback(async () => {
+    // Early return and reset if not connected or no wallet address
     if (!isConnected || !walletAddress) {
       setInputBalance('0');
       setOutputBalance('0');
+      setIsBalanceLoading(false);
       return;
     }
 
@@ -42,21 +44,24 @@ export function useTokenBalances({
       // Fetch balances in batch
       const response = await api.balances.batch({ requests });
 
-      // Process results and update states
-      response.forEach(result => {
-        if (result.status === 'success' && result.data) {
-          const { assetId } = result.request;
-          const balance = result.data.balance.toString();
-          
-          // Update the appropriate token balance
-          if (inputToken && assetId === inputToken.id) {
-            setInputBalance(balance);
+      // Only update balances if still connected
+      if (isConnected && walletAddress) {
+        // Process results and update states
+        response.forEach(result => {
+          if (result.status === 'success' && result.data) {
+            const { assetId } = result.request;
+            const balance = result.data.balance.toString();
+            
+            // Update the appropriate token balance
+            if (inputToken && assetId === inputToken.id) {
+              setInputBalance(balance);
+            }
+            if (outputToken && assetId === outputToken.id) {
+              setOutputBalance(balance);
+            }
           }
-          if (outputToken && assetId === outputToken.id) {
-            setOutputBalance(balance);
-          }
-        }
-      });
+        });
+      }
     } catch (error) {
       console.error('Failed to fetch token balances:', error);
     } finally {
@@ -66,6 +71,11 @@ export function useTokenBalances({
 
   // Refresh balances with optional delay after swap
   const refreshBalances = useCallback(async (afterSwap = false, txHash?: string) => {
+    // Don't refresh if not connected
+    if (!isConnected || !walletAddress) {
+      return;
+    }
+
     // For post-swap, add a delay to allow blockchain to update
     if (afterSwap) {
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -73,35 +83,43 @@ export function useTokenBalances({
     
     // Always fetch fresh balances
     await fetchBalances();
-  }, [fetchBalances]);
+  }, [fetchBalances, isConnected, walletAddress]);
 
   // Reset the balance states
   const resetBalances = useCallback((afterSwap = false, txHash?: string) => {
-    if (afterSwap) {
+    if (afterSwap && isConnected) {
+      // Only refresh after swap if still connected
       refreshBalances(true, txHash);
     } else {
+      // Just reset the balances to 0 without refreshing
       setInputBalance('0');
       setOutputBalance('0');
-      refreshBalances();
     }
-  }, [refreshBalances]);
+  }, [refreshBalances, isConnected]);
 
   // Effect to fetch balances when wallet or tokens change
   useEffect(() => {
     let isMounted = true;
     
-    // Only fetch if the component is still mounted
+    // Only fetch if the component is mounted and connected
     const fetchIfMounted = async () => {
-      if (isMounted) {
+      if (isMounted && isConnected && walletAddress) {
         await fetchBalances();
       }
     };
     
-    fetchIfMounted();
+    // Only fetch if connected
+    if (isConnected && walletAddress) {
+      fetchIfMounted();
+    } else {
+      // Reset balances to 0 when disconnected
+      setInputBalance('0');
+      setOutputBalance('0');
+    }
     
     // Set up regular refresh interval if connected
     let intervalId: NodeJS.Timeout | null = null;
-    if (isConnected) {
+    if (isConnected && walletAddress) {
       intervalId = setInterval(fetchIfMounted, BALANCE_REFRESH_TIMEOUT);
     }
     

@@ -153,10 +153,15 @@ export default function SwapPage() {
   // Handle wallet disconnect with confirmation state cleanup
   const handleWalletDisconnect = useCallback(() => {
     handleDisconnect();
+    resetBalances();
     if (showConfirmation) {
       resetConfirmationState();
     }
-  }, [handleDisconnect, showConfirmation, resetConfirmationState]);
+    // Reset route state
+    resetRoute();
+    // Reset input amount
+    setInputAmount('0');
+  }, [handleDisconnect, showConfirmation, resetConfirmationState, resetBalances, resetRoute]);
 
   // Effect to reset states when tokens change
   useEffect(() => {
