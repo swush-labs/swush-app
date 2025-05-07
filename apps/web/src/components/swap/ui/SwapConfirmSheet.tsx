@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { AlertCircle, ArrowDown, CheckCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBalance } from "../utils";
+import { FeeBreakdown } from "../hooks/types";
 
 export interface SimulationResult {
   success: boolean;
   estimatedFee: string;
+  feeBreakdown?: FeeBreakdown;
   willSucceed: boolean;
   error?: string;
 }

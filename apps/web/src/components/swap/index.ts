@@ -12,7 +12,6 @@ export { SwapField } from './ui/SwapField'
 export { SwapDetails } from './ui/SwapDetails'
 export { SubmitButtonAction } from './ui/SwapAction'
 export { SwapConfirmSheet } from './ui/SwapConfirmSheet'
-export { SwapForm } from './ui/SwapForm'
 export { SwapHistoryDialog } from './ui/SwapHistoryDialog'
 
 // Hooks

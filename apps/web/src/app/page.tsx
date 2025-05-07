@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Toaster } from 'react-hot-toast'
-import { SwapHeader } from '@/components/swap'
+import { SubmitButtonAction, SwapHeader, SwapField, SwapDetails } from '@/components/swap'
 import { HeaderActions } from '@/components/swap/ui/SwapHeader'
 import { SwapProgress, SwapConfirmSheet } from '@/components/swap'
 import { useSwapTokens } from '@/components/swap/hooks/useSwapTokens'
@@ -14,8 +14,9 @@ import { useSwapConfirmation } from '@/components/swap/hooks/useSwapConfirmation
 import { useSwapExecution } from '@/components/swap/hooks/useSwapExecution'
 import { useSwapHistory } from '@/components/swap/hooks/useSwapHistory'
 import { LoadState } from '@/components/swap/ui/LoadState'
-import { SwapForm } from '@/components/swap/ui/SwapForm'
 import { SwapHistoryDialog } from '@/components/swap/ui/SwapHistoryDialog'
+import { ArrowSymbolDown } from '@/components/swap'
+import { calculateMinimumReceived } from '@/components/swap'
 
 export default function SwapPage() {
   // UI state
@@ -33,40 +34,42 @@ export default function SwapPage() {
 
   // Custom hooks - Token and Balance handling
   const { inputToken, setInputToken, outputToken, setOutputToken, tokens } = useSwapTokens()
-  
+
   // Token balances
-  const { 
-    inputBalance, 
-    outputBalance, 
-    isBalanceLoading, 
-    resetBalances, 
-    refreshBalances 
+  const {
+    inputBalance,
+    outputBalance,
+    isBalanceLoading,
+    resetBalances,
+    refreshBalances
   } = useTokenBalances({
     isConnected,
     walletAddress,
     inputToken,
     outputToken
   })
-  
+
   // Handle wallet disconnect
   const handleDisconnect = useCallback(() => {
     setIsConnected(false);
     setWalletAddress('');
     resetBalances();
   }, [resetBalances]);
-  
+
   // Swap route
   const {
     outputAmount,
     routeDex,
     routeState,
+    estimatedFees,
+    feeBreakdown,
     debouncedFetchRoute,
     resetRoute
   } = useSwapRoute({
     inputToken,
     outputToken
   })
-  
+
   // Swap steps
   const {
     swapSteps,
@@ -116,12 +119,12 @@ export default function SwapPage() {
       // Reset all swap-related states
       setInputAmount('0');
       resetRoute(); // This will reset the output amount and route state
-      
+
       // Slight delay before closing the progress modal to show success state
       setTimeout(() => {
         closeSwapProgress();
       }, 1500);
-      
+
       // Reset confirmation UI state
       resetConfirmationState();
     },
@@ -226,33 +229,58 @@ export default function SwapPage() {
             setSlippageTolerance={setSlippageTolerance}
           />
 
-          <SwapForm
-            inputToken={inputToken}
-            outputToken={outputToken}
-            inputAmount={inputAmount}
-            outputAmount={outputAmount}
-            inputBalance={inputBalance}
-            outputBalance={outputBalance}
-            routeDex={routeDex}
-            routeState={routeState}
-            insufficientBalance={insufficientBalance}
-            isConnected={isConnected}
-            isBalanceLoading={isBalanceLoading}
-            onInputTokenSelect={setInputToken}
-            onOutputTokenSelect={setOutputToken}
-            handleInputChange={handleInputChange}
-            handlePercentageSelect={(value) => handleInputChange((parseFloat(inputBalance) * value).toString())}
-            handleSwapExecution={handleSwapExecution}
-            openInputDialog={openInputDialog}
-            setOpenInputDialog={setOpenInputDialog}
-            openOutputDialog={openOutputDialog}
-            setOpenOutputDialog={setOpenOutputDialog}
-            isSwapping={isSwapping}
-            setIsConnected={setIsConnected}
-            setWalletAddress={setWalletAddress}
-            tokens={tokens}
-            percentageOptions={percentageOptions}
-          />
+          <div className="space-y-8">
+            <div className="space-y-6">
+              <SwapField
+                type="input"
+                token={inputToken}
+                amount={inputAmount}
+                balance={inputBalance}
+                onTokenSelect={setInputToken}
+                onAmountChange={handleInputChange}
+                openDialog={openInputDialog}
+                setOpenDialog={setOpenInputDialog}
+                availableTokens={tokens}
+                percentageOptions={percentageOptions}
+                onPercentageSelect={(value) => handleInputChange((parseFloat(inputBalance) * value).toString())}
+                isLoading={isConnected && isBalanceLoading}
+              />
+
+              <ArrowSymbolDown />
+
+              <SwapField
+                type="output"
+                token={outputToken}
+                amount={outputAmount}
+                balance={outputBalance}
+                onTokenSelect={setOutputToken}
+                openDialog={openOutputDialog}
+                setOpenDialog={setOpenOutputDialog}
+                availableTokens={tokens}
+                isLoading={routeState.isLoading || (isConnected && isBalanceLoading)}
+                error={routeState.error}
+              />
+            </div>
+
+            <SwapDetails
+              minimumReceived={calculateMinimumReceived(outputAmount)}
+              outputToken={outputToken}
+              inputToken={inputToken}
+              maxTransactionFee={estimatedFees || simulationResult?.estimatedFee || '0'}
+              feeBreakdown={feeBreakdown || simulationResult?.feeBreakdown}
+              route={routeDex || 'Asset Hub'}
+            />
+
+            <SubmitButtonAction
+              isConnected={isConnected}
+              isSwapping={isSwapping}
+              setIsConnected={setIsConnected}
+              setWalletAddress={setWalletAddress}
+              onSwap={() => handleSwapExecution(isConnected)}
+              insufficientBalance={insufficientBalance}
+              disabled={!inputAmount || parseFloat(inputAmount) <= 0 || insufficientBalance}
+            />
+          </div>
         </div>
       </div>
 

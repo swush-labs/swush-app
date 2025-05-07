@@ -5,24 +5,32 @@ import type { TokenInfo } from '@/components/swap/types';
 import debounce from 'lodash.debounce';
 import { ROUTE_FETCH_TIMEOUT } from '@/lib/const';
 import { getNetworkDisplayName } from '@/lib/utils';
+import { calculateEstimatedFees } from './utils/feeUtils';
+import { FeeBreakdown } from './types';
 
 interface UseSwapRouteProps {
   inputToken: TokenInfo | null;
   outputToken: TokenInfo | null;
 }
 
+export interface RouteState {
+  isLoading: boolean;
+  error: string | null;
+  data: RouteQuote | null;
+}
+
 export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
   const [outputAmount, setOutputAmount] = useState('0');
-  const [routeDex, setRouteDex] = useState('');
-  const [routeState, setRouteState] = useState<{
-    isLoading: boolean;
-    error: string | null;
-    data: RouteQuote | null;
-  }>({
+  const [routeDex, setRouteDex] = useState<string | null>(null);
+  const [routeState, setRouteState] = useState<RouteState>({
     isLoading: false,
     error: null,
     data: null
   });
+  
+  // Add fee estimation state
+  const [estimatedFees, setEstimatedFees] = useState<string>('0');
+  const [feeBreakdown, setFeeBreakdown] = useState<FeeBreakdown | undefined>(undefined);
 
   // Use ref to track latest input amount for stale closure detection
   const latestInputAmountRef = useRef<string>('');
@@ -30,19 +38,23 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
   // Reset states when tokens change
   useEffect(() => {
     setOutputAmount('0');
-    setRouteDex('');
+    setRouteDex(null);
     setRouteState({
       isLoading: false,
       error: null,
       data: null
     });
+    setEstimatedFees('0');
+    setFeeBreakdown(undefined);
   }, [inputToken?.id, outputToken?.id]);
 
   const fetchRouteAndUpdateOutput = useCallback(async (currentInputAmount: string) => {
     if (!inputToken || !outputToken || !currentInputAmount || parseFloat(currentInputAmount) <= 0) {
       setOutputAmount('0');
-      setRouteDex('');
+      setRouteDex(null);
       setRouteState(prev => ({ ...prev, isLoading: false, error: null }));
+      setEstimatedFees('0');
+      setFeeBreakdown(undefined);
       return;
     }
 
@@ -69,6 +81,13 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
           data: route
         });
         setOutputAmount(route.expectedOutput.decimal);
+
+        // After determining the route and DEX, calculate fees
+        if (route && route.dex) {
+          const { estimatedFee, feeBreakdown: fees } = calculateEstimatedFees(route.dex);
+          setEstimatedFees(estimatedFee);
+          setFeeBreakdown(fees);
+        }
       }
     } catch (error: unknown) {
       console.error('Failed to fetch route:', error);
@@ -87,6 +106,8 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
         });
         setRouteDex('');
         setOutputAmount('0');
+        setEstimatedFees('0');
+        setFeeBreakdown(undefined);
       }
     }
   }, [inputToken, outputToken]);
@@ -100,6 +121,8 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
           setOutputAmount('0');
           setRouteDex('');
           setRouteState(prev => ({ ...prev, isLoading: false, error: null }));
+          setEstimatedFees('0');
+          setFeeBreakdown(undefined);
         }
       }, ROUTE_FETCH_TIMEOUT),
     [fetchRouteAndUpdateOutput]
@@ -114,6 +137,8 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
       error: null,
       data: null
     });
+    setEstimatedFees('0');
+    setFeeBreakdown(undefined);
   }, []);
 
   // Cleanup debounced function and reset ref on unmount or when debounced function changes
@@ -128,6 +153,8 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
     outputAmount,
     routeDex,
     routeState,
+    estimatedFees,
+    feeBreakdown,
     debouncedFetchRoute,
     resetRoute
   };

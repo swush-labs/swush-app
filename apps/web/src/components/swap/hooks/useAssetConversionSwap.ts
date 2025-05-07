@@ -16,7 +16,8 @@ import { SwapHistoryService } from '@/services/swapHistoryService';
 // Import our modular components
 import {
   UseAssetConversionSwapProps,
-  SwapState
+  SwapState,
+  FeeBreakdown
 } from './types';
 import {
   getAssetsWithXcmLocations,
@@ -32,6 +33,8 @@ import {
   handleXcmMonitoring
 } from './monitoring/transactionMonitoring';
 import { TypedApi } from 'polkadot-api';
+import { calculateEstimatedFees } from './utils/feeUtils';
+import { formatAmount } from '@/services/balances/utils';
 
 export function useAssetConversionSwap({
   inputToken,
@@ -186,9 +189,18 @@ export function useAssetConversionSwap({
           {}
         );
 
+        // Use our fee utility instead of calculating here
+        const { estimatedFee, feeBreakdown } = calculateEstimatedFees(
+          routeState.data?.dex || 'asset_hub'
+        );
+
+        //format the estimated fee
+        const formattedEstimatedFee = formatAmount(estimatedFee, inputToken.decimals, { trim: true, round: 6 }).decimal;
+
         const simulationResult = {
           success: dryRun.success && dryRun.value.execution_result.success,
-          estimatedFee: '0.000001',
+          estimatedFee: formattedEstimatedFee,
+          feeBreakdown,
           willSucceed: dryRun.success && dryRun.value.execution_result.success
         };
 
@@ -202,10 +214,17 @@ export function useAssetConversionSwap({
         }
       } catch (e) {
         console.error('Dry run failed:', e);
+        
+        // Use our fee utility for failed simulations too
+        const { estimatedFee, feeBreakdown } = calculateEstimatedFees(
+          routeState.data?.dex || 'asset_hub'
+        );
+        
         if (onSimulationComplete) {
           const shouldProceed = await onSimulationComplete({
             success: false,
-            estimatedFee: '0.000001',
+            estimatedFee,
+            feeBreakdown,
             willSucceed: false,
             error: e instanceof Error ? e.message : 'Unknown error during simulation'
           });

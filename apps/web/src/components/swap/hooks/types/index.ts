@@ -23,9 +23,17 @@ export interface UseAssetConversionSwapProps {
   onBalanceUpdateNeeded?: (txHash?: string) => void;
 }
 
+export interface FeeBreakdown {
+  transactionFee: bigint;
+  xcmFee: bigint;
+  tradingFee: bigint;
+  totalFee: bigint;
+}
+
 export interface SimulationResult {
   success: boolean;
   estimatedFee: string;
+  feeBreakdown?: FeeBreakdown;
   willSucceed: boolean;
   error?: string;
 }

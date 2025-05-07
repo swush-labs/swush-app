@@ -37,6 +37,7 @@ export function useSwapTokens() {
               name: inputTokenToSet.metadata.name,
               symbol: inputTokenToSet.metadata.symbol,
               icon: inputTokenToSet.metadata.symbol.charAt(0),
+              decimals: inputTokenToSet.metadata.decimals
             });
           }
           
@@ -46,6 +47,7 @@ export function useSwapTokens() {
               name: outputTokenToSet.metadata.name,
               symbol: outputTokenToSet.metadata.symbol,
               icon: outputTokenToSet.metadata.symbol.charAt(0),
+              decimals: outputTokenToSet.metadata.decimals
             });
           }
         }
@@ -63,6 +65,7 @@ export function useSwapTokens() {
     name: asset.metadata.name,
     symbol: asset.metadata.symbol,
     icon: asset.metadata.symbol.charAt(0),
+    decimals: asset.metadata.decimals
   })), [assets]);
 
   return {
