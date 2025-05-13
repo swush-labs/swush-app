@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { TokenInfo } from '../types';
 import { FeeBreakdown } from '../hooks/types';
 import { formatAmount } from '@/services/balances/utils';
+import { NUMBER_FORMAT_OPTIONS } from '@/services/constants';
 
 // Define DOT token information for fee display
 const DOT_DECIMALS = 10;
@@ -26,14 +27,14 @@ export const SwapDetails = ({
 }: SwapDetailsProps) => {
   // Format fees for display if available
   const formattedFees = feeBreakdown ? {
-    transaction: formatAmount(feeBreakdown.transactionFee, inputToken.decimals, { trim: true, round: 6 }).decimal,
-    xcm: formatAmount(feeBreakdown.xcmFee, inputToken.decimals, { trim: true, round: 6 }).decimal,
-    trading: formatAmount(feeBreakdown.tradingFee, inputToken.decimals, { trim: true, round: 6 }).decimal,
-    total: formatAmount(feeBreakdown.totalFee, inputToken.decimals, { trim: true, round: 6 }).decimal
+    transaction: formatAmount(feeBreakdown.transactionFee, inputToken.decimals,NUMBER_FORMAT_OPTIONS).decimal,
+    xcm: formatAmount(feeBreakdown.xcmFee, inputToken.decimals, NUMBER_FORMAT_OPTIONS).decimal,
+    trading: formatAmount(feeBreakdown.tradingFee, inputToken.decimals, NUMBER_FORMAT_OPTIONS).decimal,
+    total: formatAmount(feeBreakdown.totalFee, inputToken.decimals, NUMBER_FORMAT_OPTIONS).decimal
   } : null;
 
   // Format max transaction fee always using DOT decimals
-  const formattedMaxFee = formatAmount(BigInt(maxTransactionFee), DOT_DECIMALS, { trim: true, round: 6 }).decimal;
+  const formattedMaxFee = formatAmount(BigInt(maxTransactionFee), DOT_DECIMALS, NUMBER_FORMAT_OPTIONS).decimal;
 
   return (
     <motion.div

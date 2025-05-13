@@ -35,6 +35,7 @@ import {
 import { TypedApi } from 'polkadot-api';
 import { calculateEstimatedFees } from './utils/feeUtils';
 import { formatAmount } from '@/services/balances/utils';
+import { NUMBER_FORMAT_OPTIONS } from '@/services/constants';
 
 export function useAssetConversionSwap({
   inputToken,
@@ -195,7 +196,7 @@ export function useAssetConversionSwap({
         );
 
         //format the estimated fee
-        const formattedEstimatedFee = formatAmount(estimatedFee, inputToken.decimals, { trim: true, round: 6 }).decimal;
+        const formattedEstimatedFee = formatAmount(estimatedFee, inputToken.decimals, NUMBER_FORMAT_OPTIONS).decimal;
 
         const simulationResult = {
           success: dryRun.success && dryRun.value.execution_result.success,

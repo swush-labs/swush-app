@@ -1,3 +1,4 @@
+import { ROUND_OPTION } from "@/services/constants";
 import { Binary } from "polkadot-api";
 
 export const shortenAddress = (address: string): string => {
@@ -16,7 +17,7 @@ export const calculateOutputAmount = (inputAmount: string): string => {
 };
 
 export const calculateMinimumReceived = (outputAmount: string, slippageTolerance: number = 0.5): string => {
-  return (parseFloat(outputAmount) * (1 - slippageTolerance / 100)).toFixed(4);
+  return (parseFloat(outputAmount) * (1 - slippageTolerance / 100)).toFixed(ROUND_OPTION);
 }; 
 
 

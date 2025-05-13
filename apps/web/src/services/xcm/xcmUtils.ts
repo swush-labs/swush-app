@@ -308,7 +308,6 @@ export async function constructHydraDxXcmMessage(
         initialExecution: bigint;
         initialDelivery: bigint;
         hydradxExecution: bigint;
-        returnDelivery: bigint;
         finalExecution: bigint;
     },
     assetHubInputLocation: XcmV4Location,  // Asset Hub relative location for input asset
@@ -334,7 +333,6 @@ export async function constructHydraDxXcmMessage(
     const totalFees = fees.initialExecution +
         fees.initialDelivery +
         fees.hydradxExecution +
-        fees.returnDelivery +
         fees.finalExecution;
 
     // Assets to withdraw from Asset Hub
@@ -417,7 +415,7 @@ export async function constructHydraDxXcmMessage(
                         XcmV4Instruction.BuyExecution({
                             fees: {
                                 id: dotAssetHubLocation, // DOT from Asset Hub's perspective
-                                fun: XcmV3MultiassetFungibility.Fungible(fees.finalExecution + fees.returnDelivery)
+                                fun: XcmV3MultiassetFungibility.Fungible(fees.finalExecution)
                             },
                             weight_limit: XcmV3WeightLimit.Unlimited()
                         }),

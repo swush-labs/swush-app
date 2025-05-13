@@ -2,6 +2,7 @@ import { AssetHubApi, AssetsMap } from '../types';
 import { parseXcmLocation } from '../utils/assetUtils';
 import { constructHydraDxXcmMessage, fetchHydraXCMLocation } from '@/services/xcm/xcmUtils';
 import { FrontendConnectionManager } from '@/services/FrontendConnectionManager';
+import { HYDRA_DX_XCM_FEES } from '../utils/feeUtils';
 
 export const buildAssetHubTransaction = async (
   assetHubApi: AssetHubApi,
@@ -102,18 +103,18 @@ export const buildHydraDxTransaction = async (
     //   walletAddress
     // );
 
-    // Hardcoded fees for now
-    const fees = {
-      initialExecution: BigInt(48945000),
-      initialDelivery: BigInt(307250000),
-      hydradxExecution: BigInt(266095510),
-      returnDelivery: BigInt(0),
-      finalExecution: BigInt(3098000000)
-    };
+    // // Hardcoded fees for now
+    // const fees = {
+    //   initialExecution: BigInt(48945000),
+    //   initialDelivery: BigInt(307250000),
+    //   hydradxExecution: BigInt(266095510),
+    //   returnDelivery: BigInt(0),
+    //   finalExecution: BigInt(2098000000)
+    // };
 
     // Construct XCM message
     const xcmMessage = await constructHydraDxXcmMessage(
-      fees,
+      HYDRA_DX_XCM_FEES,
       inputAssetHubLocation,
       outputAssetHubLocation,
       inputHydraDxLocation,

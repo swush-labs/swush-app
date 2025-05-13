@@ -1,11 +1,11 @@
 import { FeeBreakdown } from '../types';
 
 // Hardcoded XCM fees for HydraDX from transactionBuilders
-const HYDRA_DX_XCM_FEES = {
+export const HYDRA_DX_XCM_FEES = {
   initialExecution: BigInt(48945000),    // ~0.048945 DOT
   initialDelivery: BigInt(307250000),    // ~0.30725 DOT
   hydradxExecution: BigInt(266095510),   // ~0.266095 DOT
-  finalExecution: BigInt(3098000000),    // ~3.098 DOT
+  finalExecution: BigInt(2000000000),    // ~2.000 DOT
 };
 
 // Base transaction fees

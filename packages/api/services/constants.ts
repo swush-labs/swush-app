@@ -19,7 +19,6 @@ export const TEST_RPC_POLKADOT = 'ws://localhost:3420'
 export const TEST_RPC_PARACHAIN_HYDRATION = 'ws://localhost:3422'
 
 export const NUMBER_FORMAT_OPTIONS = { round: 2, trim: true, commify: false };
-
 // Time constants in milliseconds
 export const HEALTH_CHECK = {
   INTERVAL: 2 * 60 * 1000,    // Check every 2 minutes if RPC endpoint is healthy
