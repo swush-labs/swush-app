@@ -3,6 +3,10 @@ import { TokenInfo } from '../types';
 import { FeeBreakdown } from '../hooks/types';
 import { formatAmount } from '@/services/balances/utils';
 
+// Define DOT token information for fee display
+const DOT_DECIMALS = 10;
+const DOT_SYMBOL = 'DOT';
+
 interface SwapDetailsProps {
   minimumReceived: string;
   outputToken: TokenInfo;
@@ -28,8 +32,8 @@ export const SwapDetails = ({
     total: formatAmount(feeBreakdown.totalFee, inputToken.decimals, { trim: true, round: 6 }).decimal
   } : null;
 
-  // Format max transaction fee as fallback
-  const formattedMaxFee = formatAmount(BigInt(maxTransactionFee), inputToken.decimals, { trim: true, round: 6 }).decimal;
+  // Format max transaction fee always using DOT decimals
+  const formattedMaxFee = formatAmount(BigInt(maxTransactionFee), DOT_DECIMALS, { trim: true, round: 6 }).decimal;
 
   return (
     <motion.div
@@ -50,7 +54,7 @@ export const SwapDetails = ({
           <div className="flex items-center justify-between text-sm">
             <span className="text-slate-400">Max Transaction Fee</span>
             <span className="text-slate-300">
-              {formattedMaxFee} {inputToken.symbol}
+              {formattedMaxFee} {DOT_SYMBOL}
             </span>
           </div>
           {/*           
