@@ -1,5 +1,6 @@
 import { TypedApi } from 'polkadot-api';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
+import { XCM_MONITOR_TIMEOUT } from '@/lib/const';
 
 /**
  * Monitors XCM transaction flow on Asset Hub
@@ -23,11 +24,12 @@ export async function monitorXcmFlow(
           cleanup();
           resolve(false);
         }
-      }, 2 * 60 * 1000);
+      }, XCM_MONITOR_TIMEOUT);
   
       let xcmInitiated = false;
       let assetTransferred = false;
-  
+      let messageQueueProcessed = false;
+
       const cleanup = () => {
         if (isCompleted) return;
         isCompleted = true;
@@ -44,7 +46,7 @@ export async function monitorXcmFlow(
       };
   
       const checkCompletion = () => {
-        if (xcmInitiated && assetTransferred && !isCompleted) {
+        if (xcmInitiated && assetTransferred && messageQueueProcessed && !isCompleted) {
           cleanup();
           console.log("\n✅ Asset Hub XCM flow successful!");
           resolve(true);
@@ -72,17 +74,28 @@ export async function monitorXcmFlow(
               }
   
               // Check for Assets events
-              if (eventData.type === 'Assets') {
+              if (eventData.type === 'Balances') {
                 const balanceEvent = eventData.value;
-                if (balanceEvent.type === 'Issued') {
-                  const issuedData = balanceEvent.value;
-                  if (issuedData.owner === walletAddress) {
+                if (balanceEvent.type === 'Minted') {
+                  const mintedData = balanceEvent.value;
+                  if (mintedData.who === walletAddress) {
                     console.log(`✅ Final asset transfer detected to ${walletAddress}`);
                     assetTransferred = true;
                     checkCompletion();
                   }
                 }
               }
+
+              //check for messageQueue.Processed
+              if (eventData.type === 'MessageQueue') {
+                const messageQueueEvent = eventData.value;
+                if (messageQueueEvent.type === 'Processed') {
+                  console.log(`✅ Message queue processed`);
+                  messageQueueProcessed = true;
+                  checkCompletion();
+                }
+              }
+
             }
           },
           error: (error) => {

@@ -1,13 +1,14 @@
 endpoint: 
- - wss://hydration.dotters.network
- - wss://hydration.ibp.network
- - wss://rpc.helikon.io/hydradx
- - wss://rpc.hydradx.cloud
+# - wss://rpc.helikon.io/hydradx
  - wss://hydradx-rpc.dwellir.com
-
+# - wss://rpc.hydradx.cloud
+#  - wss://hydradx.paras.ibp.network
+#  - wss://hydradx.paras.dotters.network
+#  - wss://hydration.ibp.network
+#  - wss://hydration.dotters.network
 mock-signature-host: true
 block: ${env.HYDRADX_BLOCK_NUMBER}
-#db: ./hydradx.db.sqlite
+db: ./hydradx.db.sqlite
 runtime-log-level: 5
 port: 3422
 # wasm-override: hydradx_runtime.compact.compressed.wasm
@@ -27,7 +28,7 @@ import-storage:
         -
           - 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
           - 0 # HDX
-        - free: '10000000000000000000000000'
+        - free: '9000000000000000000000'
       -
         -
           - 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
@@ -77,7 +78,7 @@ import-storage:
         -
           - 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
           - 10 # Statemint USDT
-        - free: '100000000000000000000000'
+        - free: '9000000000000000000'
       -
         -
           - 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
@@ -137,7 +138,7 @@ import-storage:
         -
           - 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
           - 22 # USDC (Polkadot Asset Hub)
-        - free: '100000000000000000000000'
+        - free: '100000000000000000'
       -
         -
           - 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY

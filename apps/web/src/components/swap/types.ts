@@ -20,6 +20,7 @@ export interface TokenInfo {
   name: string;
   symbol: string;
   icon: string;
+  decimals: number;
 }
 
 export interface DetailedRouteInfo {

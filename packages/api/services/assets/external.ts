@@ -16,6 +16,17 @@ export const base = [
     symbol: 'DED',
   },
   {
+    decimals: 10,
+    id: '31337',
+    internalId: '1000085',
+    name: 'WUD',
+    origin: 1000,
+    symbol: 'WUD',
+  }
+];
+
+export const degen = [
+  {
     decimals: 2,
     id: '420',
     internalId: '1000036',
@@ -25,23 +36,12 @@ export const base = [
   },
   {
     decimals: 10,
-    id: '31337',
-    internalId: '1000085',
-    name: 'WUD',
-    origin: 1000,
-    symbol: 'WUD',
-  },
-  {
-    decimals: 10,
     id: '42069',
     internalId: '1000034',
     name: 'STINK',
     origin: 1000,
     symbol: 'STINK',
   },
-];
-
-export const degen = [
   {
     id: '22222065',
     decimals: 12,

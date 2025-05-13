@@ -22,14 +22,6 @@ export class BalanceService {
         return this.instance;
     }
 
-    /**
-     * Clear the asset cache
-     * This is now just for API compatibility - no actual caching of balance values
-     */
-    public clearCache(txHash?: string): void {
-        // We won't cache balances anymore, but keep the method for compatibility
-    }
-
     private async getApiForAsset(asset: Asset): Promise<TypedApi<typeof polkadot_asset_hub>> {
         // Currently only supporting Asset Hub
         const connection = await this.connectionManager.getConnection(NETWORKS_SUPPORTED.ASSET_HUB);
