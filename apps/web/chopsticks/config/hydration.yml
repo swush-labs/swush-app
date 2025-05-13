@@ -1,5 +1,5 @@
 endpoint: 
- - wss://rpc.helikon.io/hydradx
+# - wss://rpc.helikon.io/hydradx
  - wss://hydradx-rpc.dwellir.com
 # - wss://rpc.hydradx.cloud
 #  - wss://hydradx.paras.ibp.network

@@ -2,7 +2,6 @@ import { FetchAssetService } from './assets/FetchAssetService';
 import { Asset } from './assets/types';
 import { ConnectionManager } from './network/ConnectionManager';
 import { TradeRouterService } from './assets/router/TradeRouterService';
-import { base, degen } from './assets/external';
 
 let isInitialized = false;
 
@@ -19,8 +18,8 @@ export async function initializeSDK(): Promise<void> {
 
         // Step 2: Initialize TradeRouter with external assets
         console.log('Initializing trade router...');
-        const externalAssets = [...base, ...degen];
-        await TradeRouterService.getInstance().initialize(externalAssets);
+        // const externalAssets = [...base];
+        await TradeRouterService.getInstance().initialize([]);
 
         // Step 3: Initialize Asset Service (which will set up caches)
         console.log('Initializing asset service...');
@@ -66,6 +65,6 @@ export async function getAssets(forceRefresh = false): Promise<Map<string, Asset
 }
 
 export * from './assets/types';
-export * from './assets/utils'; 
+export * from './assets/utils';
 
 export * from './constants';
