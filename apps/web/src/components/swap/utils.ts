@@ -15,8 +15,8 @@ export const calculateOutputAmount = (inputAmount: string): string => {
   return isNaN(inputValue) ? '0' : (inputValue * 2).toFixed(4);
 };
 
-export const calculateMinimumReceived = (outputAmount: string): string => {
-  return (parseFloat(outputAmount) * 0.995).toFixed(4);
+export const calculateMinimumReceived = (outputAmount: string, slippageTolerance: number = 0.5): string => {
+  return (parseFloat(outputAmount) * (1 - slippageTolerance / 100)).toFixed(4);
 }; 
 
 

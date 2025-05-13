@@ -263,7 +263,7 @@ export default function SwapPage() {
             </div>
 
             <SwapDetails
-              minimumReceived={calculateMinimumReceived(outputAmount)}
+              minimumReceived={calculateMinimumReceived(outputAmount, slippageTolerance)}
               outputToken={outputToken}
               inputToken={inputToken}
               maxTransactionFee={estimatedFees || simulationResult?.estimatedFee || '0'}
