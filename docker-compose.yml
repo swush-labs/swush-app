@@ -7,6 +7,7 @@ services:
       dockerfile: packages/api/Dockerfile.dev
     volumes:
       - ./packages/api:/app/packages/api
+      - ./.papi:/app/.papi
       - /app/packages/api/node_modules
     ports:
       - "3001:3001"
@@ -20,6 +21,7 @@ services:
       dockerfile: apps/web/Dockerfile.dev
     volumes:
       - ./apps/web:/app/apps/web
+      - ./.papi:/app/.papi
       - /app/apps/web/node_modules
     ports:
       - "3000:3000"
@@ -28,4 +30,4 @@ services:
       - NEXT_PUBLIC_API_HOST=${NEXT_PUBLIC_API_HOST:-localhost}
     depends_on:
       - api
-    command: pnpm dev 
+    command: pnpm dev:all 

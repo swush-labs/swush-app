@@ -7,14 +7,15 @@ RUN corepack enable && corepack prepare pnpm@9.13.0 --activate
 
 # Copy workspace files
 COPY pnpm-workspace.yaml ./
+COPY package.json ./
 COPY tsconfig.base.json ./
+COPY .papi ./.papi
 
 # Set working directory for api
 WORKDIR /app/packages/api
 
 # Copy package files and source code
 COPY packages/api/package.json ./
-COPY packages/api/.papi ./.papi
 COPY packages/api/tsconfig.json ./
 COPY packages/api/services ./services
 COPY packages/api/src ./src
