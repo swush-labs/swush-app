@@ -30,7 +30,7 @@ The project includes a Docker setup for consistent development environments:
 
 ```bash
 # Start all services
-docker-compose up --build
+docker compose up --build
 
 # Stop services
 docker compose down
