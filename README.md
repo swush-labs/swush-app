@@ -17,12 +17,8 @@ pnpm i
 #### 2. Start the development servers:
 ```bash
 # Start, web and API services and chopsticks
-pnpm dev
-```
+pnpm dev:all
 
-#### 3. Start Chopsticks
-```bash
-pnpm start-chopsticks
 ```
 
 Go to [http://localhost:3000](http://localhost:3000) to access the UI.
