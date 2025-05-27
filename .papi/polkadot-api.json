@@ -6,14 +6,15 @@
       "chain": "polkadot",
       "metadata": ".papi/metadata/polkadot.scale"
     },
-    "polkadot_asset_hub": {
-      "chain": "polkadot_asset_hub",
-      "metadata": ".papi/metadata/polkadot_asset_hub.scale"
-    },
     "hydration": {
       "wsUrl": "wss://hydradx-rpc.dwellir.com",
       "metadata": ".papi/metadata/hydration.scale",
       "genesis": "0xafdc188f45c71dacbaa0b62e16a91f726c7b8699a9748cdf715459de6b7f366d"
+    },
+    "polkadot_asset_hub": {
+      "wsUrl": "wss://polkadot-asset-hub-rpc.polkadot.io",
+      "metadata": ".papi/metadata/polkadot_asset_hub.scale",
+      "genesis": "0x68d56f15f85d3136970ec16946040bc1752654e906147f7e43e9d539d7c3de2f"
     }
   }
 }
