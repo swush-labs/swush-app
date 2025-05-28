@@ -2,6 +2,10 @@
   "version": 0,
   "descriptorPath": ".papi/descriptors",
   "entries": {
+    "polkadot": {
+      "chain": "polkadot",
+      "metadata": ".papi/metadata/polkadot.scale"
+    },
     "hydration": {
       "wsUrl": "wss://hydradx-rpc.dwellir.com",
       "metadata": ".papi\\metadata\\hydration.scale",
