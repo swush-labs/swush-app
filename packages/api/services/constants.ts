@@ -64,8 +64,8 @@ export const RPC_ENDPOINTS = {
       //TODO: analyze proper endpoints
       
       // Primary endpoints (major providers)
-    //  { url: 'wss://rpc.hydradx.cloud', priority: 1, isActive: true },          // Galactic Council (Official)
-            { url: 'wss://hydradx-rpc.dwellir.com', priority: 2, isActive: true },    // Dwellir
+      { url: 'wss://rpc.hydradx.cloud', priority: 1, isActive: true },          // Galactic Council (Official)
+    //        { url: 'wss://hydradx-rpc.dwellir.com', priority: 2, isActive: true },    // Dwellir
 
       // Tertiary endpoint
       //     { url: 'wss://rpc.helikon.io/hydradx', priority: 3, isActive: true }      // Helikon

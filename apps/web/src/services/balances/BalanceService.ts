@@ -5,7 +5,7 @@ import { FrontendConnectionManager, PapiConnection } from '../FrontendConnection
 import { BalanceRequest, BalanceResponse, RawBalanceResponse, SystemAccountData } from './types';
 import { fetchAssetInfo, formatAmount } from './utils';
 import { NETWORKS_SUPPORTED } from '../constants';
-
+import { parseXcmLocation } from '@/components/swap/hooks/utils/assetUtils';
 export class BalanceService {
     private static instance: BalanceService;
     private connectionManager: FrontendConnectionManager;
@@ -85,7 +85,8 @@ export class BalanceService {
                     return result as RawBalanceResponse;
                 }
             } else if (asset.assetType === AssetType.Foreign) {
-                const result = await api.query.ForeignAssets.Account.getValue(asset.rawXcmLocation, address);
+                const parsedLocation = parseXcmLocation(asset.rawXcmLocation);
+                const result = await api.query.ForeignAssets.Account.getValue(parsedLocation, address);
                 return result as RawBalanceResponse;
             }
 

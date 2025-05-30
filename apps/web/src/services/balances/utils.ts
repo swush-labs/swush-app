@@ -3,7 +3,7 @@ import { api } from '@/lib/api';
 
 // Format amount from raw blockchain format to readable decimal format
 export function formatAmount(
-  amount: string | bigint,
+  amount: string | bigint | null | undefined,
   decimals: number,
   options?: {
     round?: number;      // Number of decimal places to round to
@@ -12,6 +12,16 @@ export function formatAmount(
   }
 ): { raw: string; decimal: string } {
   try {
+    // Handle null, undefined, or empty values
+    if (amount === null || amount === undefined || amount === '') {
+      return { raw: '0', decimal: '0' };
+    }
+
+    // Handle string that can't be converted to BigInt
+    if (typeof amount === 'string' && amount.trim() === '') {
+      return { raw: '0', decimal: '0' };
+    }
+
     const rawBigInt = typeof amount === 'string' ? BigInt(amount) : amount;
     const raw = rawBigInt.toString();
 

@@ -65,10 +65,10 @@ export const RPC_ENDPOINTS = {
   [NETWORKS_SUPPORTED.HYDRA_DX]: {
     endpoints: [
       // Primary endpoints (major providers)
-      // { url: 'ws://localhost:3422', priority: 1, isActive: true },
+       { url: 'ws://localhost:3422', priority: 1, isActive: true },
 
       //     { url: 'wss://rpc.hydradx.cloud', priority: 1, isActive: true },          // Galactic Council (Official)
-           { url: 'wss://hydradx-rpc.dwellir.com', priority: 1, isActive: true },    // Dwellir
+      //     { url: 'wss://hydradx-rpc.dwellir.com', priority: 1, isActive: true },    // Dwellir
 
       // Secondary endpoints (reliable providers)
       //   { url: 'wss://hydradx.paras.ibp.network', priority: 2, isActive: true },  // IBP1

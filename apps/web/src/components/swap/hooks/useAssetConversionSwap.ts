@@ -8,7 +8,6 @@ import { FrontendConnectionManager } from '@/services/FrontendConnectionManager'
 import { TransactionErrorService } from '@/services/TransactionErrorService';
 import {
   polkadot_asset_hub,
-  PolkadotRuntimeOriginCaller
 } from '@polkadot-api/descriptors';
 import { UserService } from '@/services/userService';
 import { SwapHistoryService } from '@/services/swapHistoryService';
@@ -29,10 +28,16 @@ import {
   buildHydraDxTransaction
 } from './builders/transactionBuilders';
 import {
+  buildEnhancedTransaction,
+  createSimulationSummary,
+  EnhancedTransactionResult,
+  TransactionBuildOptions
+} from './builders/enhancedTransactionBuilders';
+import {
   createTransactionCallbacks,
   handleXcmMonitoring
 } from './monitoring/transactionMonitoring';
-import { TypedApi } from 'polkadot-api';
+import { Enum, TypedApi } from 'polkadot-api';
 import { calculateEstimatedFees } from './utils/feeUtils';
 import { formatAmount } from '@/services/balances/utils';
 import { NUMBER_FORMAT_OPTIONS } from '@/services/constants';
@@ -148,13 +153,27 @@ export function useAssetConversionSwap({
         outputAsset.metadata.decimals
       );
 
-      let transaction;
       const isHydraDx = routeState.data?.dex === 'hydra_dx';
+      
+      // Configure enhanced transaction build options
+      const buildOptions: TransactionBuildOptions = {
+        performDryRun: true,
+        fallbackOnDryRunFailure: true,
+        dryRunOptions: {
+          verbose: true,
+          includeHydraDx: isHydraDx,
+          includeReturnPath: isHydraDx,
+          timeoutMs: isHydraDx ? 60000 : 30000,
+          xcmVersion: 4 // Use XCM version 4
+        }
+      };
 
-      // Build transaction based on DEX
-      if (!isHydraDx) {
-        updateSwapState({ swapStatus: 'Preparing Asset Hub swap...' });
-        transaction = await buildAssetHubTransaction(
+      // Build enhanced transaction with comprehensive dry run
+      updateSwapState({ swapStatus: `Preparing ${isHydraDx ? 'HydraDX XCM' : 'Asset Hub'} swap...` });
+      
+      let enhancedResult: EnhancedTransactionResult;
+      try {
+        enhancedResult = await buildEnhancedTransaction(
           assetHubApi,
           assetsMap,
           inputToken.id,
@@ -162,47 +181,79 @@ export function useAssetConversionSwap({
           inputAmountPlanck,
           minOutputAmountPlanck,
           walletAddress,
-          routeState.data?.path
+          isHydraDx ? 'hydra_dx' : 'asset_hub',
+          routeState.data?.path,
+          isHydraDx ? polkadotSigner.publicKey : undefined,
+          buildOptions
         );
-      } else {
-        updateSwapState({ swapStatus: 'Preparing HydraDX XCM swap...' });
-        transaction = await buildHydraDxTransaction(
-          assetHubApi,
-          assetsMap,
-          inputToken.id,
-          outputToken.id,
-          inputAmountPlanck,
-          minOutputAmountPlanck,
-          polkadotSigner.publicKey,
-          walletAddress
-        );
+      } catch (error) {
+        console.warn('Enhanced transaction building failed, falling back to basic transaction:', error);
+        
+        // Fallback to original transaction building
+        let transaction;
+        if (!isHydraDx) {
+          transaction = await buildAssetHubTransaction(
+            assetHubApi,
+            assetsMap,
+            inputToken.id,
+            outputToken.id,
+            inputAmountPlanck,
+            minOutputAmountPlanck,
+            walletAddress,
+            routeState.data?.path
+          );
+        } else {
+          transaction = await buildHydraDxTransaction(
+            assetHubApi,
+            assetsMap,
+            inputToken.id,
+            outputToken.id,
+            inputAmountPlanck,
+            minOutputAmountPlanck,
+            polkadotSigner.publicKey,
+            walletAddress
+          );
+        }
+        
+        enhancedResult = {
+          transaction,
+          dexType: isHydraDx ? 'hydra_dx' : 'asset_hub',
+          estimatedSuccess: true,
+          totalEstimatedFees: BigInt(0)
+        };
       }
 
-      // Perform dry run
+      const transaction = enhancedResult.transaction;
+
+      // Enhanced simulation with comprehensive dry run results
       updateSwapState({ swapStatus: 'Simulating transaction...' });
-      try {
-        const dryRun = await assetHubApi.apis.DryRunApi.dry_run_call(
-          PolkadotRuntimeOriginCaller.system({
-            type: "Signed",
-            value: walletAddress
-          }),
-          transaction.decodedCall,
-          4
-        );
+      
+      let simulationResult;
+      
+      if (enhancedResult.dryRunResult) {
+        // Use enhanced dry run results
+        console.log('Using enhanced dry run results for simulation');
+        
+        const simulationSummary = createSimulationSummary(enhancedResult, inputToken.decimals);
+        const formattedEstimatedFee = formatAmount(
+          enhancedResult.totalEstimatedFees, 
+          inputToken.decimals, 
+          NUMBER_FORMAT_OPTIONS
+        ).decimal;
 
-        // Use our fee utility instead of calculating here
-        const { estimatedFee, feeBreakdown } = calculateEstimatedFees(
-          routeState.data?.dex || 'asset_hub'
-        );
-
-        //format the estimated fee
-        const formattedEstimatedFee = formatAmount(estimatedFee, inputToken.decimals, NUMBER_FORMAT_OPTIONS).decimal;
-
-        const simulationResult = {
-          success: dryRun.success && dryRun.value.execution_result.success,
+        simulationResult = {
+          success: enhancedResult.estimatedSuccess,
           estimatedFee: formattedEstimatedFee,
-          feeBreakdown,
-          willSucceed: dryRun.success && dryRun.value.execution_result.success
+          feeBreakdown: {
+            total: formattedEstimatedFee,
+            breakdown: simulationSummary.breakdown
+          },
+          willSucceed: enhancedResult.estimatedSuccess,
+          enhancedData: {
+            summary: simulationSummary,
+            dexType: enhancedResult.dexType,
+            simulationDuration: enhancedResult.simulationDuration
+          }
         };
 
         if (onSimulationComplete) {
@@ -213,32 +264,66 @@ export function useAssetConversionSwap({
           }
           updateSwapState({ isSwapping: true });
         }
-      } catch (e) {
-        console.error('Dry run failed:', e);
-        
-        // Use our fee utility for failed simulations too
-        const { estimatedFee, feeBreakdown } = calculateEstimatedFees(
-          routeState.data?.dex || 'asset_hub'
-        );
-        
-        if (onSimulationComplete) {
-          const shouldProceed = await onSimulationComplete({
-            success: false,
-            estimatedFee,
+      } else {
+        // Fallback to basic dry run for Asset Hub transactions
+        try {
+          console.log('Falling back to basic dry run simulation');
+          
+          const dryRun = await assetHubApi.apis.DryRunApi.dry_run_call(
+            Enum('system', Enum('Signed', walletAddress)),
+            transaction.decodedCall,
+            4 // XCM version 4
+          );
+
+          // Use our fee utility instead of calculating here
+          const { estimatedFee, feeBreakdown } = calculateEstimatedFees(
+            routeState.data?.dex || 'asset_hub'
+          );
+
+          const formattedEstimatedFee = formatAmount(estimatedFee, inputToken.decimals, NUMBER_FORMAT_OPTIONS).decimal;
+
+          simulationResult = {
+            success: dryRun.success && dryRun.value.execution_result.success,
+            estimatedFee: formattedEstimatedFee,
             feeBreakdown,
-            willSucceed: false,
-            error: e instanceof Error ? e.message : 'Unknown error during simulation'
-          });
-          if (!shouldProceed) {
-            updateSwapState({ isSwapping: false, swapStatus: null });
-            return;
+            willSucceed: dryRun.success && dryRun.value.execution_result.success
+          };
+
+          if (onSimulationComplete) {
+            const shouldProceed = await onSimulationComplete(simulationResult);
+            if (!shouldProceed) {
+              updateSwapState({ isSwapping: false, swapStatus: null });
+              return;
+            }
+            updateSwapState({ isSwapping: true });
           }
-          updateSwapState({ isSwapping: true });
+        } catch (e) {
+          console.error('Fallback dry run failed:', e);
+          
+          // Use our fee utility for failed simulations too
+          const { estimatedFee, feeBreakdown } = calculateEstimatedFees(
+            routeState.data?.dex || 'asset_hub'
+          );
+          
+          if (onSimulationComplete) {
+            const shouldProceed = await onSimulationComplete({
+              success: false,
+              estimatedFee,
+              feeBreakdown,
+              willSucceed: false,
+              error: e instanceof Error ? e.message : 'Unknown error during simulation'
+            });
+            if (!shouldProceed) {
+              updateSwapState({ isSwapping: false, swapStatus: null });
+              return;
+            }
+            updateSwapState({ isSwapping: true });
+          }
+          toast.error('Transaction simulation failed. Proceed with caution.', {
+            id: 'swap-simulation-warning',
+            duration: 5000
+          });
         }
-        toast.error('Transaction simulation failed. Proceed with caution.', {
-          id: 'swap-simulation-warning',
-          duration: 5000
-        });
       }
 
       updateSwapState({ swapStatus: 'Signing transaction...' });

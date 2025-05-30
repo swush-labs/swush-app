@@ -33,9 +33,14 @@ export interface FeeBreakdown {
 export interface SimulationResult {
   success: boolean;
   estimatedFee: string;
-  feeBreakdown?: FeeBreakdown;
+  feeBreakdown?: FeeBreakdown | any;
   willSucceed: boolean;
   error?: string;
+  enhancedData?: {
+    summary: any;
+    dexType: 'asset_hub' | 'hydra_dx';
+    simulationDuration?: number;
+  };
 }
 
 export interface SwapState {

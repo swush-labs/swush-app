@@ -1,8 +1,8 @@
 import { createClient, TypedApi } from 'polkadot-api';
-import { polkadot_asset_hub } from '@polkadot-api/descriptors';
+import { polkadot_asset_hub, hydration } from '@polkadot-api/descriptors';
 import { getWsProvider } from 'polkadot-api/ws-provider/web';
 import { withPolkadotSdkCompat } from 'polkadot-api/polkadot-sdk-compat';
-import { RPC_ENDPOINTS } from './constants';
+import { RPC_ENDPOINTS, NETWORKS_SUPPORTED } from './constants';
 import { SupportedChains } from '@swush/api/network/types';
 
 type Client = ReturnType<typeof createClient>;
@@ -44,7 +44,7 @@ export class FrontendConnectionManager {
         // Create new connection
         const endpoint = this.getPreferredEndpoint(network);
         console.log('Connecting to endpoint:', endpoint);
-        const connection = await this.connect(endpoint);
+        const connection = await this.connect(endpoint, network);
         this.connections.set(network, connection);
         return connection;
     }
@@ -59,7 +59,7 @@ export class FrontendConnectionManager {
         return activeEndpoint?.url || networkConfig.endpoints[0].url;
     }
 
-    private async connect(endpoint: string): Promise<PapiConnection> {
+    private async connect(endpoint: string, network: string): Promise<PapiConnection> {
         if (this.isConnecting) {
             throw new Error('Connection attempt already in progress');
         }
@@ -69,8 +69,21 @@ export class FrontendConnectionManager {
             const wsProvider = getWsProvider(endpoint);
             const client = createClient(withPolkadotSdkCompat(wsProvider));
             
-            // Create typed API instance
-            const api = client.getTypedApi(polkadot_asset_hub);
+            // Create typed API instance based on the network
+            let api: TypedApi<SupportedChains>;
+            
+            switch (network) {
+                case NETWORKS_SUPPORTED.ASSET_HUB:
+                    api = client.getTypedApi(polkadot_asset_hub);
+                    break;
+                case NETWORKS_SUPPORTED.HYDRA_DX:
+                    api = client.getTypedApi(hydration);
+                    break;
+                default:
+                    // Default to asset hub for backwards compatibility
+                    api = client.getTypedApi(polkadot_asset_hub);
+                    console.warn(`Unknown network ${network}, defaulting to Asset Hub API`);
+            }
 
             // Basic check to verify we have a working connection
             const health = await client._request('system_health', []);

@@ -1,5 +1,5 @@
 import { safeStringify, serializeKey } from '@/components/swap/utils';
-import { Binary, TypedApi } from "polkadot-api";
+import { Binary, Enum, TypedApi } from "polkadot-api";
 import {
     XcmVersionedLocation,
     XcmVersionedAssetId,
@@ -12,8 +12,7 @@ import {
     XcmV4AssetAssetFilter,
     XcmV4AssetWildAsset,
     polkadot_asset_hub,
-    hydration,
-    PolkadotRuntimeOriginCaller
+    hydration
 } from '@polkadot-api/descriptors';
 import { type XcmV4Location } from "@swush/api";
 import { AssetWithId } from "@/lib/api";
@@ -150,10 +149,7 @@ export async function calculateHydraDxXcmFees(
     // Do a dry run to get the actual forwarded messages
     console.log('Debug: Performing dry run...');
     const dryRun = await assetHubApi.apis.DryRunApi.dry_run_call(
-        PolkadotRuntimeOriginCaller.system({
-            type: "Signed",
-            value: address
-        }),
+        Enum('system', Enum('Signed', address)),
         tx.decodedCall,
         4
     );
