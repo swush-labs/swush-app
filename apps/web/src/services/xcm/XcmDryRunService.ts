@@ -2,7 +2,7 @@ import { Enum, TypedApi } from 'polkadot-api';
 import {
     polkadot_asset_hub,
     hydration,
-    HydrationXcmVersionedXcm,
+    PolkadotXcmVersionedXcm as HydrationXcmVersionedXcm,
     XcmVersionedXcm,
     XcmVersionedLocation,
     XcmV3Junctions,

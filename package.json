@@ -32,15 +32,15 @@
   },
   "packageManager": "pnpm@9.13.0",
   "dependencies": {
+    "@acala-network/chopsticks": "^1.0.5",
     "@galacticcouncil/api-augment": "^0.3.1",
-    "@polkadot-api/descriptors": "file:.papi/descriptors",
-    "polkadot-api": "^1.9.4",
+    "@polkadot-api/descriptors": "file:.papi\\descriptors",
     "@polkadot-labs/hdkd-helpers": "^0.0.10",
+    "@polkadot/api": "~14.0.1",
     "@polkadot/util-crypto": "^13.4.3",
     "@supabase/supabase-js": "^2.49.4",
-    "@acala-network/chopsticks": "^1.0.5",
-    "ws": "^8.18.0",
-    "@polkadot/api": "~14.0.1"
+    "polkadot-api": "^1.13.0",
+    "ws": "^8.18.0"
   },
   "pnpm": {
     "overrides": {

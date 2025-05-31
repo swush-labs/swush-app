@@ -1,21 +1,22 @@
 {
   "version": 0,
-  "descriptorPath": ".papi/descriptors",
+  "descriptorPath": ".papi\\descriptors",
   "entries": {
     "polkadot_asset_hub": {
       "wsUrl": "wss://polkadot-asset-hub-rpc.polkadot.io",
-      "metadata": ".papi/metadata/polkadot_asset_hub.scale",
+      "metadata": ".papi\\metadata\\polkadot_asset_hub.scale",
       "genesis": "0x68d56f15f85d3136970ec16946040bc1752654e906147f7e43e9d539d7c3de2f"
     },
     "polkadot": {
       "chain": "polkadot",
-      "metadata": ".papi/metadata/polkadot.scale",
+      "metadata": ".papi\\metadata\\polkadot.scale",
       "genesis": "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3"
     },
     "hydration": {
-      "wsUrl": "wss://rpc.helikon.io/hydradx",
-      "metadata": ".papi/metadata/hydration.scale",
-      "genesis": "0xafdc188f45c71dacbaa0b62e16a91f726c7b8699a9748cdf715459de6b7f366d"
+      "wsUrl": "wss://hydration.dotters.network",
+      "metadata": ".papi\\metadata\\hydration.scale",
+      "genesis": "0xafdc188f45c71dacbaa0b62e16a91f726c7b8699a9748cdf715459de6b7f366d",
+      "codeHash": "0xf229884fe5c637f59db752a7c67df6c536681f88f1631c8bf7da4d5bf29ac6f1"
     }
   }
 }
