@@ -171,10 +171,14 @@ export class ConnectionManager {
         const existingTimeout = this.reconnectionTimeouts.get(network);
         if (existingTimeout) {
             clearTimeout(existingTimeout);
+            this.reconnectionTimeouts.delete(network);
         }
 
         const connectionState = this.connections.get(network);
-        if (!connectionState || connectionState.isConnecting || this.isShuttingDown) return;
+        if (!connectionState || connectionState.isConnecting || this.isShuttingDown) {
+            console.log(`Skipping reconnection for ${network}: isConnecting=${connectionState?.isConnecting}, isShuttingDown=${this.isShuttingDown}`);
+            return;
+        }
 
         // Use custom delay or calculate exponential backoff
         const delay = customDelay || Math.min(
@@ -295,6 +299,9 @@ export class ConnectionManager {
         if (!connectionState?.connection) return;
 
         try {
+            // Mark as not ready immediately to prevent usage during cleanup
+            connectionState.isReady = false;
+            
             if (network === NETWORKS_SUPPORTED.ASSET_HUB) {
                 const connection = connectionState.connection as AssetHubConnection;
                 await ConnectionFactory.disconnectAssetHub(connection);
@@ -305,9 +312,18 @@ export class ConnectionManager {
         } catch (error) {
             console.warn(`Error cleaning up ${network} connection:`, error);
         } finally {
+            // Ensure state is fully reset
             connectionState.connection = null;
             connectionState.isReady = false;
             connectionState.currentEndpoint = null;
+            connectionState.isConnecting = false;
+            
+            // Update health status
+            this.connectionHealth.set(network, {
+                isHealthy: false,
+                lastCheck: new Date(),
+                responseTime: 0
+            });
         }
     }
 
@@ -385,10 +401,17 @@ export class ConnectionManager {
         const api = connection.connection as ApiPromise;
         
         // Quick stale connection check
-        if (!api.isConnected) {
-            console.warn('HydraDX API connection is stale, marking as not ready');
+        try {
+            if (!api.isConnected) {
+                console.warn('HydraDX API connection is stale, marking as not ready');
+                connection.isReady = false;
+                this.scheduleReconnection(NETWORKS_SUPPORTED.HYDRA_DX, 100); // Immediate reconnection
+                return null;
+            }
+        } catch (error) {
+            console.warn('Error checking HydraDX API connection state:', error);
             connection.isReady = false;
-            this.scheduleReconnection(NETWORKS_SUPPORTED.HYDRA_DX, 100); // Immediate reconnection
+            this.scheduleReconnection(NETWORKS_SUPPORTED.HYDRA_DX, 100);
             return null;
         }
         
@@ -406,32 +429,46 @@ export class ConnectionManager {
     }
 
     public async getHydradxApiWithRetry(timeoutMs: number = 5000): Promise<ApiPromise | null> {
-        // Try to get immediate connection
-        let api = this.getHydradxApi();
-        if (api) {
-            // Additional validation for critical operations
-            try {
-                const isValid = await ConnectionFactory.validateConnection(api, NETWORKS_SUPPORTED.HYDRA_DX);
-                if (isValid) {
-                    return api;
-                } else {
-                    console.warn('HydraDX API failed validation, reconnecting...');
+        try {
+            // Try to get immediate connection
+            let api = this.getHydradxApi();
+            if (api) {
+                // Quick validation with timeout protection
+                try {
+                    const validationPromise = ConnectionFactory.validateConnection(api, NETWORKS_SUPPORTED.HYDRA_DX);
+                    const timeoutPromise = new Promise<boolean>(resolve => 
+                        setTimeout(() => resolve(false), 1000) // 1s timeout for validation
+                    );
+                    
+                    const isValid = await Promise.race([validationPromise, timeoutPromise]);
+                    if (isValid) {
+                        return api;
+                    } else {
+                        console.warn('HydraDX API failed validation, reconnecting...');
+                        const connection = this.connections.get(NETWORKS_SUPPORTED.HYDRA_DX);
+                        if (connection) {
+                            connection.isReady = false;
+                            this.scheduleReconnection(NETWORKS_SUPPORTED.HYDRA_DX, 100);
+                        }
+                    }
+                } catch (error) {
+                    console.warn('HydraDX API validation error:', error);
+                    // Don't return the potentially bad connection, try to get a fresh one
                     const connection = this.connections.get(NETWORKS_SUPPORTED.HYDRA_DX);
                     if (connection) {
                         connection.isReady = false;
                         this.scheduleReconnection(NETWORKS_SUPPORTED.HYDRA_DX, 100);
                     }
                 }
-            } catch (error) {
-                console.warn('HydraDX API validation error:', error);
-                // Proceed with existing connection as fallback
-                return api;
             }
-        }
 
-        // Wait for connection to become available
-        const isReady = await this.waitForConnection(NETWORKS_SUPPORTED.HYDRA_DX, timeoutMs);
-        return isReady ? this.getHydradxApi() : null;
+            // Wait for connection to become available
+            const isReady = await this.waitForConnection(NETWORKS_SUPPORTED.HYDRA_DX, timeoutMs);
+            return isReady ? this.getHydradxApi() : null;
+        } catch (error) {
+            console.error('Error in getHydradxApiWithRetry:', error);
+            return null;
+        }
     }
 
     public getConnectionStatus(): Record<string, { 
