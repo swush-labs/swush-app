@@ -44,6 +44,7 @@ export class AssetHubRouter {
         dex?: typeof NETWORKS_SUPPORTED.ASSET_HUB | typeof NETWORKS_SUPPORTED.HYDRA_DX
     ): Promise<RouteQuote | null> {
         try {
+            console.log('--------------------------------');
             console.log('Starting findBestRoute:', {
                 fromAsset,
                 toAsset,
