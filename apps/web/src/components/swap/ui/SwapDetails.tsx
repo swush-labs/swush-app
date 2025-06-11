@@ -1,3 +1,4 @@
+import React, { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { TokenInfo } from '../types';
 import { FeeBreakdown } from '../hooks/types';
@@ -17,16 +18,19 @@ interface SwapDetailsProps {
   route: string;
 }
 
-export const SwapDetails = ({
+export const SwapDetails = memo(function SwapDetails({
   minimumReceived,
   outputToken,
   inputToken,
   maxTransactionFee,
   feeBreakdown,
   route
-}: SwapDetailsProps) => {
-  // Format fees for display if available
-  const formattedFees = feeBreakdown ? (() => {
+}: SwapDetailsProps) {
+  // Format fees for display if available - memoized for performance
+  const formattedFees = useMemo(() => {
+    if (!feeBreakdown) return null;
+    
+    return (() => {
     // Check if it's the standard FeeBreakdown interface
     if (feeBreakdown && typeof feeBreakdown === 'object' && 'transactionFee' in feeBreakdown && 'xcmFee' in feeBreakdown && 'tradingFee' in feeBreakdown && 'totalFee' in feeBreakdown) {
       const standardFees = feeBreakdown as {
@@ -61,10 +65,13 @@ export const SwapDetails = ({
         total: '0'
       };
     }
-  })() : null;
+    })();
+  }, [feeBreakdown, inputToken.decimals]);
 
   // Format max transaction fee always using DOT decimals - ensure it's never undefined
-  const formattedMaxFee = formatAmount(BigInt(maxTransactionFee || '0'), DOT_DECIMALS, NUMBER_FORMAT_OPTIONS).decimal;
+  const formattedMaxFee = useMemo(() => {
+    return formatAmount(BigInt(maxTransactionFee || '0'), DOT_DECIMALS, NUMBER_FORMAT_OPTIONS).decimal;
+  }, [maxTransactionFee]);
 
   return (
     <motion.div
@@ -162,4 +169,4 @@ export const SwapDetails = ({
       </div>
     </motion.div>
   );
-}; 
+}); 

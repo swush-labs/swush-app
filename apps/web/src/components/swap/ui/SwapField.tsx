@@ -1,3 +1,4 @@
+import React, { memo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { SwapFieldProps } from '../types';
 import { formatBalance } from '../utils';
 import { Loader2 } from 'lucide-react';
 
-export function SwapField({
+export const SwapField = memo(function SwapField({
   type,
   token,
   amount,
@@ -28,14 +29,14 @@ export function SwapField({
   const displayBalance = formatBalance(balance);
 
   // Handle input change with validation
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     
     // Only allow valid number inputs
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
       onAmountChange?.(value);
     }
-  };
+  }, [onAmountChange]);
 
   return (
     <motion.div 
@@ -127,4 +128,4 @@ export function SwapField({
       )}
     </motion.div>
   );
-} 
+});
