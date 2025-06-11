@@ -1,10 +1,19 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import dynamic from 'next/dynamic'
 import { Toaster } from 'react-hot-toast'
 import { SubmitButtonAction, SwapHeader, SwapField, SwapDetails } from '@/components/swap'
 import { HeaderActions } from '@/components/swap/ui/SwapHeader'
-import { SwapProgress, SwapConfirmSheet } from '@/components/swap'
+
+// Dynamic imports for non-critical components
+const SwapConfirmSheet = dynamic(() => import('@/components/swap/ui/SwapConfirmSheet').then(mod => ({ default: mod.SwapConfirmSheet })), {
+  ssr: false
+})
+
+const SwapHistoryDialog = dynamic(() => import('@/components/swap/ui/SwapHistoryDialog').then(mod => ({ default: mod.SwapHistoryDialog })), {
+  ssr: false
+})
 import { useSwapTokens } from '@/components/swap/hooks/useSwapTokens'
 import { useTokenBalances } from '@/components/swap/hooks/useTokenBalances'
 import { useSwapRoute } from '@/components/swap/hooks/useSwapRoute'
@@ -14,7 +23,6 @@ import { useSwapConfirmation } from '@/components/swap/hooks/useSwapConfirmation
 import { useSwapExecution } from '@/components/swap/hooks/useSwapExecution'
 import { useSwapHistory } from '@/components/swap/hooks/useSwapHistory'
 import { LoadState } from '@/components/swap/ui/LoadState'
-import { SwapHistoryDialog } from '@/components/swap/ui/SwapHistoryDialog'
 import { ArrowSymbolDown } from '@/components/swap'
 import { calculateMinimumReceived } from '@/components/swap'
 
@@ -27,6 +35,16 @@ export function SwapContainer() {
   const [showHistory, setShowHistory] = useState(false)
   const [openInputDialog, setOpenInputDialog] = useState(false)
   const [openOutputDialog, setOpenOutputDialog] = useState(false)
+
+  // Simple URL parameter management for asset selection
+  const updateURLParams = useCallback((from?: string, to?: string) => {
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      if (from) url.searchParams.set('from', from)
+      if (to) url.searchParams.set('to', to)
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [])
 
   // Initialize wallet state first to avoid circular dependencies
   const [isConnected, setIsConnected] = useState(false)
@@ -236,7 +254,10 @@ export function SwapContainer() {
                 token={inputToken}
                 amount={inputAmount}
                 balance={inputBalance}
-                onTokenSelect={setInputToken}
+                onTokenSelect={(token) => {
+                  setInputToken(token)
+                  updateURLParams(token.symbol, outputToken?.symbol)
+                }}
                 onAmountChange={handleInputChange}
                 openDialog={openInputDialog}
                 setOpenDialog={setOpenInputDialog}
@@ -253,7 +274,10 @@ export function SwapContainer() {
                 token={outputToken}
                 amount={outputAmount}
                 balance={outputBalance}
-                onTokenSelect={setOutputToken}
+                onTokenSelect={(token) => {
+                  setOutputToken(token)
+                  updateURLParams(inputToken?.symbol, token.symbol)
+                }}
                 openDialog={openOutputDialog}
                 setOpenDialog={setOpenOutputDialog}
                 availableTokens={tokens}
