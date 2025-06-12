@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/services/db/supabase';
 
 export type SwapHistory = Database['public']['Tables']['swap_history']['Row'];
 export type SwapHistoryInsert = Database['public']['Tables']['swap_history']['Insert'];
