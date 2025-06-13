@@ -240,14 +240,14 @@ export function SwapContainer() {
       />
 
       {/* Main Content */}
-      <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-cyan-900 to-slate-900 flex flex-col items-center justify-start pt-8">
+      <div className="min-h-screen w-full flex flex-col items-center justify-start pt-8 relative z-10">
         <div className="w-full max-w-md space-y-8">
           <SwapHeader
             slippageTolerance={slippageTolerance}
             setSlippageTolerance={setSlippageTolerance}
           />
 
-          <div className="space-y-8">
+          <div className="space-y-6">
             <div className="space-y-6">
               <SwapField
                 type="input"
@@ -320,11 +320,13 @@ export function SwapContainer() {
       <Toaster
         position="top-right"
         toastOptions={{
-          className: "!bg-slate-900 !border !border-slate-800 !text-white",
+          className: "!bg-forest-900/90 !border !border-forest-600/50 !text-forest-100",
           style: {
-            background: 'rgb(15 23 42 / 0.9)',
-            border: '1px solid rgb(51 65 85 / 0.5)',
-            backdropFilter: 'blur(8px)',
+            background: 'rgba(15, 41, 34, 0.9)',
+            border: '1px solid rgba(44, 95, 93, 0.5)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '12px',
+            boxShadow: '0 10px 40px rgba(255, 107, 53, 0.1)',
           },
         }}
       />
