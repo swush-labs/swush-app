@@ -7,7 +7,7 @@ import { TokenButton } from '../TokenButton';
 import { AssetList } from './AssetList';
 import { SwapFieldProps } from '../types';
 import { formatBalance } from '../utils';
-import { Loader2, ChevronDown } from 'lucide-react';
+import { Loader2, ChevronDown, Wallet } from 'lucide-react';
 
 export const SwapField = memo(function SwapField({
   type,
@@ -51,29 +51,28 @@ export const SwapField = memo(function SwapField({
       {/* Content */}
       <div className="relative z-10">
         <div className="flex justify-between items-center mb-4">
-        <span className="text-xl font-bold text-white">{isInput ? 'Pay' : 'Receive'}</span>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-forest-400">Balance: </span>
-          <span className="text-sm font-medium text-forest-200">{displayBalance} {token?.symbol || ''}</span>
+          {/* Balance display - always on the left side */}
+          <div className="flex items-center gap-2">
+            <Wallet className="w-4 h-4 text-forest-400" />
+            <span className="text-sm font-medium text-forest-200">{displayBalance} {token?.symbol || ''}</span>
+          </div>
+          
+          {/* Percentage options for input (Pay) field - on the right side */}
+          <div className="flex gap-2">
+            {isInput && percentageOptions && percentageOptions.map(({ label, value }) => (
+              <Button
+                key={label}
+                variant="default"
+                size="sm"
+                onClick={() => onPercentageSelect?.(value)}
+                className="text-xs font-medium bg-forest-700/50 border-forest-600 text-forest-300 hover:bg-forest-600 hover:text-white transition-all duration-200"
+                disabled={isLoading || !balance || parseFloat(balance) <= 0}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
         </div>
-      </div>
-      
-      {isInput && percentageOptions && (
-        <div className="flex gap-2 mb-4">
-          {percentageOptions.map(({ label, value }) => (
-            <Button
-              key={label}
-              variant="outline"
-              size="sm"
-              onClick={() => onPercentageSelect?.(value)}
-              className="text-xs font-medium bg-forest-700/50 border-forest-600 text-forest-300 hover:bg-forest-600 hover:text-white transition-all duration-200"
-              disabled={isLoading || !balance || parseFloat(balance) <= 0}
-            >
-              {label}
-            </Button>
-          ))}
-        </div>
-      )}
 
       <div className="flex items-center gap-4">
         <Dialog open={openDialog} onOpenChange={setOpenDialog}>
@@ -110,7 +109,7 @@ export const SwapField = memo(function SwapField({
             value={amount}
             onChange={handleInputChange}
             readOnly={!isInput}
-            className="border-0 bg-transparent text-2xl text-white focus-visible:ring-0 focus-visible:ring-offset-0 text-right appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className="border-0 bg-transparent text-3xl text-white focus-visible:ring-0 focus-visible:ring-offset-0 text-right appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             placeholder="0"
           />
         </div>
