@@ -60,39 +60,41 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+      className={`fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-md transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`}
       onClick={(e) => {
         // Close on backdrop click, but not while confirming
         if (e.target === e.currentTarget && !isConfirming) onClose();
       }}
     >
       <div 
-        className={`w-full max-w-md rounded-t-xl bg-slate-900 border border-slate-800 border-b-0 p-5 shadow-xl transition-transform duration-300 ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
+        className={`w-full max-w-md rounded-t-2xl bg-forest-900/95 border border-forest-600/50 border-b-0 p-6 shadow-2xl shadow-flame-500/10 backdrop-blur-xl transition-transform duration-300 ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
       >
         {/* Header with close button */}
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-white">Confirm Swap</h3>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-white">Confirm Swap</h3>
           <button 
             onClick={onClose}
-            className="p-1 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-2 rounded-full hover:bg-forest-800/50 text-forest-400 hover:text-white transition-colors"
             disabled={isConfirming}
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
         {/* Swap Summary */}
-        <div className="bg-slate-800 rounded-lg p-4 mb-4">
-          <div className="flex justify-between mb-3">
-            <span className="text-slate-400">You pay</span>
-            <span className="font-medium text-white">{inputAmount} {inputToken}</span>
+        <div className="bg-forest-800/60 backdrop-blur-sm rounded-xl p-5 mb-5 border border-forest-600/30">
+          <div className="flex justify-between mb-4">
+            <span className="text-forest-300">You pay</span>
+            <span className="font-semibold text-white">{inputAmount} {inputToken}</span>
           </div>
-          <div className="flex justify-center my-2">
-            <ArrowDown size={20} className="text-slate-500" />
+          <div className="flex justify-center my-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-flame-400 to-flame-500 flex items-center justify-center">
+              <ArrowDown size={16} className="text-white" />
+            </div>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">You receive</span>
-            <span className="font-medium text-white">{outputAmount} {outputToken}</span>
+            <span className="text-forest-300">You receive</span>
+            <span className="font-semibold text-white">{outputAmount} {outputToken}</span>
           </div>
         </div>
 
@@ -122,20 +124,20 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
         )}
 
         {/* Transaction Details */}
-        <div className="mb-5 space-y-2">
+        <div className="mb-6 space-y-3">
           <div className="flex justify-between text-sm">
-            <span className="text-slate-400">Network Fee</span>
-            <span className="text-slate-200">{simulationResult?.estimatedFee || '0.0'} {inputToken}</span>
+            <span className="text-forest-400">Network Fee</span>
+            <span className="text-forest-200">{simulationResult?.estimatedFee || '0.0'} {inputToken}</span>
           </div>
           
           <div className="flex justify-between text-sm">
-            <span className="text-slate-400">Slippage Tolerance</span>
-            <span className="text-slate-200">{slippageTolerance}%</span>
+            <span className="text-forest-400">Slippage Tolerance</span>
+            <span className="text-forest-200">{slippageTolerance}%</span>
           </div>
           
           <div className="flex justify-between text-sm">
-            <span className="text-slate-400">Minimum Received</span>
-            <span className="text-slate-200">{formatBalance((parseFloat(outputAmount) * (1 - slippageTolerance / 100)).toString())} {outputToken}</span>
+            <span className="text-forest-400">Minimum Received</span>
+            <span className="text-forest-200">{formatBalance((parseFloat(outputAmount) * (1 - slippageTolerance / 100)).toString())} {outputToken}</span>
           </div>
         </div>
 
@@ -143,7 +145,7 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
         <div className="flex gap-3">
           <Button
             variant="outline"
-            className="flex-1 border-slate-700 hover:bg-slate-800"
+            className="flex-1 border-forest-600 text-forest-300 hover:bg-forest-800/50 hover:border-forest-500 transition-all duration-200"
             onClick={onClose}
             disabled={isConfirming}
           >
@@ -151,7 +153,7 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
           </Button>
           <Button
             variant="default"
-            className="flex-1 bg-blue-600 hover:bg-blue-700"
+            className="flex-1 bg-gradient-to-r from-flame-500 to-flame-400 hover:from-flame-400 hover:to-flame-300 text-white border-0 font-semibold transition-all duration-200 shadow-lg shadow-flame-500/25"
             onClick={onConfirm}
             disabled={isButtonDisabled}
           >
