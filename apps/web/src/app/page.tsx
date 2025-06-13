@@ -18,8 +18,8 @@ export default function SwapPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent"></div>
         </div>
         
-        {/* Swush Logo - Top Right Corner */}
-        <div className="absolute top-6 left-6 z-20">
+        {/* Swush Logo - Top Left Corner - Hidden on mobile */}
+        <div className="absolute top-6 left-6 z-20 hidden md:block">
           <div className="relative">
             <Image
               src="/swush-logo.png"
