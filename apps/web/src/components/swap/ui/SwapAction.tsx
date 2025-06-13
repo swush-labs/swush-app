@@ -23,7 +23,7 @@ export const SubmitButtonAction = ({
   disabled
 }: SubmitButtonProps) => {
   return (
-    <div className="pt-6">
+    <div className="">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

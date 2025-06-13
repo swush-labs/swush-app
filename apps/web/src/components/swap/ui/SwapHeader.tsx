@@ -31,8 +31,7 @@ export const SwapHeader = ({
   setSlippageTolerance
 }: SwapHeaderProps) => {
   return (
-    <div className="flex justify-between items-center px-1">
-      <h1 className="text-2xl font-bold text-white"></h1>
+    <div className="flex justify-end items-center px-1">
       <div className="flex gap-2 items-center">
         <Dialog>
           <DialogTrigger asChild>
