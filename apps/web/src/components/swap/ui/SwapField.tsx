@@ -22,11 +22,13 @@ export const SwapField = memo(function SwapField({
   percentageOptions,
   onPercentageSelect,
   isLoading,
+  balancesLoaded = true,
+  isConnected = false,
   error
 }: SwapFieldProps) {
   const isInput = type === 'input';
   const bgColor = isInput ? 'bg-pink-500' : 'bg-blue-500';
-  const displayBalance = formatBalance(balance);
+  const displayBalance = formatBalance(balance, balancesLoaded);
 
   // Handle input change with validation
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,10 +53,12 @@ export const SwapField = memo(function SwapField({
       {/* Content */}
       <div className="relative z-10">
         <div className="flex justify-between items-center mb-4">
-          {/* Balance display - always on the left side */}
+          {/* Balance display - only show when connected */}
           <div className="flex items-center gap-2">
             <Wallet className="w-4 h-4 text-forest-400" />
-            <span className="text-sm font-medium text-forest-200">{displayBalance} {token?.symbol || ''}</span>
+            <span className="text-sm font-medium text-forest-200">
+              {isConnected ? `${displayBalance} ${token?.symbol || ''}` : ''}
+            </span>
           </div>
           
           {/* Percentage options for input (Pay) field - on the right side */}

@@ -20,7 +20,7 @@ export interface RouteState {
 }
 
 export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
-  const [outputAmount, setOutputAmount] = useState('0');
+  const [outputAmount, setOutputAmount] = useState('');
   const [routeDex, setRouteDex] = useState<string | null>(null);
   const [routeState, setRouteState] = useState<RouteState>({
     isLoading: false,
@@ -37,7 +37,7 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
 
   // Reset states when tokens change
   useEffect(() => {
-    setOutputAmount('0');
+    setOutputAmount('');
     setRouteDex(null);
     setRouteState({
       isLoading: false,
@@ -50,7 +50,7 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
 
   const fetchRouteAndUpdateOutput = useCallback(async (currentInputAmount: string) => {
     if (!inputToken || !outputToken || !currentInputAmount || parseFloat(currentInputAmount) <= 0) {
-      setOutputAmount('0');
+      setOutputAmount('');
       setRouteDex(null);
       setRouteState(prev => ({ ...prev, isLoading: false, error: null }));
       setEstimatedFees('0');
@@ -62,7 +62,7 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
     latestInputAmountRef.current = currentInputAmount;
 
     setRouteState(prev => ({ ...prev, isLoading: true, error: null }));
-    setOutputAmount('0');
+    setOutputAmount('');
     setRouteDex('');
 
     try {
@@ -105,7 +105,7 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
           data: null
         });
         setRouteDex('');
-        setOutputAmount('0');
+        setOutputAmount('');
         setEstimatedFees('0');
         setFeeBreakdown(undefined);
       }
@@ -118,7 +118,7 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
         if (parseFloat(amount) > 0) {
           fetchRouteAndUpdateOutput(amount);
         } else {
-          setOutputAmount('0');
+          setOutputAmount('');
           setRouteDex('');
           setRouteState(prev => ({ ...prev, isLoading: false, error: null }));
           setEstimatedFees('0');
@@ -130,7 +130,7 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
 
   // Add resetRoute function
   const resetRoute = useCallback(() => {
-    setOutputAmount('0');
+    setOutputAmount('');
     setRouteDex('');
     setRouteState({
       isLoading: false,

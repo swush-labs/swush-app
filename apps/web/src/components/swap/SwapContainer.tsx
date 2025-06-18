@@ -28,7 +28,7 @@ import { calculateMinimumReceived } from '@/components/swap'
 
 export function SwapContainer() {
   // UI state
-  const [inputAmount, setInputAmount] = useState('0')
+  const [inputAmount, setInputAmount] = useState('')
   const [slippageTolerance, setSlippageTolerance] = useState(10)
   const [transactionDeadline, setTransactionDeadline] = useState(20)
   const [insufficientBalance, setInsufficientBalance] = useState(false)
@@ -58,6 +58,7 @@ export function SwapContainer() {
     inputBalance,
     outputBalance,
     isBalanceLoading,
+    balancesLoaded,
     resetBalances,
     refreshBalances
   } = useTokenBalances({
@@ -135,7 +136,7 @@ export function SwapContainer() {
     routeState,
     onSuccess: () => {
       // Reset all swap-related states
-      setInputAmount('0');
+      setInputAmount('');
       resetRoute(); // This will reset the output amount and route state
 
       // Slight delay before closing the progress modal to show success state
@@ -148,7 +149,7 @@ export function SwapContainer() {
     },
     onError: (error) => {
       // Reset all swap-related states
-      setInputAmount('0');
+      setInputAmount('');
       resetRoute();
       setIsSwapping(false);
       resetConfirmationState();
@@ -181,7 +182,7 @@ export function SwapContainer() {
     // Reset route state
     resetRoute();
     // Reset input amount
-    setInputAmount('0');
+    setInputAmount('');
   }, [handleDisconnect, showConfirmation, resetConfirmationState, resetBalances, resetRoute]);
 
   // Effect to reset states when tokens change
@@ -190,7 +191,7 @@ export function SwapContainer() {
     setInsufficientBalance(false);
 
     // If we have both tokens and an input amount, fetch new route
-    if (inputToken && outputToken && parseFloat(inputAmount) > 0) {
+    if (inputToken && outputToken && inputAmount && parseFloat(inputAmount) > 0) {
       debouncedFetchRoute(inputAmount);
     }
   }, [inputToken, outputToken, inputAmount, debouncedFetchRoute]);
@@ -265,6 +266,8 @@ export function SwapContainer() {
                 percentageOptions={percentageOptions}
                 onPercentageSelect={(value) => handleInputChange((parseFloat(inputBalance) * value).toString())}
                 isLoading={isConnected && isBalanceLoading}
+                balancesLoaded={balancesLoaded}
+                isConnected={isConnected}
               />
 
               <ArrowSymbolDown />
@@ -282,6 +285,8 @@ export function SwapContainer() {
                 setOpenDialog={setOpenOutputDialog}
                 availableTokens={tokens}
                 isLoading={routeState.isLoading || (isConnected && isBalanceLoading)}
+                balancesLoaded={balancesLoaded}
+                isConnected={isConnected}
                 error={routeState.error}
               />
             </div>
@@ -293,6 +298,7 @@ export function SwapContainer() {
               maxTransactionFee={estimatedFees || simulationResult?.estimatedFee || '0'}
               feeBreakdown={feeBreakdown || simulationResult?.feeBreakdown}
               route={routeDex || ''}
+              isLoading={routeState.isLoading}
             />
 
             <SubmitButtonAction
@@ -302,7 +308,7 @@ export function SwapContainer() {
               setWalletAddress={setWalletAddress}
               onSwap={() => handleSwapExecution(isConnected)}
               insufficientBalance={insufficientBalance}
-              disabled={!inputAmount || parseFloat(inputAmount) <= 0 || insufficientBalance}
+              disabled={!inputAmount || inputAmount === '' || parseFloat(inputAmount) <= 0 || insufficientBalance}
             />
           </div>
         </div>

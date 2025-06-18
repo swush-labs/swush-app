@@ -85,7 +85,9 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
         <div className="bg-forest-800/60 backdrop-blur-sm rounded-xl p-5 mb-5 border border-forest-600/30">
           <div className="flex justify-between mb-4">
             <span className="text-forest-300">You pay</span>
-            <span className="font-semibold text-white">{inputAmount} {inputToken}</span>
+            <span className="font-semibold text-white">
+              {inputAmount && parseFloat(inputAmount) > 0 ? `${inputAmount} ${inputToken}` : '— —'}
+            </span>
           </div>
           <div className="flex justify-center my-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-flame-400 to-flame-500 flex items-center justify-center">
@@ -94,7 +96,9 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
           </div>
           <div className="flex justify-between">
             <span className="text-forest-300">You receive</span>
-            <span className="font-semibold text-white">{outputAmount} {outputToken}</span>
+            <span className="font-semibold text-white">
+              {outputAmount && parseFloat(outputAmount) > 0 ? `${outputAmount} ${outputToken}` : '— —'}
+            </span>
           </div>
         </div>
 
@@ -127,7 +131,11 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
         <div className="mb-6 space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-forest-400">Network Fee</span>
-            <span className="text-forest-200">{simulationResult?.estimatedFee || '0.0'} {inputToken}</span>
+            <span className="text-forest-200">
+              {simulationResult?.estimatedFee && simulationResult.estimatedFee !== '0' 
+                ? `${simulationResult.estimatedFee} ${inputToken}` 
+                : '—'}
+            </span>
           </div>
           
           <div className="flex justify-between text-sm">
@@ -137,7 +145,11 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
           
           <div className="flex justify-between text-sm">
             <span className="text-forest-400">Minimum Received</span>
-            <span className="text-forest-200">{formatBalance((parseFloat(outputAmount) * (1 - slippageTolerance / 100)).toString())} {outputToken}</span>
+            <span className="text-forest-200">
+              {outputAmount && parseFloat(outputAmount) > 0
+                ? `${formatBalance((parseFloat(outputAmount) * (1 - slippageTolerance / 100)).toString(), true)} ${outputToken}`
+                : '—'}
+            </span>
           </div>
         </div>
 
