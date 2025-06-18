@@ -203,11 +203,14 @@ export function SwapContainer() {
 
       if (value && parseFloat(value) > 0) {
         debouncedFetchRoute(value);
+      } else {
+        // Reset route when input is cleared or zero
+        resetRoute();
       }
 
       setInsufficientBalance(value !== '' && parseFloat(value) > parseFloat(inputBalance));
     }
-  }, [debouncedFetchRoute, inputBalance]);
+  }, [debouncedFetchRoute, inputBalance, resetRoute]);
 
   const percentageOptions = useMemo(() => [
     { label: '25%', value: 0.25 },
