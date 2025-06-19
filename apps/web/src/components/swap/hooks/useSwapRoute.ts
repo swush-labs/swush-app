@@ -72,8 +72,8 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
         amountIn: currentInputAmount
       });
       
-      // Only update if this is still the latest input amount
-      if (latestInputAmountRef.current === currentInputAmount) {
+      // Only update if this is still the latest input amount and ref hasn't been cleared
+      if (latestInputAmountRef.current === currentInputAmount && latestInputAmountRef.current !== '') {
         setRouteDex(getNetworkDisplayName(route.dex));
         setRouteState({
           isLoading: false,
@@ -97,8 +97,8 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
         errorMessage = `No route available from ${inputToken.symbol} to ${outputToken.symbol}`;
       }
 
-      // Only update if this is still the latest input amount
-      if (latestInputAmountRef.current === currentInputAmount) {
+      // Only update if this is still the latest input amount and ref hasn't been cleared
+      if (latestInputAmountRef.current === currentInputAmount && latestInputAmountRef.current !== '') {
         setRouteState({
           isLoading: false,
           error: errorMessage,
@@ -115,7 +115,8 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
   const debouncedFetchRoute = useMemo(
     () =>
       debounce((amount: string) => {
-        if (parseFloat(amount) > 0) {
+        // Additional safety check to prevent API calls with invalid amounts
+        if (amount && parseFloat(amount) > 0 && !isNaN(parseFloat(amount))) {
           fetchRouteAndUpdateOutput(amount);
         } else {
           setOutputAmount('');
@@ -130,6 +131,9 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
 
   // Add resetRoute function
   const resetRoute = useCallback(() => {
+    // Clear the latest input amount ref to prevent stale API responses
+    latestInputAmountRef.current = '';
+    
     setOutputAmount('');
     setRouteDex('');
     setRouteState({

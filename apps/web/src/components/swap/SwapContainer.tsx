@@ -204,7 +204,8 @@ export function SwapContainer() {
       if (value && parseFloat(value) > 0) {
         debouncedFetchRoute(value);
       } else {
-        // Reset route when input is cleared or zero
+        // Cancel any pending debounced calls and reset route when input is cleared or zero
+        debouncedFetchRoute.cancel();
         resetRoute();
       }
 
