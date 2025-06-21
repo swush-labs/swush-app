@@ -27,7 +27,7 @@ sleep 3
 echo "📋 Step 2: Starting application..."
 
 # Start the application with environment variable and log output
-nohup env NEXT_PUBLIC_API_HOST=139.84.213.65 pnpm dev > output.log 2>&1 &
+nohup env NEXT_PUBLIC_API_HOST=api.swush.me pnpm dev > output.log 2>&1 &
 
 echo "✅ Application restarted successfully!"
 echo "📋 Logs are being written to output.log"
