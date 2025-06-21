@@ -13,19 +13,34 @@ export const mockBlockchainTransaction = async (): Promise<boolean> => {
 
 export const calculateOutputAmount = (inputAmount: string): string => {
   const inputValue = parseFloat(inputAmount);
-  return isNaN(inputValue) ? '0' : (inputValue * 2).toFixed(4);
+  return isNaN(inputValue) || !inputAmount ? '' : (inputValue * 2).toFixed(4);
 };
 
 export const calculateMinimumReceived = (outputAmount: string, slippageTolerance: number = 0.5): string => {
+  if (!outputAmount || outputAmount === '' || isNaN(parseFloat(outputAmount))) {
+    return '';
+  }
   return (parseFloat(outputAmount) * (1 - slippageTolerance / 100)).toFixed(ROUND_OPTION);
 }; 
 
 
 // Helper function to format balance display
-export function formatBalance(balance: string | undefined): string {
-  if (!balance || balance === '0') return '0';
+export function formatBalance(balance: string | undefined, isLoaded: boolean = true): string {
+  // If not loaded yet, return empty for placeholder state
+  if (!isLoaded) return '';
+  
+  // If loaded but no balance value, return empty
+  if (!balance || balance === '') return '';
   
   const numBalance = parseFloat(balance);
+  
+  // If loaded and balance is 0, show '0' 
+  if (!isNaN(numBalance) && numBalance === 0) return '0';
+  
+  // If invalid number, return empty
+  if (isNaN(numBalance)) return '';
+  
+  // Format non-zero balances
   if (numBalance < 0.0001 && numBalance > 0) return '< 0.0001';
   
   // For numbers less than 1, show more decimals

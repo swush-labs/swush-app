@@ -16,17 +16,19 @@ export function useTokenBalances({
   inputToken,
   outputToken
 }: UseTokenBalancesProps) {
-  const [inputBalance, setInputBalance] = useState('0');
-  const [outputBalance, setOutputBalance] = useState('0');
+  const [inputBalance, setInputBalance] = useState('');
+  const [outputBalance, setOutputBalance] = useState('');
   const [isBalanceLoading, setIsBalanceLoading] = useState(false);
+  const [balancesLoaded, setBalancesLoaded] = useState(false);
 
   // Function to fetch balances directly from the API
   const fetchBalances = useCallback(async () => {
     // Early return and reset if not connected or no wallet address
     if (!isConnected || !walletAddress) {
-      setInputBalance('0');
-      setOutputBalance('0');
+      setInputBalance('');
+      setOutputBalance('');
       setIsBalanceLoading(false);
+      setBalancesLoaded(false);
       return;
     }
 
@@ -46,6 +48,10 @@ export function useTokenBalances({
 
       // Only update balances if still connected
       if (isConnected && walletAddress) {
+        // Initialize balances to '0' for tokens that are being fetched
+        if (inputToken) setInputBalance('0');
+        if (outputToken) setOutputBalance('0');
+        
         // Process results and update states
         response.forEach(result => {
           if (result.status === 'success' && result.data) {
@@ -61,6 +67,9 @@ export function useTokenBalances({
             }
           }
         });
+        
+        // Mark balances as loaded
+        setBalancesLoaded(true);
       }
     } catch (error) {
       console.error('Failed to fetch token balances:', error);
@@ -91,9 +100,10 @@ export function useTokenBalances({
       // Only refresh after swap if still connected
       refreshBalances(true, txHash);
     } else {
-      // Just reset the balances to 0 without refreshing
-      setInputBalance('0');
-      setOutputBalance('0');
+      // Just reset the balances to empty without refreshing
+      setInputBalance('');
+      setOutputBalance('');
+      setBalancesLoaded(false);
     }
   }, [refreshBalances, isConnected]);
 
@@ -112,9 +122,10 @@ export function useTokenBalances({
     if (isConnected && walletAddress) {
       fetchIfMounted();
     } else {
-      // Reset balances to 0 when disconnected
-      setInputBalance('0');
-      setOutputBalance('0');
+      // Reset balances to empty when disconnected
+      setInputBalance('');
+      setOutputBalance('');
+      setBalancesLoaded(false);
     }
     
     // Set up regular refresh interval if connected
@@ -135,6 +146,7 @@ export function useTokenBalances({
     inputBalance,
     outputBalance,
     isBalanceLoading,
+    balancesLoaded,
     resetBalances,
     refreshBalances
   };

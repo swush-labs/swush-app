@@ -179,7 +179,7 @@ export function formatAmount(
 export function convertToPlank(amount: string | number, decimals: number): bigint {
   try {
     // Handle empty or invalid input
-    if (!amount || amount === '0') {
+    if (!amount || amount === '0' || amount === '') {
       return BigInt(0);
     }
 

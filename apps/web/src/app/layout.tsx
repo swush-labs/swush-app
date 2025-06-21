@@ -9,7 +9,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Swush",
-  description: "DEX Aggregator on Polkadot Asset Hub",
+  description: "DEX Aggregator on Polkadot Asset Hub"
 };
 
 export default function RootLayout({

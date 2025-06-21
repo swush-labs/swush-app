@@ -28,7 +28,7 @@ import { calculateMinimumReceived } from '@/components/swap'
 
 export function SwapContainer() {
   // UI state
-  const [inputAmount, setInputAmount] = useState('0')
+  const [inputAmount, setInputAmount] = useState('')
   const [slippageTolerance, setSlippageTolerance] = useState(10)
   const [transactionDeadline, setTransactionDeadline] = useState(20)
   const [insufficientBalance, setInsufficientBalance] = useState(false)
@@ -58,6 +58,7 @@ export function SwapContainer() {
     inputBalance,
     outputBalance,
     isBalanceLoading,
+    balancesLoaded,
     resetBalances,
     refreshBalances
   } = useTokenBalances({
@@ -135,7 +136,7 @@ export function SwapContainer() {
     routeState,
     onSuccess: () => {
       // Reset all swap-related states
-      setInputAmount('0');
+      setInputAmount('');
       resetRoute(); // This will reset the output amount and route state
 
       // Slight delay before closing the progress modal to show success state
@@ -148,7 +149,7 @@ export function SwapContainer() {
     },
     onError: (error) => {
       // Reset all swap-related states
-      setInputAmount('0');
+      setInputAmount('');
       resetRoute();
       setIsSwapping(false);
       resetConfirmationState();
@@ -181,7 +182,7 @@ export function SwapContainer() {
     // Reset route state
     resetRoute();
     // Reset input amount
-    setInputAmount('0');
+    setInputAmount('');
   }, [handleDisconnect, showConfirmation, resetConfirmationState, resetBalances, resetRoute]);
 
   // Effect to reset states when tokens change
@@ -190,7 +191,7 @@ export function SwapContainer() {
     setInsufficientBalance(false);
 
     // If we have both tokens and an input amount, fetch new route
-    if (inputToken && outputToken && parseFloat(inputAmount) > 0) {
+    if (inputToken && outputToken && inputAmount && parseFloat(inputAmount) > 0) {
       debouncedFetchRoute(inputAmount);
     }
   }, [inputToken, outputToken, inputAmount, debouncedFetchRoute]);
@@ -202,11 +203,15 @@ export function SwapContainer() {
 
       if (value && parseFloat(value) > 0) {
         debouncedFetchRoute(value);
+      } else {
+        // Cancel any pending debounced calls and reset route when input is cleared or zero
+        debouncedFetchRoute.cancel();
+        resetRoute();
       }
 
       setInsufficientBalance(value !== '' && parseFloat(value) > parseFloat(inputBalance));
     }
-  }, [debouncedFetchRoute, inputBalance]);
+  }, [debouncedFetchRoute, inputBalance, resetRoute]);
 
   const percentageOptions = useMemo(() => [
     { label: '25%', value: 0.25 },
@@ -240,15 +245,15 @@ export function SwapContainer() {
       />
 
       {/* Main Content */}
-      <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-cyan-900 to-slate-900 flex flex-col items-center justify-start pt-8">
-        <div className="w-full max-w-md space-y-8">
+      <div className="min-h-screen w-full flex flex-col items-center justify-start px-6 py-8 md:px-4 md:py-4 relative z-10">
+        <div className="w-full max-w-md space-y-6 md:space-y-4">
           <SwapHeader
             slippageTolerance={slippageTolerance}
             setSlippageTolerance={setSlippageTolerance}
           />
 
           <div className="space-y-8">
-            <div className="space-y-6">
+            <div className="">
               <SwapField
                 type="input"
                 token={inputToken}
@@ -265,6 +270,8 @@ export function SwapContainer() {
                 percentageOptions={percentageOptions}
                 onPercentageSelect={(value) => handleInputChange((parseFloat(inputBalance) * value).toString())}
                 isLoading={isConnected && isBalanceLoading}
+                balancesLoaded={balancesLoaded}
+                isConnected={isConnected}
               />
 
               <ArrowSymbolDown />
@@ -282,6 +289,8 @@ export function SwapContainer() {
                 setOpenDialog={setOpenOutputDialog}
                 availableTokens={tokens}
                 isLoading={routeState.isLoading || (isConnected && isBalanceLoading)}
+                balancesLoaded={balancesLoaded}
+                isConnected={isConnected}
                 error={routeState.error}
               />
             </div>
@@ -293,6 +302,7 @@ export function SwapContainer() {
               maxTransactionFee={estimatedFees || simulationResult?.estimatedFee || '0'}
               feeBreakdown={feeBreakdown || simulationResult?.feeBreakdown}
               route={routeDex || ''}
+              isLoading={routeState.isLoading}
             />
 
             <SubmitButtonAction
@@ -302,7 +312,7 @@ export function SwapContainer() {
               setWalletAddress={setWalletAddress}
               onSwap={() => handleSwapExecution(isConnected)}
               insufficientBalance={insufficientBalance}
-              disabled={!inputAmount || parseFloat(inputAmount) <= 0 || insufficientBalance}
+              disabled={!inputAmount || inputAmount === '' || parseFloat(inputAmount) <= 0 || insufficientBalance}
             />
           </div>
         </div>
@@ -320,11 +330,13 @@ export function SwapContainer() {
       <Toaster
         position="top-right"
         toastOptions={{
-          className: "!bg-slate-900 !border !border-slate-800 !text-white",
+          className: "!bg-forest-900/90 !border !border-forest-600/50 !text-forest-100",
           style: {
-            background: 'rgb(15 23 42 / 0.9)',
-            border: '1px solid rgb(51 65 85 / 0.5)',
-            backdropFilter: 'blur(8px)',
+            background: 'rgba(15, 41, 34, 0.9)',
+            border: '1px solid rgba(44, 95, 93, 0.5)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '12px',
+            boxShadow: '0 10px 40px rgba(255, 107, 53, 0.1)',
           },
         }}
       />

@@ -72,6 +72,8 @@ export interface SwapFieldProps {
   percentageOptions?: Array<{ label: string; value: number }>;
   onPercentageSelect?: (value: number) => void;
   isLoading?: boolean;
+  balancesLoaded?: boolean;
+  isConnected?: boolean;
   error?: string | null;
 }
 

@@ -20,7 +20,7 @@ export interface RouteState {
 }
 
 export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
-  const [outputAmount, setOutputAmount] = useState('0');
+  const [outputAmount, setOutputAmount] = useState('');
   const [routeDex, setRouteDex] = useState<string | null>(null);
   const [routeState, setRouteState] = useState<RouteState>({
     isLoading: false,
@@ -37,7 +37,7 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
 
   // Reset states when tokens change
   useEffect(() => {
-    setOutputAmount('0');
+    setOutputAmount('');
     setRouteDex(null);
     setRouteState({
       isLoading: false,
@@ -50,7 +50,7 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
 
   const fetchRouteAndUpdateOutput = useCallback(async (currentInputAmount: string) => {
     if (!inputToken || !outputToken || !currentInputAmount || parseFloat(currentInputAmount) <= 0) {
-      setOutputAmount('0');
+      setOutputAmount('');
       setRouteDex(null);
       setRouteState(prev => ({ ...prev, isLoading: false, error: null }));
       setEstimatedFees('0');
@@ -62,7 +62,7 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
     latestInputAmountRef.current = currentInputAmount;
 
     setRouteState(prev => ({ ...prev, isLoading: true, error: null }));
-    setOutputAmount('0');
+    setOutputAmount('');
     setRouteDex('');
 
     try {
@@ -72,8 +72,8 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
         amountIn: currentInputAmount
       });
       
-      // Only update if this is still the latest input amount
-      if (latestInputAmountRef.current === currentInputAmount) {
+      // Only update if this is still the latest input amount and ref hasn't been cleared
+      if (latestInputAmountRef.current === currentInputAmount && latestInputAmountRef.current !== '') {
         setRouteDex(getNetworkDisplayName(route.dex));
         setRouteState({
           isLoading: false,
@@ -97,15 +97,15 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
         errorMessage = `No route available from ${inputToken.symbol} to ${outputToken.symbol}`;
       }
 
-      // Only update if this is still the latest input amount
-      if (latestInputAmountRef.current === currentInputAmount) {
+      // Only update if this is still the latest input amount and ref hasn't been cleared
+      if (latestInputAmountRef.current === currentInputAmount && latestInputAmountRef.current !== '') {
         setRouteState({
           isLoading: false,
           error: errorMessage,
           data: null
         });
         setRouteDex('');
-        setOutputAmount('0');
+        setOutputAmount('');
         setEstimatedFees('0');
         setFeeBreakdown(undefined);
       }
@@ -115,10 +115,11 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
   const debouncedFetchRoute = useMemo(
     () =>
       debounce((amount: string) => {
-        if (parseFloat(amount) > 0) {
+        // Additional safety check to prevent API calls with invalid amounts
+        if (amount && parseFloat(amount) > 0 && !isNaN(parseFloat(amount))) {
           fetchRouteAndUpdateOutput(amount);
         } else {
-          setOutputAmount('0');
+          setOutputAmount('');
           setRouteDex('');
           setRouteState(prev => ({ ...prev, isLoading: false, error: null }));
           setEstimatedFees('0');
@@ -130,7 +131,10 @@ export function useSwapRoute({ inputToken, outputToken }: UseSwapRouteProps) {
 
   // Add resetRoute function
   const resetRoute = useCallback(() => {
-    setOutputAmount('0');
+    // Clear the latest input amount ref to prevent stale API responses
+    latestInputAmountRef.current = '';
+    
+    setOutputAmount('');
     setRouteDex('');
     setRouteState({
       isLoading: false,
