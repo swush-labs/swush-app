@@ -12,7 +12,8 @@ import {
     XcmV4AssetAssetFilter,
     XcmV4AssetWildAsset,
     polkadot_asset_hub,
-    hydration
+    hydration,
+    PolkadotXcmVersionedXcm
 } from '@polkadot-api/descriptors';
 import { type XcmV4Location } from "@swush/api";
 import { AssetWithId } from "@/lib/api";
@@ -175,7 +176,7 @@ export async function calculateHydraDxXcmFees(
 
     // Extract the XCM message
     const [_, messages] = targetMessage;
-    const xcmMessage = messages[0];
+    const xcmMessage = messages[0] as PolkadotXcmVersionedXcm;
 
     // Calculate initial execution fee
     console.log('Debug: Calculating initial execution fee...');
