@@ -70,34 +70,7 @@ pnpm start
 ```
 
 ## 🔧 **Nginx Configuration Example**
-
-Your nginx should be configured like this:
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name app.swush.me;
-    
-    ssl_certificate /etc/letsencrypt/live/app.swush.me/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/app.swush.me/privkey.pem;
-    
-    location /api/ {
-        proxy_pass http://localhost:3001;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-    
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
+Refer to [nginx.md](./ci/nginx.md) for the nginx configuration.
 
 ## ✅ **Benefits of This Setup**
 
