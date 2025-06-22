@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import { Toaster } from 'react-hot-toast'
 import { SubmitButtonAction, SwapHeader, SwapField, SwapDetails } from '@/components/swap'
 import { HeaderActions } from '@/components/swap/ui/SwapHeader'
-
+  
 // Dynamic imports for non-critical components
 const SwapConfirmSheet = dynamic(() => import('@/components/swap/ui/SwapConfirmSheet').then(mod => ({ default: mod.SwapConfirmSheet })), {
   ssr: false
@@ -36,21 +36,11 @@ export function SwapContainer() {
   const [openInputDialog, setOpenInputDialog] = useState(false)
   const [openOutputDialog, setOpenOutputDialog] = useState(false)
 
-  // Simple URL parameter management for asset selection
-  const updateURLParams = useCallback((from?: string, to?: string) => {
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href)
-      if (from) url.searchParams.set('from', from)
-      if (to) url.searchParams.set('to', to)
-      window.history.replaceState({}, '', url.toString())
-    }
-  }, [])
-
   // Initialize wallet state first to avoid circular dependencies
   const [isConnected, setIsConnected] = useState(false)
   const [walletAddress, setWalletAddress] = useState('')
 
-  // Custom hooks - Token and Balance handling
+  // Custom hooks - Token and Balance handling (nuqs handles URL params automatically)
   const { inputToken, setInputToken, outputToken, setOutputToken, tokens } = useSwapTokens()
 
   // Token balances
@@ -261,7 +251,6 @@ export function SwapContainer() {
                 balance={inputBalance}
                 onTokenSelect={(token) => {
                   setInputToken(token)
-                  updateURLParams(token.symbol, outputToken?.symbol)
                 }}
                 onAmountChange={handleInputChange}
                 openDialog={openInputDialog}
@@ -283,7 +272,6 @@ export function SwapContainer() {
                 balance={outputBalance}
                 onTokenSelect={(token) => {
                   setOutputToken(token)
-                  updateURLParams(inputToken?.symbol, token.symbol)
                 }}
                 openDialog={openOutputDialog}
                 setOpenDialog={setOpenOutputDialog}
