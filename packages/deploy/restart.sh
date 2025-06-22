@@ -43,7 +43,6 @@ if pgrep -f "pnpm dev" > /dev/null; then
     echo "🌐 Backend HTTP: http://localhost:3001 (internal)"
     echo "🌐 Frontend HTTP: http://localhost:3000 (internal)"
     echo "🔒 Public HTTPS: https://app.swush.me (via nginx)"
-    echo "📋 Logs: tail -f output.log"
     
     # Check nginx status
     if systemctl is-active --quiet nginx; then
@@ -51,6 +50,8 @@ if pgrep -f "pnpm dev" > /dev/null; then
     else
         echo "⚠️  Nginx is not running - start it with: sudo systemctl start nginx"
     fi
+
+    tail -f output.log
 else
     echo "❌ Failed to start application"
     echo "📋 Check logs: tail -n 20 output.log"
