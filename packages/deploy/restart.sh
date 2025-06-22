@@ -26,17 +26,18 @@ sleep 3
 
 echo "📋 Step 2: Starting application (HTTP behind nginx)..."
 
-# Start the application with production environment variables (properly detached)
-nohup bash -c "
-    exec env \
+# Start the application with production environment variables (fully detached)
+setsid bash -c '
+    exec nohup env \
         NEXT_PUBLIC_API_HOST=api.swush.me \
         NEXT_PUBLIC_USE_HTTPS=true \
         TRUST_PROXY=true \
-        pnpm dev
-" > output.log 2>&1 < /dev/null &
+        pnpm dev > output.log 2>&1 < /dev/null
+' &
 
-# Store the background process PID
-BG_PID=$!
+# Get the actual pnpm process PID (more reliable)
+sleep 2
+BG_PID=$(pgrep -f "pnpm dev" | head -1)
 echo "📋 Application started with PID: $BG_PID"
 
 # Give the application time to start
@@ -64,8 +65,36 @@ if pgrep -f "pnpm dev" > /dev/null; then
     echo "📋 Showing logs (Press Ctrl+C to exit, app will keep running)..."
     echo "================================================"
     
-    # Show logs with signal handling
-    trap 'echo -e "\n📋 Exited log view. App still running (PID: $BG_PID)\n📋 View logs: tail -f output.log\n📋 Stop app: kill $BG_PID"; exit 0' INT
+    # Verify process is still running before showing logs
+    if ! kill -0 $BG_PID 2>/dev/null; then
+        echo "⚠️  Background process not found, searching for pnpm dev..."
+        BG_PID=$(pgrep -f "pnpm dev" | head -1)
+        if [ -z "$BG_PID" ]; then
+            echo "❌ No pnpm dev process found!"
+            exit 1
+        fi
+        echo "📋 Found process PID: $BG_PID"
+    fi
+    
+    # Enhanced signal handling - ignore SIGTERM to prevent accidental termination
+    cleanup_logs() {
+        echo ""
+        echo "================================================"
+        # Double-check process is still running
+        if kill -0 $BG_PID 2>/dev/null; then
+            echo "✅ App still running (PID: $BG_PID)"
+        else
+            echo "⚠️  App process may have stopped"
+        fi
+        echo "📋 View logs again: tail -f output.log"
+        echo "📋 Stop app: kill $BG_PID"
+        exit 0
+    }
+    
+    # Trap signals but ensure they don't affect background process
+    trap cleanup_logs INT TERM
+    
+    # Show logs (this will only exit when interrupted)
     tail -f output.log
 
 else
