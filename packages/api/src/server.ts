@@ -8,11 +8,27 @@ import { initializeSDK } from '../services';
 
 const app = express();
 const port = process.env.PORT || 3001;
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 // Middleware
-app.use(helmet());
+app.use(helmet({
+  // Trust proxy headers from nginx
+  ...(process.env.TRUST_PROXY === 'true' && {
+    hsts: {
+      maxAge: 31536000, // 1 year
+      includeSubDomains: true,
+      preload: true
+    }
+  })
+}));
+
 app.use(cors());
 app.use(express.json());
+
+// Trust nginx proxy for real IP addresses
+if (process.env.TRUST_PROXY === 'true') {
+  app.set('trust proxy', 1);
+}
 
 // Rate limiting
 const limiter = rateLimit({
@@ -20,6 +36,19 @@ const limiter = rateLimit({
   max: 100 // limit each IP to 100 requests per windowMs
 });
 app.use(limiter);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    protocol: req.protocol,
+    secure: req.secure,
+    forwarded: req.get('X-Forwarded-Proto') || 'none',
+    host: req.get('Host'),
+    userAgent: req.get('User-Agent')
+  });
+});
 
 // Initialize SDK
 (async () => {
@@ -45,6 +74,14 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   });
 });
 
+// Start HTTP server (nginx handles HTTPS)
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`🌐 HTTP Server running on port ${port}`);
+  if (isDevelopment) {
+    console.log(`📍 Development: http://localhost:${port}`);
+    console.log(`📍 Health check: http://localhost:${port}/health`);
+  } else {
+    console.log(`📍 Production: Running behind nginx proxy`);
+    console.log(`📍 Health check: http://localhost:${port}/health`);
+  }
 }); 
