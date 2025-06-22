@@ -50,17 +50,6 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Initialize SDK
-(async () => {
-  try {
-    await initializeSDK();
-    console.log('✅ SDK initialized successfully 🚀');
-  } catch (error) {
-    console.error('❌ Failed to initialize SDK:', error); 
-    process.exit(1);
-  }
-})();
-
 // Routes
 app.use('/api/v1/assets', assetsRouter);
 app.use('/api/v1/balances', balancesRouter);
@@ -75,7 +64,7 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 });
 
 // Start HTTP server (nginx handles HTTPS)
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`🌐 HTTP Server running on port ${port}`);
   if (use_https) {
     console.log(`📍 Development: https://localhost:${port}`);
@@ -84,4 +73,16 @@ app.listen(port, () => {
     console.log(`📍 Production: Running behind nginx proxy`);
     console.log(`📍 Health check: http://localhost:${port}/health`);
   }
-}); 
+});
+
+// Initialize SDK after server starts
+(async () => {
+  try {
+    await initializeSDK();
+    console.log('✅ SDK initialized successfully 🚀');
+  } catch (error) {
+    console.error('❌ Failed to initialize SDK:', error); 
+    console.log('⚠️ Server will continue running with limited functionality');
+    // Don't exit - let the server run even if SDK fails
+  }
+})(); 

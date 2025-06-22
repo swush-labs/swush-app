@@ -113,7 +113,7 @@ export const SwapField = memo(function SwapField({
             value={amount}
             onChange={handleInputChange}
             readOnly={!isInput}
-            className="border-0 bg-transparent text-3xl text-white focus-visible:ring-0 focus-visible:ring-offset-0 text-right appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className="border-0 bg-transparent text-2xl md:text-3xl text-white focus-visible:ring-0 focus-visible:ring-offset-0 text-right appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             placeholder="0"
           />
         </div>

@@ -235,8 +235,8 @@ export function SwapContainer() {
       />
 
       {/* Main Content */}
-      <div className="min-h-screen w-full flex flex-col items-center justify-start px-6 py-8 md:px-4 md:py-4 relative z-10">
-        <div className="w-full max-w-md space-y-6 md:space-y-4">
+      <div className="min-h-screen w-full flex flex-col items-center justify-start px-6 py-4 md:px-4 md:py-4 relative z-10">
+        <div className="w-full max-w-md space-y-4 md:space-y-4">
           <SwapHeader
             slippageTolerance={slippageTolerance}
             setSlippageTolerance={setSlippageTolerance}
