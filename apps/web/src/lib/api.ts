@@ -3,44 +3,36 @@ import { NETWORKS_SUPPORTED } from '@/services/constants';
 
 const API_HOST = process.env.NEXT_PUBLIC_API_HOST || 'localhost';
 const API_VERSION = 'v1';
-const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
 const USE_HTTPS = process.env.NEXT_PUBLIC_USE_HTTPS === 'true';
 
-// Determine API base URL based on environment
+// Determine API base URL based on HTTPS setting
 const getApiConfig = () => {
-  if (IS_DEVELOPMENT) {
-    // Development: always use HTTP with explicit port
-    const port = process.env.NEXT_PUBLIC_API_PORT || '3001';
-    return {
-      baseUrl: `http://${API_HOST}:${port}/api/${API_VERSION}`,
-      protocol: 'http',
-      port,
-      host: API_HOST
-    };
-  } else {
-    // Production: use HTTPS by default (nginx handles SSL termination)
-    const protocol = process.env.NEXT_PUBLIC_USE_HTTPS !== 'false' ? 'https' : 'http';
-    return {
-      baseUrl: `${protocol}://${API_HOST}/api/${API_VERSION}`,
-      protocol,
-      port: protocol === 'https' ? '443' : '80',
-      host: API_HOST
-    };
-  }
+  const protocol = USE_HTTPS ? 'https' : 'http';
+  
+  // If HTTPS: use standard port (nginx handles SSL termination)
+  // If HTTP: use explicit port for local development
+  const baseUrl = USE_HTTPS 
+    ? `${protocol}://${API_HOST}/api/${API_VERSION}`
+    : `${protocol}://${API_HOST}:${process.env.NEXT_PUBLIC_API_PORT || '3001'}/api/${API_VERSION}`;
+  
+  return {
+    baseUrl,
+    protocol,
+    port: USE_HTTPS ? '443' : (process.env.NEXT_PUBLIC_API_PORT || '3001'),
+    host: API_HOST
+  };
 };
 
 const { baseUrl: API_BASE_URL, protocol, port } = getApiConfig();
 
-// Log configuration in development
-if (IS_DEVELOPMENT) {
-  console.log('🔧 API Configuration:', {
-    host: API_HOST,
-    protocol,
-    port,
-    baseUrl: API_BASE_URL,
-    environment: 'development'
-  });
-}
+// Log configuration for debugging
+console.log('🔧 API Configuration:', {
+  host: API_HOST,
+  protocol,
+  port,
+  baseUrl: API_BASE_URL,
+  httpsEnabled: USE_HTTPS
+});
 
 interface ApiResponse<T> {
   status: 'success' | 'error';
