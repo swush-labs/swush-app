@@ -16,6 +16,15 @@ alwaysApply: false
   UI and Styling
   - Use Shadcn UI, Radix, and Tailwind for components and styling.
   - Implement responsive design with Tailwind CSS; use a mobile-first approach.
+     
+  Naming Conventions
+  - Use lowercase with dashes for directories (e.g., components/auth-wizard).
+  - Use camelCase for file names
+  
+  TypeScript Usage
+  - Use TypeScript for all code; prefer interfaces over types.
+  - Avoid enums; use maps instead.
+  - Use functional components with TypeScript interfaces.
   
   Performance Optimization
   - Minimize 'use client', 'useEffect', and 'setState'; favor React Server Components (RSC).

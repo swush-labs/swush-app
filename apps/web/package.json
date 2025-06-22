@@ -29,21 +29,22 @@
     "lucide-react": "^0.451.0",
     "next": "14.2.15",
     "next-themes": "^0.3.0",
+    "nuqs": "^2.4.3",
     "react": "^18",
     "react-dom": "^18",
     "react-hot-toast": "^2.4.1",
     "tailwind-merge": "^2.5.3",
-    "tailwindcss-animate": "^1.0.7" 
-   },
+    "tailwindcss-animate": "^1.0.7"
+  },
   "devDependencies": {
     "@shadcn/ui": "^0.0.4",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "eslint-config-next": "14.2.15",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5.3.3",
-    "eslint-config-next": "14.2.15"
+    "typescript": "^5.3.3"
   },
   "packageManager": "pnpm@9.13.0+sha512.beb9e2a803db336c10c9af682b58ad7181ca0fbd0d4119f2b33d5f2582e96d6c0d93c85b23869295b765170fbdaa92890c0da6ada457415039769edf3c959efe"
 }
