@@ -26,9 +26,9 @@ sleep 3
 
 echo "📋 Step 2: Starting application (HTTP behind nginx)..."
 
-# Start the application with environment variables
-# Note: Keep NODE_ENV=development for dev server, only set production vars for API client
+# Start the application with production environment variables
 nohup env \
+    NODE_ENV=notdev \
     NEXT_PUBLIC_API_HOST=api.swush.me \
     NEXT_PUBLIC_USE_HTTPS=true \
     TRUST_PROXY=true \
