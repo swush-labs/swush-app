@@ -8,7 +8,7 @@ import { initializeSDK } from '../services';
 
 const app = express();
 const port = process.env.PORT || 3001;
-const isDevelopment = process.env.NODE_ENV === 'development';
+const use_https = process.env.NEXT_PUBLIC_USE_HTTPS ? true : false;
 
 // Middleware
 app.use(helmet({
@@ -77,9 +77,9 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 // Start HTTP server (nginx handles HTTPS)
 app.listen(port, () => {
   console.log(`🌐 HTTP Server running on port ${port}`);
-  if (isDevelopment) {
-    console.log(`📍 Development: http://localhost:${port}`);
-    console.log(`📍 Health check: http://localhost:${port}/health`);
+  if (use_https) {
+    console.log(`📍 Development: https://localhost:${port}`);
+    console.log(`📍 Health check: https://localhost:${port}/health`);
   } else {
     console.log(`📍 Production: Running behind nginx proxy`);
     console.log(`📍 Health check: http://localhost:${port}/health`);
