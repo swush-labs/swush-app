@@ -62,3 +62,10 @@ packages/api/src/app/api/
 output.log
 
 *.db.sqlite*
+
+#ignore .git
+.git
+
+#ignore .env
+.env
+.env.local
