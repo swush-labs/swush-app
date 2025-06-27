@@ -19,6 +19,7 @@ import { WalletButtonProps } from './types';
 import { FrontendConnectionManager } from '@/services/FrontendConnectionManager';
 import { UserService } from '@/services/userService';
 import { NETWORKS_SUPPORTED } from '@/services/constants';
+import ChopsticksService from '@/services/ChopsticksService';
 // Network configuration for address formatting
 const NETWORK_CONFIG = {
   POLKADOT: {
@@ -114,6 +115,22 @@ export const WalletButton = ({
     }
   };
 
+  // Handle chopsticks Alice auto-connect
+  const handleChopsticksConnect = async () => {
+    const chopsticksService = ChopsticksService.getInstance();
+    const aliceAccount = chopsticksService.getAliceAccount();
+    
+    // Mock WalletAccount structure for Alice
+    const mockAccount: WalletAccount = {
+      address: aliceAccount.address,
+      name: aliceAccount.name,
+      source: aliceAccount.source,
+      signer: undefined // Not needed for chopsticks
+    };
+    
+    await handleAccountSelected(mockAccount);
+  };
+
   const handleAccountSelected = async (account: WalletAccount) => {
     console.log('Selected account:', account);
     
@@ -192,6 +209,18 @@ export const WalletButton = ({
     }
   };
 
+  // Check if chopsticks mode and handle accordingly
+  const chopsticksService = ChopsticksService.getInstance();
+  const isChopsticksMode = chopsticksService.isChopsticksMode();
+
+  const handleConnectClick = () => {
+    if (isChopsticksMode) {
+      handleChopsticksConnect();
+    } else {
+      setIsOpen(true);
+    }
+  };
+
   return (
     <>
       {isConnected ? (
@@ -203,14 +232,15 @@ export const WalletButton = ({
         >
           Disconnect
         </Button>
-      ) : (
-        <Button 
-          onClick={() => setIsOpen(true)}
+            ) : (
+        <Button
+          onClick={handleConnectClick}
           variant={variant}
           className={className}
           disabled={isInitializing}
         >
-          {isInitializing ? 'Connecting...' : 'Connect Wallet'}
+          {isInitializing ? 'Connecting...' : 
+           isChopsticksMode ? 'Connect Alice (Test)' : 'Connect Wallet'}
         </Button>
       )}
 
