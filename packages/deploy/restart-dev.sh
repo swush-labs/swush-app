@@ -31,7 +31,6 @@ setsid bash -c '
     exec nohup env \
         NEXT_PUBLIC_API_HOST=dev.swush.me \
         NEXT_PUBLIC_USE_HTTPS=true \
-        NODE_ENV=staging \
         TRUST_PROXY=true \
         LOG_LEVEL=debug \
         PORT=4001 \

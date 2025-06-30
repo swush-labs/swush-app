@@ -128,6 +128,23 @@ docker compose -f docker-compose.dev.yml logs chopsticks
 
 # Stop chopsticks
 docker compose -f docker-compose.dev.yml down chopsticks
+
+# Rebuild if needed
+docker compose -f docker-compose.dev.yml up -d --build chopsticks
 ```
 
 This approach eliminates 90% of the complexity while providing a stable, self-healing demo environment perfect for beta testing! 🚀
+
+## Clean Up
+
+```bash
+
+# Remove containers and images (optional)
+docker compose -f docker-compose.dev.yml down --rmi all
+
+# Remove all containers and images
+docker compose -f docker-compose.dev.yml down --volumes --remove-orphans
+
+# Build again without cache
+docker compose -f docker-compose.dev.yml build --no-cache chopsticks
+```

@@ -30,7 +30,9 @@ export async function GET() {
     );
 
     const results = await Promise.all(healthChecks);
-    const isHealthy = results.some(result => result === true);
+
+    //both must be healthy
+    const isHealthy = results.every(result => result === true);
 
     if (isHealthy) {
       return NextResponse.json({ 

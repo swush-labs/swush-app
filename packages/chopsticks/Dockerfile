@@ -1,11 +1,7 @@
-FROM node:18-alpine
+FROM node:lts-alpine
 
-# Install dependencies for chopsticks
-RUN apk add --no-cache \
-    python3 \
-    make \
-    g++ \
-    bash
+# Install Python and build tools for native dependencies
+#RUN apk add --no-cache python3 py3-pip make g++
 
 # Set working directory
 WORKDIR /app
