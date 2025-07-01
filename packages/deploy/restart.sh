@@ -49,7 +49,7 @@ setsid bash -c '
         NEXT_PUBLIC_CHOPSTICKS_HOST=app.swush.me \
         NEXT_PUBLIC_USE_CHOPSTICKS=true \
         TRUST_PROXY=true \
-        pnpm dev > output.log 2>&1 < /dev/null
+        pnpm dev 2>&1 | awk "{ print strftime(\"[%Y-%m-%d %H:%M:%S]\"), \$0; fflush() }" > output.log < /dev/null
 ' &
 
 # Get the actual pnpm process PID (more reliable)
