@@ -174,7 +174,7 @@ export const SwapToasts = {
     return toast.success('Demo environment ready!', {
       id: TOAST_IDS.CHOPSTICKS_STATUS,
       icon: '✅',
-      duration: 3000,
+      duration: 2000,
       style: getSuccessToastStyle()
     });
   },
