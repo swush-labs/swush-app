@@ -31,6 +31,8 @@ setsid bash -c '
     exec nohup env \
         NEXT_PUBLIC_API_HOST=api.swush.me \
         NEXT_PUBLIC_USE_HTTPS=true \
+        NEXT_PUBLIC_CHOPSTICKS_HOST=app.swush.me \
+        NEXT_PUBLIC_USE_CHOPSTICKS=true \
         TRUST_PROXY=true \
         pnpm dev > output.log 2>&1 < /dev/null
 ' &

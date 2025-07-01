@@ -2,9 +2,19 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
+    // Dynamic chopsticks URLs based on environment
+    const CHOPSTICKS_HOST = process.env.NEXT_PUBLIC_CHOPSTICKS_HOST || 'localhost';
+    const USE_HTTPS = process.env.NEXT_PUBLIC_USE_HTTPS === 'true';
+    const WS_PROTOCOL = USE_HTTPS ? 'wss' : 'ws';
+    
+    // Use nginx proxy paths for production (HTTPS) or direct ports for development
     const endpoints = [
-      'ws://localhost:3421', // Asset Hub
-      'ws://localhost:3422'  // Hydration
+      USE_HTTPS 
+        ? `${WS_PROTOCOL}://${CHOPSTICKS_HOST}/3421` 
+        : `${WS_PROTOCOL}://${CHOPSTICKS_HOST}:3421`, // Asset Hub
+      USE_HTTPS 
+        ? `${WS_PROTOCOL}://${CHOPSTICKS_HOST}/3422` 
+        : `${WS_PROTOCOL}://${CHOPSTICKS_HOST}:3422`  // Hydration
     ];
 
     // Test WebSocket connections

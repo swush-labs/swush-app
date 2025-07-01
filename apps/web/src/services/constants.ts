@@ -14,7 +14,18 @@ export const NETWORKS_SUPPORTED = {
 export const AH_RPC_URL = 'wss://asset-hub-polkadot.dotters.network';
 //TEST_RPC
 export const TEST_RPC = 'ws://localhost:8000'
-export const TEST_RPC_ASSET_HUB = 'ws://localhost:3421'
+// Dynamic chopsticks URLs based on environment
+const CHOPSTICKS_HOST = process.env.NEXT_PUBLIC_CHOPSTICKS_HOST || 'localhost';
+const USE_HTTPS = process.env.NEXT_PUBLIC_USE_HTTPS === 'true';
+const WS_PROTOCOL = USE_HTTPS ? 'wss' : 'ws';
+
+// Use nginx proxy paths for production (HTTPS) or direct ports for development
+export const TEST_RPC_ASSET_HUB = USE_HTTPS 
+  ? `${WS_PROTOCOL}://${CHOPSTICKS_HOST}/3421` 
+  : `${WS_PROTOCOL}://${CHOPSTICKS_HOST}:3421`
+export const TEST_RPC_HYDRATION = USE_HTTPS 
+  ? `${WS_PROTOCOL}://${CHOPSTICKS_HOST}/3422` 
+  : `${WS_PROTOCOL}://${CHOPSTICKS_HOST}:3422`
 export const TEST_RPC_POLKADOT = 'ws://localhost:3420'
 export const TEST_RPC_PARACHAIN_HYDRATION = 'ws://localhost:3422'
 

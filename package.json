@@ -13,8 +13,11 @@
     "dev:ui": "pnpm --filter @swush/web dev",
     "dev:with-chopsticks": "cd apps/web && pnpm run dev:all",
     "dev:all": "pnpm run dev & pnpm start-chopsticks",
-    "dev:demo": "docker compose -f docker-compose.dev.yml up -d && pnpm dev",
-    "dev:demo:stop": "docker compose -f docker-compose.dev.yml down",
+    "demo": "docker compose -f docker-compose.dev.yml up -d && pnpm dev:ui",
+    "demo:start": "docker compose -f docker-compose.dev.yml up -d",
+    "demo:stop": "docker compose -f docker-compose.dev.yml down",
+    "demo:restart": "pnpm demo:stop && pnpm demo",
+    "demo:logs": "docker compose -f docker-compose.dev.yml logs -f",
     "dev:restart": "bash packages/deploy/restart-dev.sh",
     "dev:logs": "tail -f dev-output.log",
     "app:restart": "bash packages/deploy/restart.sh",
@@ -23,7 +26,7 @@
     "test": "pnpm -r test",
     "clean": "pnpm -r clean",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "start-chopsticks": "npx @acala-network/chopsticks xcm -p packages/chopsticks/config/polkadot_asset_hub.yml -p packages/chopsticks/config/hydration.yml" 
+    "start-chopsticks": "npx @acala-network/chopsticks xcm -p packages/chopsticks/config/polkadot_asset_hub.yml -p packages/chopsticks/config/hydration.yml"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.21.0",
