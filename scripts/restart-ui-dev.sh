@@ -35,7 +35,7 @@ echo "📋 Step 2: Starting UI with custom environment (detached)..."
 # Start the UI with custom environment variables on port 4000 (fully detached)
 setsid bash -c '
     exec nohup env \
-        NEXT_PUBLIC_API_HOST=dev.swush.me \
+        NEXT_PUBLIC_API_HOST=api.swush.me \
         NEXT_PUBLIC_USE_HTTPS=true \
         NEXT_PUBLIC_USE_CHOPSTICKS=true \
         TRUST_PROXY=true \
