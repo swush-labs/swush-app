@@ -1,37 +1,63 @@
 import { toast } from 'react-hot-toast';
 
-// Base toast styling configurations
-const baseToastStyle = {
-  borderRadius: '12px',
-  padding: '12px 16px',
-  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+// Responsive toast styling that adapts to screen size
+const getResponsiveToastStyle = () => {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  
+  if (isMobile) {
+    return {
+      borderRadius: '10px',
+      padding: '10px 14px',
+      fontSize: '13px',
+      maxWidth: '90vw',
+      minWidth: 'auto',
+      boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.05)'
+    };
+  } else {
+    return {
+      borderRadius: '12px',
+      padding: '12px 16px',
+      fontSize: '14px',
+      maxWidth: '400px',
+      minWidth: '300px',
+      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+    };
+  }
 };
 
-const loadingToastStyle = {
-  ...baseToastStyle,
+const getLoadingToastStyle = () => ({
+  ...getResponsiveToastStyle(),
   background: '#1f2937',
   color: '#f9fafb',
   border: '1px solid #374151'
+});
+
+const getSuccessToastStyle = () => {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  return {
+    ...getResponsiveToastStyle(),
+    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    color: '#ffffff',
+    border: '1px solid #047857',
+    fontWeight: '600',
+    boxShadow: isMobile 
+      ? '0 4px 12px -2px rgba(16, 185, 129, 0.15), 0 2px 4px -1px rgba(16, 185, 129, 0.05)'
+      : '0 10px 25px -5px rgba(16, 185, 129, 0.25), 0 4px 6px -2px rgba(16, 185, 129, 0.05)'
+  };
 };
 
-const successToastStyle = {
-  ...baseToastStyle,
-  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-  color: '#ffffff',
-  border: '1px solid #047857',
-  fontSize: '14px',
-  fontWeight: '600',
-  boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.25), 0 4px 6px -2px rgba(16, 185, 129, 0.05)'
-};
-
-const errorToastStyle = {
-  ...baseToastStyle,
-  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-  color: '#ffffff',
-  border: '1px solid #b91c1c',
-  fontSize: '14px',
-  fontWeight: '600',
-  boxShadow: '0 10px 25px -5px rgba(239, 68, 68, 0.25), 0 4px 6px -2px rgba(239, 68, 68, 0.05)'
+const getErrorToastStyle = () => {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  return {
+    ...getResponsiveToastStyle(),
+    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+    color: '#ffffff',
+    border: '1px solid #b91c1c',
+    fontWeight: '600',
+    boxShadow: isMobile 
+      ? '0 4px 12px -2px rgba(239, 68, 68, 0.15), 0 2px 4px -1px rgba(239, 68, 68, 0.05)'
+      : '0 10px 25px -5px rgba(239, 68, 68, 0.25), 0 4px 6px -2px rgba(239, 68, 68, 0.05)'
+  };
 };
 
 // Toast IDs for consistent management
@@ -53,29 +79,26 @@ export const SwapToasts = {
 
   // Processing states
   confirmAndSign: () => {
-    return toast.loading('Please confirm and sign the transaction...', {
+    return toast.loading('🔄 Please confirm and sign the transaction...', {
       id: TOAST_IDS.SWAP_STATUS,
-      icon: '🥤',
       duration: 60000,
-      style: loadingToastStyle
+      style: getLoadingToastStyle()
     });
   },
 
   processing: () => {
     toast.dismiss(TOAST_IDS.SWAP_PREPARE);
-    return toast.loading('Processing your swap...', {
-      icon: '⚡',
+    return toast.loading('⚡ Processing your swap...', {
       id: TOAST_IDS.SWAP_STATUS,
       duration: 60000,
-      style: loadingToastStyle
+      style: getLoadingToastStyle()
     });
   },
 
   xcmTransfer: () => {
-    return toast.loading('Completing cross-chain transfer...', {
-      icon: '🌉',
+    return toast.loading('🌉 Completing cross-chain transfer...', {
       id: TOAST_IDS.SWAP_STATUS,
-      style: loadingToastStyle
+      style: getLoadingToastStyle()
     });
   },
 
@@ -90,7 +113,7 @@ export const SwapToasts = {
       id: TOAST_IDS.SWAP_SUCCESS,
       duration: 7500,
       icon: '🎉',
-      style: successToastStyle
+      style: getSuccessToastStyle()
     });
   },
 
@@ -104,7 +127,7 @@ export const SwapToasts = {
       id: TOAST_IDS.SWAP_SUCCESS,
       duration: 7500,
       icon: '🎉',
-      style: successToastStyle
+      style: getSuccessToastStyle()
     });
   },
 
@@ -115,7 +138,7 @@ export const SwapToasts = {
       id: TOAST_IDS.SWAP_ERROR,
       duration: 5000,
       icon: '❌',
-      style: errorToastStyle
+      style: getErrorToastStyle()
     });
   },
 
@@ -125,7 +148,7 @@ export const SwapToasts = {
       id: TOAST_IDS.XCM_ERROR,
       duration: 5000,
       icon: '❌',
-      style: errorToastStyle
+      style: getErrorToastStyle()
     });
   },
 
@@ -135,7 +158,7 @@ export const SwapToasts = {
       id: toastId,
       duration,
       icon: '❌',
-      style: errorToastStyle
+      style: getErrorToastStyle()
     });
   },
 
@@ -143,7 +166,7 @@ export const SwapToasts = {
   chopsticksChecking: () => {
     return toast.loading('Checking demo environment...', {
       id: TOAST_IDS.CHOPSTICKS_STATUS,
-      style: loadingToastStyle
+      style: getLoadingToastStyle()
     });
   },
 
@@ -152,14 +175,14 @@ export const SwapToasts = {
       id: TOAST_IDS.CHOPSTICKS_STATUS,
       icon: '✅',
       duration: 3000,
-      style: successToastStyle
+      style: getSuccessToastStyle()
     });
   },
 
   chopsticksStarting: () => {
     return toast.loading('Starting demo environment...', {
       id: TOAST_IDS.CHOPSTICKS_STATUS,
-      style: loadingToastStyle
+      style: getLoadingToastStyle()
     });
   },
 
@@ -168,7 +191,7 @@ export const SwapToasts = {
       id: TOAST_IDS.CHOPSTICKS_STATUS,
       icon: '✅',
       duration: 3000,
-      style: successToastStyle
+      style: getSuccessToastStyle()
     });
   },
 
@@ -176,7 +199,7 @@ export const SwapToasts = {
     return toast.error('Demo environment failed to start', {
       id: TOAST_IDS.CHOPSTICKS_STATUS,
       icon: '🔴',
-      style: errorToastStyle
+      style: getErrorToastStyle()
     });
   },
 
@@ -185,7 +208,7 @@ export const SwapToasts = {
       id: TOAST_IDS.CHOPSTICKS_STATUS,
       icon: '✅',
       duration: 3000,
-      style: successToastStyle
+      style: getSuccessToastStyle()
     });
   },
 
@@ -194,7 +217,7 @@ export const SwapToasts = {
     return toast.loading(message, {
       id: TOAST_IDS.WALLET_CONNECTION,
       icon,
-      style: loadingToastStyle
+      style: getLoadingToastStyle()
     });
   },
 
@@ -203,21 +226,21 @@ export const SwapToasts = {
       id: TOAST_IDS.WALLET_CONNECTION,
       icon,
       duration: 3000,
-      style: successToastStyle
+      style: getSuccessToastStyle()
     });
   },
 
   walletConnectionFailed: (message: string = 'Failed to connect wallet') => {
     return toast.error(message, {
       id: TOAST_IDS.WALLET_CONNECTION,
-      style: errorToastStyle
+      style: getErrorToastStyle()
     });
   },
 
   walletDisconnected: () => {
     return toast.success('Wallet disconnected', {
       duration: 2000,
-      style: successToastStyle
+      style: getSuccessToastStyle()
     });
   }
 };
