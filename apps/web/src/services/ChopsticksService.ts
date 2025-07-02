@@ -104,7 +104,6 @@ class ChopsticksService {
         await this.wait(waitTime);
         
         if (await this.checkHealth()) {
-      //    toast.dismiss(TOAST_IDS.CHOPSTICKS_STATUS);
           SwapToasts.chopsticksStarted();
           return true;
         }

@@ -79,38 +79,37 @@ export const SwapToasts = {
 
   // Processing states
   confirmAndSign: () => {
-    return toast.loading('🔄 Please confirm and sign the transaction...', {
+    return toast.loading('Please confirm and sign the transaction...', {
       id: TOAST_IDS.SWAP_STATUS,
-      duration: 60000,
-      style: getLoadingToastStyle()
+      style: getLoadingToastStyle(),
+      icon: '🔄'
     });
   },
 
   processing: () => {
-    toast.dismiss(TOAST_IDS.SWAP_PREPARE);
-    return toast.loading('⚡ Processing your swap...', {
+    return toast.loading('Processing your swap...', {
       id: TOAST_IDS.SWAP_STATUS,
-      duration: 60000,
-      style: getLoadingToastStyle()
+      style: getLoadingToastStyle(),
+      icon: '⚡'
     });
   },
 
   xcmTransfer: () => {
-    return toast.loading('🌉 Completing cross-chain transfer...', {
+    return toast.loading('Completing cross-chain transfer...', {
       id: TOAST_IDS.SWAP_STATUS,
-      style: getLoadingToastStyle()
+      style: getLoadingToastStyle(),
+      icon: '🌉'
     });
   },
 
   // Success states
   swapSuccess: (swapDetails?: { inputAmount: string; inputToken: string; outputToken: string }) => {
-    toast.dismiss(TOAST_IDS.SWAP_STATUS);
     const message = swapDetails 
       ? `Swap completed! ${swapDetails.inputAmount} ${swapDetails.inputToken} → ${swapDetails.outputToken}`
       : 'Swap completed successfully!';
     
     return toast.success(message, {
-      id: TOAST_IDS.SWAP_SUCCESS,
+      id: TOAST_IDS.SWAP_STATUS,
       duration: 7500,
       icon: '🎉',
       style: getSuccessToastStyle()
@@ -118,14 +117,13 @@ export const SwapToasts = {
   },
 
   xcmSuccess: (swapDetails?: { inputAmount: string; inputToken: string; outputToken: string }) => {
-    toast.dismiss(TOAST_IDS.SWAP_STATUS);
     const message = swapDetails 
       ? `Swap completed! ${swapDetails.inputAmount} ${swapDetails.inputToken} → ${swapDetails.outputToken}`
       : 'Cross-chain swap completed successfully!';
     
     return toast.success(message, {
-      id: TOAST_IDS.SWAP_SUCCESS,
-      duration: 7500,
+      id: TOAST_IDS.SWAP_STATUS,
+      duration: 6000,
       icon: '🎉',
       style: getSuccessToastStyle()
     });
@@ -133,9 +131,8 @@ export const SwapToasts = {
 
   // Error states
   transactionFailed: () => {
-    toast.dismiss(TOAST_IDS.SWAP_STATUS);
     return toast.error('Transaction failed. Please try again.', {
-      id: TOAST_IDS.SWAP_ERROR,
+      id: TOAST_IDS.SWAP_STATUS,
       duration: 5000,
       icon: '❌',
       style: getErrorToastStyle()
@@ -143,9 +140,8 @@ export const SwapToasts = {
   },
 
   xcmFailed: () => {
-    toast.dismiss(TOAST_IDS.SWAP_STATUS);
     return toast.error('Cross-chain transfer failed. Please try again.', {
-      id: TOAST_IDS.XCM_ERROR,
+      id: TOAST_IDS.SWAP_STATUS,
       duration: 5000,
       icon: '❌',
       style: getErrorToastStyle()

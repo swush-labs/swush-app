@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { FrontendTransactionService } from '@/services/FrontendTransactionService';
-import { toast } from 'react-hot-toast';
 import { getPolkadotSignerFromPjs, SignPayload, SignRaw } from 'polkadot-api/pjs-signer';
 import { getWalletBySource } from '@talismn/connect-wallets';
 import type { Signer } from '@polkadot/api/types';
@@ -224,9 +223,6 @@ export function useAssetConversionSwap({
       if (onSimulationComplete) {
         const shouldProceed = await onSimulationComplete(simulationResult);
         if (!shouldProceed) {
-          // User cancelled from confirmation sheet
-          toast.dismiss('swap-prepare');
-          updateSwapState({ isSwapping: false, swapStatus: null });
           return;
         }
         updateSwapState({ isSwapping: true });
@@ -281,10 +277,7 @@ export function useAssetConversionSwap({
 
       // Handle XCM monitoring for HydraDX swaps
       if (isHydraDx) {
-        // Ensure toast continues loading before starting XCM monitoring
-        updateSwapState({ swapStatus: 'Processing your swap...' });
-        toast.loading('Processing your swap...', { id: 'swap-status' });
-        
+  
         await handleXcmMonitoring(
           assetHubApi,
           walletAddress,
