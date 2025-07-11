@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 You are an expert in Typescript, Nodejs, Next.js and all web development/UI stuff like shadcn, tailwind etc 
 

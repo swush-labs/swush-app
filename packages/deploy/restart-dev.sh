@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🔄 Restarting Swush-Me application (Nginx + Node.js)..."
+echo "🔄 Restarting Swush-Me DEV STAGING application (Nginx + Node.js)..."
 
 # Function to find and kill process by port
 kill_process_on_port() {
@@ -17,45 +17,30 @@ kill_process_on_port() {
 
 echo "📋 Step 1: Stopping existing processes..."
 
-# Kill processes running on ports 3000 and 3001 (HTTP only, nginx handles HTTPS)
-kill_process_on_port 3000
-kill_process_on_port 3001
+# Kill processes running on staging ports 4000 and 4001 (HTTP only, nginx handles HTTPS)
+kill_process_on_port 4000
+kill_process_on_port 4001
 
 echo "⏳ Waiting 3 seconds for clean shutdown..."
 sleep 3
 
-echo "📋 Step 2: Rotating logs and starting application..."
+echo "📋 Step 2: Starting DEV STAGING application (HTTP behind nginx)..."
 
-# Rotate existing log file if it exists
-if [ -f "output.log" ]; then
-    TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-    mv output.log "output_${TIMESTAMP}.log"
-    echo "📋 Old log saved as: output_${TIMESTAMP}.log"
-fi
-
-# Keep only the last 5 log files to prevent disk space issues
-LOG_COUNT=$(ls -1 output_*.log 2>/dev/null | wc -l)
-if [ "$LOG_COUNT" -gt 5 ]; then
-    REMOVE_COUNT=$((LOG_COUNT - 5))
-    ls -1t output_*.log | tail -n $REMOVE_COUNT | xargs rm -f
-    echo "📋 Cleaned up $REMOVE_COUNT old log files (keeping last 5)"
-fi
-
-# Start the application with production environment variables (fully detached)
+# Start the application with staging environment variables (fully detached)
 setsid bash -c '
     exec nohup env \
-        NEXT_PUBLIC_API_HOST=api.swush.me \
+        NEXT_PUBLIC_API_HOST=dev.swush.me \
         NEXT_PUBLIC_USE_HTTPS=true \
-        NEXT_PUBLIC_CHOPSTICKS_HOST=app.swush.me \
-        NEXT_PUBLIC_USE_CHOPSTICKS=true \
         TRUST_PROXY=true \
-        pnpm dev > output.log 2>&1 < /dev/null
+        LOG_LEVEL=debug \
+        PORT=4001 \
+        pnpm dev -- --port 4000 > staging-output.log 2>&1 < /dev/null
 ' &
 
 # Get the actual pnpm process PID (more reliable)
 sleep 2
 BG_PID=$(pgrep -f "pnpm dev" | head -1)
-echo "📋 Application started with PID: $BG_PID"
+echo "📋 DEV STAGING application started with PID: $BG_PID"
 
 # Give the application time to start
 echo "⏳ Waiting for application to start..."
@@ -63,10 +48,10 @@ sleep 5
 
 # Check if the application started successfully
 if pgrep -f "pnpm dev" > /dev/null; then
-    echo "✅ Application restarted successfully!"
-    echo "🌐 Backend HTTP: http://localhost:3001 (internal)"
-    echo "🌐 Frontend HTTP: http://localhost:3000 (internal)"
-    echo "🔒 Public HTTPS: https://app.swush.me (via nginx)"
+    echo "✅ DEV STAGING application restarted successfully!"
+    echo "🌐 Backend HTTP: http://localhost:4001 (internal)"
+    echo "🌐 Frontend HTTP: http://localhost:4000 (internal)"
+    echo "🔒 Public HTTPS: https://dev.swush.me (via nginx)"
     echo "📋 Application PID: $BG_PID"
     echo "📋 To stop the app: kill $BG_PID"
     echo ""
@@ -99,11 +84,11 @@ if pgrep -f "pnpm dev" > /dev/null; then
         echo "================================================"
         # Double-check process is still running
         if kill -0 $BG_PID 2>/dev/null; then
-            echo "✅ App still running (PID: $BG_PID)"
+            echo "✅ DEV STAGING app still running (PID: $BG_PID)"
         else
-            echo "⚠️  App process may have stopped"
+            echo "⚠️  DEV STAGING app process may have stopped"
         fi
-        echo "📋 View logs again: tail -f output.log"
+        echo "📋 View logs again: tail -f dev-output.log"
         echo "📋 Stop app: kill $BG_PID"
         exit 0
     }
@@ -112,10 +97,10 @@ if pgrep -f "pnpm dev" > /dev/null; then
     trap cleanup_logs INT TERM
     
     # Show logs (this will only exit when interrupted)
-    tail -f output.log
+    tail -f dev-output.log
 
 else
-    echo "❌ Failed to start application"
-    echo "📋 Check logs: tail -n 20 output.log"
+    echo "❌ Failed to start DEV STAGING application"
+    echo "📋 Check logs: tail -n 20 dev-output.log"
     exit 1
 fi 

@@ -64,7 +64,12 @@ export class ConnectionManager {
         // More frequent health checks to catch stale connections faster
         this.healthCheckInterval = setInterval(async () => {
             if (!this.isShuttingDown && this.initialized) {
-                await this.performHealthChecks();
+                try {
+                    await this.performHealthChecks();
+                } catch (error) {
+                    console.error('Health check error (non-fatal):', error);
+                    // Don't let health check errors crash the service
+                }
             }
         }, 30000); // Check every 30 seconds instead of 60
     }
@@ -75,6 +80,15 @@ export class ConnectionManager {
             if (!connection?.isReady || !connection.connection) return;
 
             try {
+                // Smart health checking: only validate if enough time has passed since last check
+                const health = this.connectionHealth.get(network);
+                const timeSinceLastCheck = health ? Date.now() - health.lastCheck.getTime() : Infinity;
+                
+                // Skip validation if recently checked and was healthy (reduce unnecessary load)
+                if (health?.isHealthy && timeSinceLastCheck < 60000) { // Skip if validated within last minute
+                    return;
+                }
+
                 const startTime = Date.now();
                 const isValid = await ConnectionFactory.validateConnection(connection.connection, network);
                 
@@ -99,7 +113,14 @@ export class ConnectionManager {
                 
                 // If health check fails, mark connection as not ready and attempt reconnection
                 connection.isReady = false;
-                this.scheduleReconnection(network);
+                
+                // Check if this is a circuit breaker situation before scheduling reconnection
+                try {
+                    this.scheduleReconnection(network);
+                } catch (circuitBreakerError) {
+                    // Circuit breaker is open - log but don't crash
+                    console.log(`Circuit breaker prevents reconnection for ${network}: ${circuitBreakerError instanceof Error ? circuitBreakerError.message : circuitBreakerError}`);
+                }
             }
         });
 
@@ -195,10 +216,25 @@ export class ConnectionManager {
             try {
                 await this.connectToNetworkWithLock(network);
             } catch (error) {
-                console.error(`Reconnection failed for ${network}:`, error);
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                console.error(`Reconnection failed for ${network}:`, errorMessage);
+                
+                // Check if it's a circuit breaker error
+                if (errorMessage.includes('Circuit breaker')) {
+                    console.log(`Circuit breaker active for ${network}, will retry when breaker closes`);
+                    return; // Don't increment failures for circuit breaker
+                }
+                
                 // Increment failure count and schedule next attempt
                 connectionState.consecutiveFailures++;
-                this.scheduleReconnection(network);
+                
+                // Prevent infinite reconnection attempts
+                if (connectionState.consecutiveFailures < 10) {
+                    this.scheduleReconnection(network);
+                } else {
+                    console.error(`Max reconnection attempts reached for ${network}, stopping reconnection attempts`);
+                    // Don't crash the service, just log and continue with other networks
+                }
             }
         }, delay);
 
@@ -281,8 +317,8 @@ export class ConnectionManager {
             connectionState.consecutiveFailures++;
             connectionState.lastError = err;
             
-            // Mark endpoint as failed for this session
-            if (selectedEndpoint) {
+            // Only mark endpoint as failed if it's not a circuit breaker error
+            if (selectedEndpoint && !err.message.includes('Circuit breaker')) {
                 this.endpointProvider.markEndpointFailed(network, selectedEndpoint);
                 console.log(`🚫 Marked endpoint as failed: ${selectedEndpoint}`);
             }
@@ -342,17 +378,21 @@ export class ConnectionManager {
         try {
             // Connect to all networks in parallel with locks
             const connectionPromises = Object.values(NETWORKS_SUPPORTED).map(network => 
-                this.connectToNetworkWithLock(network)
+                this.connectToNetworkWithLock(network).catch(error => {
+                    console.warn(`Failed to initialize ${network}:`, error instanceof Error ? error.message : error);
+                    // Don't propagate the error - allow partial initialization
+                    return null;
+                })
             );
 
             await Promise.allSettled(connectionPromises);
             
             this.initialized = true;
-            console.log('✅ ConnectionManager initialization completed');
+            console.log('✅ ConnectionManager initialization completed (some connections may still be establishing)');
         } catch (error) {
-            console.error('Failed to initialize all connections:', error);
-            // Don't throw - some connections might have succeeded
-            this.initialized = true; // Mark as initialized even with partial failures
+            console.error('Error during ConnectionManager initialization:', error);
+            // Mark as initialized anyway to allow the service to continue with available connections
+            this.initialized = true;
         }
     }
 
@@ -433,41 +473,41 @@ export class ConnectionManager {
             // Try to get immediate connection
             let api = this.getHydradxApi();
             if (api) {
-                // Quick validation with timeout protection
+                // Quick validation with timeout protection for active connections
                 try {
                     const validationPromise = ConnectionFactory.validateConnection(api, NETWORKS_SUPPORTED.HYDRA_DX);
                     const timeoutPromise = new Promise<boolean>(resolve => 
-                        setTimeout(() => resolve(false), 1000) // 1s timeout for validation
+                        setTimeout(() => resolve(false), 2000) // Quick validation timeout
                     );
                     
                     const isValid = await Promise.race([validationPromise, timeoutPromise]);
                     if (isValid) {
                         return api;
                     } else {
-                        console.warn('HydraDX API failed validation, reconnecting...');
+                        console.warn('HydraDX API failed quick validation, marking for reconnection...');
                         const connection = this.connections.get(NETWORKS_SUPPORTED.HYDRA_DX);
                         if (connection) {
                             connection.isReady = false;
-                            this.scheduleReconnection(NETWORKS_SUPPORTED.HYDRA_DX, 100);
+                            // Don't schedule immediate reconnection in getApi methods to prevent loops
+                            // Let the health check handle it
                         }
                     }
                 } catch (error) {
                     console.warn('HydraDX API validation error:', error);
-                    // Don't return the potentially bad connection, try to get a fresh one
+                    // Don't return the potentially bad connection
                     const connection = this.connections.get(NETWORKS_SUPPORTED.HYDRA_DX);
                     if (connection) {
                         connection.isReady = false;
-                        this.scheduleReconnection(NETWORKS_SUPPORTED.HYDRA_DX, 100);
                     }
                 }
             }
 
-            // Wait for connection to become available
+            // Wait for connection to become available (graceful degradation)
             const isReady = await this.waitForConnection(NETWORKS_SUPPORTED.HYDRA_DX, timeoutMs);
             return isReady ? this.getHydradxApi() : null;
         } catch (error) {
-            console.error('Error in getHydradxApiWithRetry:', error);
-            return null;
+            console.error('Error in getHydradxApiWithRetry (non-fatal):', error);
+            return null; // Return null instead of throwing to prevent service crashes
         }
     }
 

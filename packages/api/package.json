@@ -9,16 +9,15 @@
     "clean": "rimraf dist .papi",
     "lint": "eslint services --ext .ts",
     "test": "jest --config=jest.config.js",
-
     "test:basic": "tsx scripts/basic-test.ts",
     "test:integration": "tsx scripts/integration-test.ts"
   },
   "dependencies": {
-    "@galacticcouncil/sdk": "^7.2.0",
-    "@polkadot/api": "~14.0.1",
+    "@galacticcouncil/sdk": "^9.6.0",
     "@polkadot-api/descriptors": "file:../../.papi/descriptors",
     "@polkadot-labs/hdkd": "^0.0.10",
     "@polkadot-labs/hdkd-helpers": "^0.0.10",
+    "@polkadot/api": "~16.1.1",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",

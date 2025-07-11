@@ -1,4 +1,4 @@
-import { PoolService, TradeRouter } from '@galacticcouncil/sdk';
+import { EvmClient, PoolService, TradeRouter } from '@galacticcouncil/sdk';
 import { ConnectionManager } from '../../network/ConnectionManager';
 
 export class TradeRouterService {
@@ -47,7 +47,8 @@ export class TradeRouterService {
             console.log('HydraDX API available, initializing PoolService...');
 
             // Initialize PoolService
-            this.poolService = new PoolService(hydraApi);
+            const evmClient = new EvmClient(hydraApi);
+            this.poolService = new PoolService(hydraApi, evmClient);
             if (!this.poolService) {
                 throw new Error('Failed to create PoolService');
             }
@@ -67,6 +68,9 @@ export class TradeRouterService {
         } catch (error) {
             this.cleanup(); // Reset state on failure
             console.error('❌ Failed to initialize TradeRouterService:', error instanceof Error ? error.message : error);
+            if (error instanceof Error && error.stack) {
+                console.error('Stack trace:', error.stack);
+            }
             throw error;
         }
     }

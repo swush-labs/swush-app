@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import dynamic from 'next/dynamic'
-import { Toaster } from 'react-hot-toast'
 import { SubmitButtonAction, SwapHeader, SwapField, SwapDetails } from '@/components/swap'
 import { HeaderActions } from '@/components/swap/ui/SwapHeader'
-  
+
 // Dynamic imports for non-critical components
 const SwapConfirmSheet = dynamic(() => import('@/components/swap/ui/SwapConfirmSheet').then(mod => ({ default: mod.SwapConfirmSheet })), {
   ssr: false
@@ -206,7 +205,7 @@ export function SwapContainer() {
   const percentageOptions = useMemo(() => [
     { label: '25%', value: 0.25 },
     { label: '50%', value: 0.50 },
-    { label: '75%', value: 0.75 },
+    // { label: '75%', value: 0.75 },
     { label: 'MAX', value: 1 },
   ], []);
 
@@ -235,8 +234,8 @@ export function SwapContainer() {
       />
 
       {/* Main Content */}
-      <div className="min-h-screen w-full flex flex-col items-center justify-start px-6 py-4 md:px-4 md:py-4 relative z-10">
-        <div className="w-full max-w-md space-y-4 md:space-y-4">
+      <div className="w-full flex flex-col items-center justify-start px-4 py-4 md:px-4 md:py-4 relative z-10">
+        <div className="w-full max-w-md space-y-5 md:space-y-4">
           <SwapHeader
             slippageTolerance={slippageTolerance}
             setSlippageTolerance={setSlippageTolerance}
@@ -314,20 +313,21 @@ export function SwapContainer() {
         isLoadingHistory={isLoadingHistory}
       />
 
-      {/* Toast Container */}
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          className: "!bg-forest-900/90 !border !border-forest-600/50 !text-forest-100",
-          style: {
-            background: 'rgba(15, 41, 34, 0.9)',
-            border: '1px solid rgba(44, 95, 93, 0.5)',
-            backdropFilter: 'blur(12px)',
-            borderRadius: '12px',
-            boxShadow: '0 10px 40px rgba(255, 107, 53, 0.1)',
-          },
-        }}
-      />
+      {/* Toast Container 
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            className: "!bg-forest-900/90 !border !border-forest-600/50 !text-forest-100",
+            style: {
+              background: 'rgba(15, 41, 34, 0.9)',
+              border: '1px solid rgba(44, 95, 93, 0.5)',
+              backdropFilter: 'blur(12px)',
+              borderRadius: '12px',
+              boxShadow: '0 10px 40px rgba(255, 107, 53, 0.1)',
+            },
+          }}
+        />
+      */}
 
       {/* Swap Confirmation Bottom Sheet */}
       <SwapConfirmSheet

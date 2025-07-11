@@ -41,7 +41,6 @@ apps/web/.next
 apps/web/dist
 apps/web/build
 apps/web/public
-apps/web/src/app/api/
 apps/web/.yalc
 apps/web/out/*
 
@@ -50,7 +49,6 @@ packages/api/.next
 packages/api/dist
 packages/api/build
 packages/api/public
-packages/api/src/app/api/
 
 #ignore all node_modules inside packages
 **/node_modules

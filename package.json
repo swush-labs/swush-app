@@ -13,11 +13,20 @@
     "dev:ui": "pnpm --filter @swush/web dev",
     "dev:with-chopsticks": "cd apps/web && pnpm run dev:all",
     "dev:all": "pnpm run dev & pnpm start-chopsticks",
+    "docker:up": "docker compose -f docker-compose.dev.yml up -d",
+    "docker:stop": "docker compose -f docker-compose.dev.yml down",
+    "docker:restart": "pnpm docker:stop && pnpm docker:up",
+    "docker:logs": "docker compose -f docker-compose.dev.yml logs -f",
+    "docker:rebuild": "docker compose -f docker-compose.dev.yml build --no-cache",
+    "dev:restart": "bash packages/deploy/restart.sh",
+    "dev:logs": "tail -f output.log",
+    "app:restart": "bash packages/deploy/restart-dev.sh",
+    "app:logs": "tail -f dev-output.log",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "clean": "pnpm -r clean",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "start-chopsticks": "npx @acala-network/chopsticks xcm -p packages/chopsticks/config/polkadot_asset_hub.yml -p packages/chopsticks/config/hydration.yml" 
+    "start-chopsticks": "npx @acala-network/chopsticks xcm -p packages/chopsticks/config/polkadot_asset_hub.yml -p packages/chopsticks/config/hydration.yml"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.21.0",

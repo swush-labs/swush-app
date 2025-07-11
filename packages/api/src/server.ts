@@ -56,7 +56,10 @@ app.use('/api/v1/balances', balancesRouter);
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
+  console.error('❌ Server error:', err.message);
+  if (err.stack) {
+    console.error('Stack trace:', err.stack);
+  }
   res.status(500).json({
     status: 'error',
     message: 'Internal server error'

@@ -42,7 +42,7 @@ export const SwapField = memo(function SwapField({
 
   return (
     <motion.div 
-      className="group relative p-6 rounded-2xl bg-forest-800/95 backdrop-blur-md border border-forest-600/60 shadow-xl hover:border-flame-400/50 hover:shadow-flame-500/20 transition-all duration-300"
+      className={`group relative ${isInput ? 'p-5' : 'p-6'} rounded-2xl bg-forest-800/95 backdrop-blur-md border border-forest-600/60 shadow-xl hover:border-flame-400/50 hover:shadow-flame-500/20 transition-all duration-300`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: isInput ? 0 : 0.1 }}
@@ -78,19 +78,19 @@ export const SwapField = memo(function SwapField({
           </div>
         </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center">
         <Dialog open={openDialog} onOpenChange={setOpenDialog}>
           <DialogTrigger asChild>
             <div className="flex-shrink-0">
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-forest-800 hover:bg-forest-700 border-forest-600 hover:border-flame-400 transition-all duration-200 cursor-pointer">
+              <div className="flex items-center gap-3 pl-2 py-3 rounded-xl bg-forest-800 hover:bg-forest-700 border-forest-600 hover:border-flame-400 transition-all duration-200 cursor-pointer">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-flame-400 to-flame-500 flex items-center justify-center shadow-lg">
                   <span className="text-white text-lg font-bold">{token.icon}</span>
                 </div>
-                <div className="flex flex-col items-start">
-                  <span className="font-semibold text-white">{token.symbol}</span>
-                  <span className="text-sm text-forest-400">{token.name}</span>
+                <div className="flex flex-col items-start w-[60px] md:w-[80px]">
+                  <span className="font-semibold text-white truncate w-full">{token.symbol}</span>
+                  <span className="text-sm text-forest-400 truncate w-full" title={token.name}>{token.name}</span>
                 </div>
-                <ChevronDown className="w-5 h-5 text-forest-400" />
+                <ChevronDown className="w-5 h-5 text-forest-400 flex-shrink-0" />
               </div>
             </div>
           </DialogTrigger>

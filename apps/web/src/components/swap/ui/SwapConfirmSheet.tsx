@@ -3,6 +3,7 @@ import { AlertCircle, ArrowDown, CheckCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBalance } from "../utils";
 import { FeeBreakdown } from "../hooks/types";
+import { SwapToasts, TOAST_IDS } from "../utils/toastUtils";
 
 export interface SimulationResult {
   success: boolean;
@@ -58,12 +59,19 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
     isConfirming || 
     Boolean(simulationResult && (!simulationResult.success || simulationResult.willSucceed === false));
 
+  // Handle close with toast cleanup
+  const handleClose = () => {
+    // Dismiss any preparation toasts when cancelling
+    SwapToasts.dismiss(TOAST_IDS.SWAP_STATUS);
+    onClose();
+  };
+
   return (
     <div 
       className={`fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-md transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`}
       onClick={(e) => {
         // Close on backdrop click, but not while confirming
-        if (e.target === e.currentTarget && !isConfirming) onClose();
+        if (e.target === e.currentTarget && !isConfirming) handleClose();
       }}
     >
       <div 
@@ -73,7 +81,7 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold text-white">Confirm Swap</h3>
           <button 
-            onClick={onClose}
+            onClick={handleClose}
             className="p-2 rounded-full hover:bg-forest-800/50 text-forest-400 hover:text-white transition-colors"
             disabled={isConfirming}
           >
@@ -158,7 +166,7 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
           <Button
             variant="outline"
             className="flex-1 border-forest-600 text-forest-300 hover:bg-forest-800/50 hover:border-forest-500 transition-all duration-200"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={isConfirming}
           >
             Cancel

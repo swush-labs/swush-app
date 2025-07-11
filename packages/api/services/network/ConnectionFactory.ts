@@ -13,6 +13,9 @@ export interface AssetHubConnection {
 // Callback type for connection events
 export type ConnectionEventCallback = (network: string, event: 'connected' | 'disconnected' | 'error', error?: Error) => void;
 
+// Validation timeout - more generous than the hardcoded 2s
+const VALIDATION_TIMEOUT = Math.max(CONNECTION_TIMEOUT * 0.5, 5000); // 50% of connection timeout, minimum 5 seconds
+
 export class ConnectionFactory {
   
   public static async createAssetHubConnection(
@@ -186,16 +189,22 @@ export class ConnectionFactory {
 
         // Enhanced validation: attempt an actual query to detect stale connections
         try {
-          // Use a lightweight query with aggressive timeout to prevent hanging
+          // Use a lightweight query with configurable timeout based on CONNECTION_TIMEOUT
           const validationPromise = hydraApi.rpc.system.chain();
           const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Validation timeout')), 2000) // Reduced to 2s
+            setTimeout(() => reject(new Error('Validation timeout')), VALIDATION_TIMEOUT)
           );
           
           await Promise.race([validationPromise, timeoutPromise]);
           return true;
         } catch (error) {
-          console.warn(`HydraDX connection validation failed:`, error instanceof Error ? error.message : error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          // Only log as warning if it's not a timeout (timeouts are expected during network issues)
+          if (errorMessage.includes('Validation timeout')) {
+            console.warn(`HydraDX connection validation timed out after ${VALIDATION_TIMEOUT}ms`);
+          } else {
+            console.warn(`HydraDX connection validation failed:`, errorMessage);
+          }
           return false;
         }
       }

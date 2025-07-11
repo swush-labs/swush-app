@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  chopsticks:
+    build:
+      context: ./packages/chopsticks
+      dockerfile: Dockerfile
+    command: >
+      npx @acala-network/chopsticks xcm -p /configs/polkadot_asset_hub.yml -p /configs/hydration.yml
+    healthcheck:
+      test: >
+        CMD-SHELL
+        timeout 15 nc -z localhost 3421 &&
+        timeout 15 nc -z localhost 3422
+      interval: 60s
+      timeout: 20s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    volumes:
+      - ./packages/chopsticks/config:/configs
+    ports:
+      - "3421:3421"  # Asset Hub
+      - "3422:3422"  # Hydration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
