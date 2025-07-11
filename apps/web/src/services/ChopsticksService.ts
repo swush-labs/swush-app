@@ -81,6 +81,7 @@ class ChopsticksService {
   private async restartAndWaitForHealth(): Promise<boolean> {
     console.log('🔄 Restarting chopsticks...');
     this.connectionStatus = 'connecting';
+    SwapToasts.chopsticksStarting();
 
     try {
       // Trigger restart
