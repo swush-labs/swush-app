@@ -511,6 +511,62 @@ export class ConnectionManager {
         }
     }
 
+    // Simple wrapper to catch WebSocket disconnection errors and retry
+    public async safeRpcCall<T>(
+        network: string,
+        operation: (api: any) => Promise<T>,
+        maxRetries: number = 2
+    ): Promise<T> {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                let api: any = null;
+                
+                if (network === NETWORKS_SUPPORTED.HYDRA_DX) {
+                    api = await this.getHydradxApiWithRetry(5000);
+                } else if (network === NETWORKS_SUPPORTED.ASSET_HUB) {
+                    api = await this.getAssetHubApiWithRetry(5000);
+                }
+                
+                if (!api) {
+                    throw new Error(`${network} API not available`);
+                }
+                
+                return await operation(api);
+                
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                
+                // Check if it's a WebSocket disconnection error
+                if (errorMessage.includes('WebSocket is not connected') || 
+                    errorMessage.includes('connection lost') ||
+                    errorMessage.includes('connection closed')) {
+                    
+                    console.warn(`⚠️ WebSocket error detected on attempt ${attempt}, marking connection stale`);
+                    
+                    // Mark connection as stale and trigger reconnection
+                    const connection = this.connections.get(network);
+                    if (connection) {
+                        connection.isReady = false;
+                        this.scheduleReconnection(network, 100);
+                    }
+                    
+                    if (attempt === maxRetries) {
+                        throw new Error(`RPC call failed after ${maxRetries} attempts: ${errorMessage}`);
+                    }
+                    
+                    // Wait before retry
+                    await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                    continue;
+                }
+                
+                // For other errors, don't retry
+                throw error;
+            }
+        }
+        
+        throw new Error('Unexpected error in safeRpcCall');
+    }
+
     public getConnectionStatus(): Record<string, { 
         isReady: boolean; 
         isHealthy: boolean; 
