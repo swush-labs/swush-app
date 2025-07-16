@@ -299,13 +299,13 @@ export class FetchAssetService {
         foreignAssetsInfo: Map<string, Asset>
 
     ): Promise<Map<string, Asset>> {
-        const hydraApi = this.connectionManager.getHydradxApi();
-        if (!hydraApi) throw new Error('HydraDX API not initialized');
+        const hydraApi = await this.connectionManager.getHydradxApiWithRetry(10000);
+        if (!hydraApi) throw new Error('HydraDX API not available after retry');
 
         const mergedAssets = new Map<string, Asset>(assetHubAssets);
 
         try {
-            const tradeRouter = TradeRouterService.getInstance().getTradeRouter();
+            const tradeRouter = await TradeRouterService.getInstance().getTradeRouter();
             const hydradxPools = await tradeRouter.getPools();
 
             // Process all HydraDX pools

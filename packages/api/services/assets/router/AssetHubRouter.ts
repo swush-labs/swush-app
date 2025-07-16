@@ -120,7 +120,7 @@ export class AssetHubRouter {
                 return null;
             }
 
-            const tradeRouter = TradeRouterService.getInstance().getTradeRouter();
+            const tradeRouter = await TradeRouterService.getInstance().getTradeRouter();
             const trade = await tradeRouter.getBestSell(
                 fromAsset.hydradx.assetId,
                 toAsset.hydradx.assetId,

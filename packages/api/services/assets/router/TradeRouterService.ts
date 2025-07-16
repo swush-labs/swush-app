@@ -6,6 +6,7 @@ export class TradeRouterService {
     private tradeRouter: TradeRouter | null = null;
     private poolService: PoolService | null = null;
     private initialized = false;
+    private lastInitializedAssets: any[] = [];
 
     private constructor() {}
 
@@ -64,6 +65,7 @@ export class TradeRouterService {
             }
 
             this.initialized = true;
+            this.lastInitializedAssets = externalAssets; // Store for potential reinitializaton
             console.log('TradeRouterService initialized successfully');
         } catch (error) {
             this.cleanup(); // Reset state on failure
@@ -75,17 +77,46 @@ export class TradeRouterService {
         }
     }
 
-    public getTradeRouter(): TradeRouter {
-        if (!this.initialized || !this.tradeRouter) {
-            throw new Error('TradeRouter not initialized. Call initialize() first');
+    // Modular method to ensure services are ready and connection is valid
+    private async ensureInitializedAndConnected(): Promise<void> {
+        if (!this.initialized) {
+            throw new Error('TradeRouterService not initialized. Call initialize() first');
         }
+
+        // Check if HydraDX connection is still valid
+        const connectionManager = ConnectionManager.getInstance();
+        const currentApi = connectionManager.getHydradxApi();
+        
+        if (!currentApi) {
+            console.warn('HydraDX connection lost, reinitializing TradeRouterService...');
+            
+            // Reset state and reinitialize with original assets
+            this.cleanup();
+            await this.initialize(this.lastInitializedAssets);
+            
+            if (!this.initialized) {
+                throw new Error('Failed to reinitialize TradeRouterService after connection loss');
+            }
+        }
+    }
+
+    public async getTradeRouter(): Promise<TradeRouter> {
+        await this.ensureInitializedAndConnected();
+        
+        if (!this.tradeRouter) {
+            throw new Error('TradeRouter not available after initialization check');
+        }
+        
         return this.tradeRouter;
     }
 
-    public getPoolService(): PoolService {
-        if (!this.initialized || !this.poolService) {
-            throw new Error('PoolService not initialized. Call initialize() first');
+    public async getPoolService(): Promise<PoolService> {
+        await this.ensureInitializedAndConnected();
+        
+        if (!this.poolService) {
+            throw new Error('PoolService not available after initialization check');
         }
+        
         return this.poolService;
     }
 
@@ -93,5 +124,6 @@ export class TradeRouterService {
         this.tradeRouter = null;
         this.poolService = null;
         this.initialized = false;
+        this.lastInitializedAssets = [];
     }
 } 
