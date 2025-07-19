@@ -5,8 +5,9 @@
 name: Build Check
 
 on:
-  # Runs on pushes targeting the default branch
-  push:
+    
+  # Runs on pull requests targeting the dev branch
+  pull_request:
     branches: ["dev"]
 
   # Allows you to run this workflow manually from the Actions tab
