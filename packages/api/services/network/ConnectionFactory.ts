@@ -241,8 +241,11 @@ export class ConnectionFactory {
     try {
         if (!connection) return;
         
-        // Simplified but still thorough cleanup
-        await connection.disconnect();
+        // Add timeout protection for disconnect operation
+        await Promise.race([
+          connection.disconnect(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Disconnect timeout')), 5000))
+        ]);
         
         // Force WebSocket closure as safety net
         const provider = (connection as any).provider;
