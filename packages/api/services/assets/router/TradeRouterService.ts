@@ -1,14 +1,22 @@
 import { EvmClient, PoolService, TradeRouter } from '@galacticcouncil/sdk';
-import { ConnectionManager } from '../../network/ConnectionManager';
+import { ConnectionManager, ConnectionObserver } from '../../network/ConnectionManager';
+import { AssetHubConnection } from '../../network/ConnectionFactory';
+import { NETWORKS_SUPPORTED } from '../../constants';
+import { ApiPromise } from '@polkadot/api';
 
-export class TradeRouterService {
+export class TradeRouterService implements ConnectionObserver {
     private static instance: TradeRouterService;
     private tradeRouter: TradeRouter | null = null;
     private poolService: PoolService | null = null;
     private initialized = false;
     private lastInitializedAssets: any[] = [];
+    private connectionManager: ConnectionManager;
 
-    private constructor() {}
+    private constructor() {
+        this.connectionManager = ConnectionManager.getInstance();
+        // Register as observer for HydraDX connections
+        this.connectionManager.registerConnectionObserver(NETWORKS_SUPPORTED.HYDRA_DX, this);
+    }
 
     public static getInstance(): TradeRouterService {
         if (!TradeRouterService.instance) {
@@ -77,44 +85,19 @@ export class TradeRouterService {
         }
     }
 
-    // Modular method to ensure services are ready and connection is valid
-    private async ensureInitializedAndConnected(): Promise<void> {
-        if (!this.initialized) {
-            throw new Error('TradeRouterService not initialized. Call initialize() first');
-        }
 
-        // Check if HydraDX connection is still valid
-        const connectionManager = ConnectionManager.getInstance();
-        const currentApi = connectionManager.getHydradxApi();
-        
-        if (!currentApi) {
-            console.warn('HydraDX connection lost, reinitializing TradeRouterService...');
-            
-            // Reset state and reinitialize with original assets
-            this.cleanup();
-            await this.initialize(this.lastInitializedAssets);
-            
-            if (!this.initialized) {
-                throw new Error('Failed to reinitialize TradeRouterService after connection loss');
-            }
-        }
-    }
 
     public async getTradeRouter(): Promise<TradeRouter> {
-        await this.ensureInitializedAndConnected();
-        
-        if (!this.tradeRouter) {
-            throw new Error('TradeRouter not available after initialization check');
+        if (!this.initialized || !this.tradeRouter) {
+            throw new Error('TradeRouter not available. Ensure TradeRouterService is initialized and HydraDX connection is active.');
         }
         
         return this.tradeRouter;
     }
 
     public async getPoolService(): Promise<PoolService> {
-        await this.ensureInitializedAndConnected();
-        
-        if (!this.poolService) {
-            throw new Error('PoolService not available after initialization check');
+        if (!this.initialized || !this.poolService) {
+            throw new Error('PoolService not available. Ensure TradeRouterService is initialized and HydraDX connection is active.');
         }
         
         return this.poolService;
@@ -125,5 +108,26 @@ export class TradeRouterService {
         this.poolService = null;
         this.initialized = false;
         this.lastInitializedAssets = [];
+    }
+
+    // ConnectionObserver implementation
+    public async onConnectionChanged(network: string, newConnection: AssetHubConnection | ApiPromise | null): Promise<void> {
+        if (network === NETWORKS_SUPPORTED.HYDRA_DX) {
+            console.log('🔄 TradeRouterService: HydraDX connection changed, resetting...');
+            // Clear current services since connection changed
+            this.cleanup();
+        }
+    }
+
+    public async onConnectionRestored(network: string, connection: AssetHubConnection | ApiPromise): Promise<void> {
+        if (network === NETWORKS_SUPPORTED.HYDRA_DX && this.lastInitializedAssets.length > 0) {
+            console.log('🔄 TradeRouterService: HydraDX connection restored, reinitializing...');
+            try {
+                // Reinitialize with the same assets when connection is restored
+                await this.initialize(this.lastInitializedAssets);
+            } catch (error) {
+                console.error('Failed to reinitialize TradeRouterService after connection restoration:', error);
+            }
+        }
     }
 } 
