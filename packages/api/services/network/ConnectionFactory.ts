@@ -239,50 +239,18 @@ export class ConnectionFactory {
 
   public static async disconnectHydradx(connection: ApiPromise): Promise<void> {
     try {
-      if (!connection) return;
-      
-      // Get the provider to clean up WebSocket properly
-      const provider = connection.runtimeVersion ? (connection as any)._runtimeChain?.registry?.provider || (connection as any).provider : null;
-      
-      // Enhanced cleanup sequence
-      const cleanupPromise = async () => {
-        try {
-          // 1. Disconnect the API (this should also disconnect the provider)
-          await connection.disconnect();
-          
-          // 2. If provider is a WsProvider, ensure WebSocket is properly closed
-          if (provider && typeof provider.disconnect === 'function') {
-            try {
-              await provider.disconnect();
-            } catch (providerError) {
-              console.warn('Provider disconnect error (may be expected):', providerError);
-            }
-          }
-          
-          // 3. Force close WebSocket if still connected
-          if (provider && (provider as any).websocket) {
-            const ws = (provider as any).websocket;
-            if (ws.readyState === 1) { // WebSocket.OPEN
-              console.log('Force closing WebSocket connection');
-              ws.close(1000, 'Connection cleanup');
-            }
-          }
-          
-          // 4. Remove all event listeners from the provider
-          if (provider && typeof provider.removeAllListeners === 'function') {
-            provider.removeAllListeners();
-          }
-        } catch (error) {
-          console.warn('Error during connection cleanup:', error);
+        if (!connection) return;
+        
+        // Simplified but still thorough cleanup
+        await connection.disconnect();
+        
+        // Force WebSocket closure as safety net
+        const provider = (connection as any).provider;
+        if (provider?.websocket?.readyState === 1) {
+            provider.websocket.close(1000, 'Connection cleanup');
         }
-      };
-      
-      await Promise.race([
-        cleanupPromise(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Disconnect timeout')), 5000))
-      ]);
     } catch (error) {
-      console.warn('Error disconnecting HydraDX connection:', error);
+        console.warn('Error disconnecting HydraDX connection:', error);
     }
   }
 } 

@@ -27,7 +27,6 @@ export class EndpointProvider {
   private circuitBreakers: Map<string, CircuitBreakerState> = new Map();
 
   // Circuit breaker configuration
-  private readonly CIRCUIT_BREAKER_THRESHOLD = 3; // All endpoints must fail this many times
   private readonly CIRCUIT_BREAKER_BASE_DELAY = 30000; // 30 seconds base delay
   private readonly CIRCUIT_BREAKER_MAX_DELAY = 300000; // 5 minutes max delay
   private readonly ENDPOINT_RETRY_DELAY = 60000; // 1 minute before retrying a failed endpoint
