@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from "@/components/ui/input";
-import { TokenButton } from '../TokenButton';
+import { TokenButton } from '../button/TokenButton';
 import { AssetListProps, TokenInfo } from '../types';
 
 export const AssetList = ({ assets, onSelect, currentAsset, onClose }: AssetListProps) => {

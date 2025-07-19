@@ -1,7 +1,7 @@
 // Components
-export { WalletButton } from './WalletButton'
-export { WalletMenu } from './WalletMenu'
-export { TokenButton } from './TokenButton'
+export { WalletButton } from './button/WalletButton'
+export { WalletMenu } from './ui/WalletMenu'
+export { TokenButton } from './button/TokenButton'
 export { AssetList } from './ui/AssetList'
 export { SwapProgress } from './ui/SwapProgress'
 export { ArrowSymbolDown } from './ui/ArrowSymbolDown'

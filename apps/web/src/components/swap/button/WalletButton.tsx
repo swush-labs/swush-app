@@ -14,12 +14,12 @@ import {
   WalletAccount,
 } from '@talismn/connect-wallets';
 import { encodeAddress, decodeAddress } from '@polkadot/util-crypto';
-import { WalletButtonProps } from './types';
+import { WalletButtonProps } from '../types';
 import { FrontendConnectionManager } from '@/services/FrontendConnectionManager';
 import { UserService } from '@/services/userService';
 import { NETWORKS_SUPPORTED } from '@/services/constants';
 import ChopsticksService from '@/services/ChopsticksService';
-import { SwapToasts, TOAST_IDS } from './utils/toastUtils';
+import { SwapToasts, TOAST_IDS } from '../utils/toastUtils';
 // Network configuration for address formatting
 const NETWORK_CONFIG = {
   POLKADOT: {

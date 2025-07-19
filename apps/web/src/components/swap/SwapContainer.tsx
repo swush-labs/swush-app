@@ -29,7 +29,6 @@ export function SwapContainer() {
   // UI state
   const [inputAmount, setInputAmount] = useState('')
   const [slippageTolerance, setSlippageTolerance] = useState(10)
-  const [transactionDeadline, setTransactionDeadline] = useState(20)
   const [insufficientBalance, setInsufficientBalance] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [openInputDialog, setOpenInputDialog] = useState(false)
@@ -312,22 +311,6 @@ export function SwapContainer() {
         swapHistory={swapHistory}
         isLoadingHistory={isLoadingHistory}
       />
-
-      {/* Toast Container 
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            className: "!bg-forest-900/90 !border !border-forest-600/50 !text-forest-100",
-            style: {
-              background: 'rgba(15, 41, 34, 0.9)',
-              border: '1px solid rgba(44, 95, 93, 0.5)',
-              backdropFilter: 'blur(12px)',
-              borderRadius: '12px',
-              boxShadow: '0 10px 40px rgba(255, 107, 53, 0.1)',
-            },
-          }}
-        />
-      */}
 
       {/* Swap Confirmation Bottom Sheet */}
       <SwapConfirmSheet

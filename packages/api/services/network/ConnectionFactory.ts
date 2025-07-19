@@ -147,12 +147,22 @@ export class ConnectionFactory {
           onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'connected');
         }
 
-        // Shorter stability check to reduce window for issues
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Extended stability check to ensure WebSocket is truly ready
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
-        // Verify connection is still active
+        // Verify connection is still active and perform a test query
         if (!api.isConnected) {
           throw new Error('Connection lost during initial stability check');
+        }
+        
+        // Test WebSocket stability with a lightweight query
+        try {
+          await Promise.race([
+            api.rpc.system.chain(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Stability test timeout')), 3000))
+          ]);
+        } catch (error) {
+          throw new Error(`Connection stability test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
 
         return api;
@@ -229,12 +239,21 @@ export class ConnectionFactory {
 
   public static async disconnectHydradx(connection: ApiPromise): Promise<void> {
     try {
-      await Promise.race([
-        connection?.disconnect(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Disconnect timeout')), 5000))
-      ]);
+        if (!connection) return;
+        
+        // Add timeout protection for disconnect operation
+        await Promise.race([
+          connection.disconnect(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Disconnect timeout')), 5000))
+        ]);
+        
+        // Force WebSocket closure as safety net
+        const provider = (connection as any).provider;
+        if (provider?.websocket?.readyState === 1) {
+            provider.websocket.close(1000, 'Connection cleanup');
+        }
     } catch (error) {
-      console.warn('Error disconnecting HydraDX connection:', error);
+        console.warn('Error disconnecting HydraDX connection:', error);
     }
   }
 } 

@@ -19,8 +19,7 @@ export const NETWORK_ENDPOINTS = {
   ],
   [NETWORKS_SUPPORTED.HYDRA_DX]: [
     'wss://hydration-rpc.n.dwellir.com',
-    'wss://rpc.hydradx.cloud',
-    'wss://rpc.helikon.io/hydradx'
+    'wss://rpc.cay.hydration.cloud'
   ]
 } as const;
 

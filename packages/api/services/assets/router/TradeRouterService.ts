@@ -1,13 +1,22 @@
 import { EvmClient, PoolService, TradeRouter } from '@galacticcouncil/sdk';
-import { ConnectionManager } from '../../network/ConnectionManager';
+import { ConnectionManager, ConnectionObserver } from '../../network/ConnectionManager';
+import { AssetHubConnection } from '../../network/ConnectionFactory';
+import { NETWORKS_SUPPORTED } from '../../constants';
+import { ApiPromise } from '@polkadot/api';
 
-export class TradeRouterService {
+export class TradeRouterService implements ConnectionObserver {
     private static instance: TradeRouterService;
     private tradeRouter: TradeRouter | null = null;
     private poolService: PoolService | null = null;
     private initialized = false;
+    private lastInitializedAssets: any[] = [];
+    private connectionManager: ConnectionManager;
 
-    private constructor() {}
+    private constructor() {
+        this.connectionManager = ConnectionManager.getInstance();
+        // Register as observer for HydraDX connections
+        this.connectionManager.registerConnectionObserver(NETWORKS_SUPPORTED.HYDRA_DX, this);
+    }
 
     public static getInstance(): TradeRouterService {
         if (!TradeRouterService.instance) {
@@ -64,6 +73,7 @@ export class TradeRouterService {
             }
 
             this.initialized = true;
+            this.lastInitializedAssets = externalAssets; // Store for potential reinitializaton
             console.log('TradeRouterService initialized successfully');
         } catch (error) {
             this.cleanup(); // Reset state on failure
@@ -75,17 +85,21 @@ export class TradeRouterService {
         }
     }
 
-    public getTradeRouter(): TradeRouter {
+
+
+    public async getTradeRouter(): Promise<TradeRouter> {
         if (!this.initialized || !this.tradeRouter) {
-            throw new Error('TradeRouter not initialized. Call initialize() first');
+            throw new Error('TradeRouter not available. Ensure TradeRouterService is initialized and HydraDX connection is active.');
         }
+        
         return this.tradeRouter;
     }
 
-    public getPoolService(): PoolService {
+    public async getPoolService(): Promise<PoolService> {
         if (!this.initialized || !this.poolService) {
-            throw new Error('PoolService not initialized. Call initialize() first');
+            throw new Error('PoolService not available. Ensure TradeRouterService is initialized and HydraDX connection is active.');
         }
+        
         return this.poolService;
     }
 
@@ -93,5 +107,27 @@ export class TradeRouterService {
         this.tradeRouter = null;
         this.poolService = null;
         this.initialized = false;
+        this.lastInitializedAssets = [];
+    }
+
+    // ConnectionObserver implementation
+    public async onConnectionChanged(network: string, newConnection: AssetHubConnection | ApiPromise | null): Promise<void> {
+        if (network === NETWORKS_SUPPORTED.HYDRA_DX) {
+            console.log('🔄 TradeRouterService: HydraDX connection changed, resetting...');
+            // Clear current services since connection changed
+            this.cleanup();
+        }
+    }
+
+    public async onConnectionRestored(network: string, connection: AssetHubConnection | ApiPromise): Promise<void> {
+        if (network === NETWORKS_SUPPORTED.HYDRA_DX && this.lastInitializedAssets.length > 0) {
+            console.log('🔄 TradeRouterService: HydraDX connection restored, reinitializing...');
+            try {
+                // Reinitialize with the same assets when connection is restored
+                await this.initialize(this.lastInitializedAssets);
+            } catch (error) {
+                console.error('Failed to reinitialize TradeRouterService after connection restoration:', error);
+            }
+        }
     }
 } 

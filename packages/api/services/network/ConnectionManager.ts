@@ -21,6 +21,12 @@ interface ConnectionHealth {
     responseTime: number;
 }
 
+// Observer interface for services that depend on connections
+export interface ConnectionObserver {
+    onConnectionChanged(network: string, newConnection: AssetHubConnection | ApiPromise | null): Promise<void>;
+    onConnectionRestored(network: string, connection: AssetHubConnection | ApiPromise): Promise<void>;
+}
+
 export class ConnectionManager {
     private static instance: ConnectionManager;
     private connections: Map<string, NetworkConnection> = new Map();
@@ -31,6 +37,9 @@ export class ConnectionManager {
     private healthCheckInterval: NodeJS.Timeout | null = null;
     private reconnectionTimeouts: Map<string, NodeJS.Timeout> = new Map();
     private connectionLocks: Map<string, boolean> = new Map(); // Prevent race conditions
+    
+    // Observer pattern for services that depend on connections
+    private connectionObservers: Map<string, Set<ConnectionObserver>> = new Map();
 
     private constructor() {
         this.endpointProvider = EndpointProvider.getInstance();
@@ -71,7 +80,49 @@ export class ConnectionManager {
                     // Don't let health check errors crash the service
                 }
             }
-        }, 30000); // Check every 30 seconds instead of 60
+        }, CONNECTION_HEALTH_CHECK_INTERVAL); // Check every 30 seconds instead of 60
+    }
+
+    // Observer pattern methods for clean service dependency management
+    public registerConnectionObserver(network: string, observer: ConnectionObserver): void {
+        if (!this.connectionObservers.has(network)) {
+            this.connectionObservers.set(network, new Set());
+        }
+        this.connectionObservers.get(network)!.add(observer);
+        console.log(`🔔 Registered observer for ${network} connections`);
+    }
+
+    public unregisterConnectionObserver(network: string, observer: ConnectionObserver): void {
+        const observers = this.connectionObservers.get(network);
+        if (observers) {
+            observers.delete(observer);
+            if (observers.size === 0) {
+                this.connectionObservers.delete(network);
+            }
+        }
+    }
+
+    private async notifyConnectionObservers(network: string, connection: AssetHubConnection | ApiPromise | null, isRestoration: boolean = false): Promise<void> {
+        const observers = this.connectionObservers.get(network);
+        if (!observers || observers.size === 0) return;
+
+        console.log(`🔔 Notifying ${observers.size} observers of ${network} connection ${isRestoration ? 'restoration' : 'change'}`);
+        
+        // Notify all observers in parallel
+        const notificationPromises = Array.from(observers).map(async (observer) => {
+            try {
+                if (isRestoration && connection) {
+                    await observer.onConnectionRestored(network, connection);
+                } else {
+                    await observer.onConnectionChanged(network, connection);
+                }
+            } catch (error) {
+                console.error(`Error notifying connection observer for ${network}:`, error);
+                // Don't let observer errors affect other observers
+            }
+        });
+
+        await Promise.allSettled(notificationPromises);
     }
 
     private async performHealthChecks(): Promise<void> {
@@ -144,6 +195,10 @@ export class ConnectionManager {
                     lastCheck: new Date(),
                     responseTime: 0
                 });
+                // Notify observers that connection was restored
+                this.notifyConnectionObservers(network, connection.connection, true).catch(err => 
+                    console.error('Error notifying connection restoration:', err)
+                );
                 break;
 
             case 'disconnected':
@@ -154,6 +209,10 @@ export class ConnectionManager {
                     lastCheck: new Date(),
                     responseTime: 0
                 });
+                // Notify observers that connection is lost
+                this.notifyConnectionObservers(network, null, false).catch(err => 
+                    console.error('Error notifying connection loss:', err)
+                );
                 // Mark current endpoint as failed
                 if (connection.currentEndpoint) {
                     this.endpointProvider.markEndpointFailed(network, connection.currentEndpoint);
@@ -171,6 +230,10 @@ export class ConnectionManager {
                     lastCheck: new Date(),
                     responseTime: 0
                 });
+                // Notify observers that connection has error
+                this.notifyConnectionObservers(network, null, false).catch(err => 
+                    console.error('Error notifying connection error:', err)
+                );
                 // Mark current endpoint as failed
                 if (connection.currentEndpoint) {
                     this.endpointProvider.markEndpointFailed(network, connection.currentEndpoint);
@@ -204,7 +267,7 @@ export class ConnectionManager {
         // Use custom delay or calculate exponential backoff
         const delay = customDelay || Math.min(
             1000 * Math.pow(2, connectionState.consecutiveFailures),
-            30000 // Max 30 seconds
+            CONNECTION_HEALTH_CHECK_INTERVAL // Max 30 seconds
         );
 
         console.log(`🔄 Scheduling reconnection for ${network} in ${delay}ms (attempt ${connectionState.consecutiveFailures + 1})`);
@@ -312,6 +375,9 @@ export class ConnectionManager {
             });
 
             console.log(`✅ Successfully connected to ${network}`);
+            
+            // Notify observers of new connection (especially important for endpoint switches)
+            await this.notifyConnectionObservers(network, connection, true);
         } catch (error) {
             const err = error instanceof Error ? error : new Error('Unknown connection error');
             connectionState.consecutiveFailures++;
@@ -510,6 +576,8 @@ export class ConnectionManager {
             return null; // Return null instead of throwing to prevent service crashes
         }
     }
+
+
 
     public getConnectionStatus(): Record<string, { 
         isReady: boolean; 
