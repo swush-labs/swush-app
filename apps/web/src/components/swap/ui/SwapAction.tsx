@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
-import { Button } from "@/components/ui/button";
-import { WalletButton } from '../WalletButton';
+import { WalletButton } from '../button/WalletButton';
 import { Loader2 } from 'lucide-react';
 
 interface SubmitButtonProps {

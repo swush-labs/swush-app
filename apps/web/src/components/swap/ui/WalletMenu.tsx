@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Wallet, ChevronDown } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { WalletMenuProps } from './types';
-import { shortenAddress } from './utils';
+import { WalletMenuProps } from '../types';
+import { shortenAddress } from '../utils';
 
 export const WalletMenu = ({
   address,

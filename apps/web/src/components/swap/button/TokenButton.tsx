@@ -1,5 +1,5 @@
 import { ArrowRight } from 'lucide-react';
-import { TokenButtonProps } from './types';
+import { TokenButtonProps } from '../types';
 
 export const TokenButton = ({ token, symbol, icon, onClick }: TokenButtonProps) => (
   <button

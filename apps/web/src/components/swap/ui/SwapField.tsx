@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { TokenButton } from '../TokenButton';
+import { TokenButton } from '../button/TokenButton';
 import { AssetList } from './AssetList';
 import { SwapFieldProps } from '../types';
 import { formatBalance } from '../utils';
