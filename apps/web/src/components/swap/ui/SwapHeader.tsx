@@ -56,9 +56,9 @@ export const SwapHeader = ({
             </div>
           </DialogContent>
         </Dialog>
-        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800/50">
+        {/* <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800/50">
           <RotateCcw className="w-5 h-5" />
-        </Button>
+        </Button> */}
       </div>
     </div>
   );
