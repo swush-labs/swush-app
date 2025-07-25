@@ -17,9 +17,22 @@ export const NETWORK_ENDPOINTS = {
     'wss://asset-hub-polkadot.dotters.network',
     'wss://sys.ibp.network/asset-hub-polkadot'
   ],
+/*   [NETWORKS_SUPPORTED.HYDRA_DX]: [
+    'wss://hydration-rpc.n.dwellir.com',
+    'wss://rpc.cay.hydration.cloud',
+    'wss://rpc2.cay.hydration.cloud'
+  ] */
   [NETWORKS_SUPPORTED.HYDRA_DX]: [
     'wss://hydration-rpc.n.dwellir.com',
-    'wss://rpc.cay.hydration.cloud'
+    'wss://hydration.dotters.network',
+    'wss://rpc.helikon.io/hydradx',
+    'wss://hydration.ibp.network',
+    'wss://rpc.cay.hydration.cloud',
+    'wss://rpc.parm.hydration.cloud',
+    'wss://rpc.roach.hydration.cloud',
+    'wss://rpc.zipp.hydration.cloud',
+    'wss://rpc.sin.hydration.cloud',
+    'wss://rpc.coke.hydration.cloud'
   ]
 } as const;
 
