@@ -164,14 +164,7 @@ export class ConnectionManager {
                 
                 // If health check fails, mark connection as not ready and attempt reconnection
                 connection.isReady = false;
-                
-                // Check if this is a circuit breaker situation before scheduling reconnection
-                try {
-                    this.scheduleReconnection(network);
-                } catch (circuitBreakerError) {
-                    // Circuit breaker is open - log but don't crash
-                    console.log(`Circuit breaker prevents reconnection for ${network}: ${circuitBreakerError instanceof Error ? circuitBreakerError.message : circuitBreakerError}`);
-                }
+                this.scheduleReconnection(network);
             }
         });
 
@@ -282,12 +275,6 @@ export class ConnectionManager {
                 const errorMessage = error instanceof Error ? error.message : String(error);
                 console.error(`Reconnection failed for ${network}:`, errorMessage);
                 
-                // Check if it's a circuit breaker error
-                if (errorMessage.includes('Circuit breaker')) {
-                    console.log(`Circuit breaker active for ${network}, will retry when breaker closes`);
-                    return; // Don't increment failures for circuit breaker
-                }
-                
                 // Increment failure count and schedule next attempt
                 connectionState.consecutiveFailures++;
                 
@@ -383,8 +370,8 @@ export class ConnectionManager {
             connectionState.consecutiveFailures++;
             connectionState.lastError = err;
             
-            // Only mark endpoint as failed if it's not a circuit breaker error
-            if (selectedEndpoint && !err.message.includes('Circuit breaker')) {
+            // Mark endpoint as failed
+            if (selectedEndpoint) {
                 this.endpointProvider.markEndpointFailed(network, selectedEndpoint);
                 console.log(`🚫 Marked endpoint as failed: ${selectedEndpoint}`);
             }

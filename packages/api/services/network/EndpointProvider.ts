@@ -11,24 +11,14 @@ interface EndpointState {
   lastFailureTime: Date;
 }
 
-interface CircuitBreakerState {
-  isOpen: boolean;
-  lastFailureTime: Date;
-  consecutiveFailures: number;
-  nextRetryTime: Date;
-}
-
 export class EndpointProvider {
   private static instance: EndpointProvider;
   private endpoints: NetworkEndpoints;
   private currentIndex: Record<string, number> = {};
   private endpointStates: Map<string, EndpointState> = new Map();
   private lastEndpointUsed: Record<string, string> = {};
-  private circuitBreakers: Map<string, CircuitBreakerState> = new Map();
 
-  // Circuit breaker configuration
-  private readonly CIRCUIT_BREAKER_BASE_DELAY = 30000; // 30 seconds base delay
-  private readonly CIRCUIT_BREAKER_MAX_DELAY = 300000; // 5 minutes max delay
+  // Endpoint retry configuration
   private readonly ENDPOINT_RETRY_DELAY = 60000; // 1 minute before retrying a failed endpoint
 
   private constructor() {
@@ -39,14 +29,6 @@ export class EndpointProvider {
     Object.keys(this.endpoints).forEach(network => {
       this.currentIndex[network] = 0;
       this.lastEndpointUsed[network] = '';
-      
-      // Initialize circuit breaker state
-      this.circuitBreakers.set(network, {
-        isOpen: false,
-        lastFailureTime: new Date(0),
-        consecutiveFailures: 0,
-        nextRetryTime: new Date(0)
-      });
       
       // Initialize endpoint states
       this.endpoints[network].forEach(endpoint => {
@@ -73,13 +55,6 @@ export class EndpointProvider {
       throw new Error(`No endpoints configured for network: ${network}`);
     }
 
-    // Check circuit breaker
-    const circuitBreaker = this.circuitBreakers.get(network);
-    if (circuitBreaker?.isOpen && new Date() < circuitBreaker.nextRetryTime) {
-      const remainingTime = Math.ceil((circuitBreaker.nextRetryTime.getTime() - Date.now()) / 1000);
-      throw new Error(`Circuit breaker open for ${network}, retry in ${remainingTime}s`);
-    }
-
     // Get available (non-blacklisted or recently failed) endpoints
     const now = new Date();
     const availableEndpoints = networkEndpoints.filter(endpoint => {
@@ -94,29 +69,19 @@ export class EndpointProvider {
       return timeSinceFailure > this.ENDPOINT_RETRY_DELAY;
     });
 
-    // If all endpoints are still failing, check if we should open circuit breaker
+    // If all endpoints are still failing, try the oldest failed endpoint
     if (availableEndpoints.length === 0) {
-      this.handleAllEndpointsFailed(network);
-      
-      // Try to find the oldest failed endpoint to retry
       const oldestFailure = this.findOldestFailedEndpoint(network);
       if (oldestFailure) {
         this.resetEndpointState(oldestFailure);
-        console.log(`Circuit breaker: Retrying oldest failed endpoint: ${oldestFailure}`);
+        console.log(`All endpoints failed, retrying oldest failed endpoint: ${oldestFailure}`);
         return oldestFailure;
       }
       
       // Last resort: clear all blacklists and use first endpoint
-      console.warn(`Circuit breaker: All endpoints exhausted for ${network}, clearing blacklists`);
+      console.warn(`All endpoints exhausted for ${network}, clearing blacklists`);
       this.clearBlacklist(network);
       return networkEndpoints[0];
-    }
-
-    // Reset circuit breaker if we have available endpoints
-    if (circuitBreaker?.isOpen) {
-      console.log(`Circuit breaker: Endpoints recovered for ${network}, closing circuit breaker`);
-      circuitBreaker.isOpen = false;
-      circuitBreaker.consecutiveFailures = 0;
     }
 
     // Smart endpoint selection: avoid recently used endpoints if possible
@@ -163,42 +128,6 @@ export class EndpointProvider {
       state.lastUsed = new Date();
       console.warn(`Blacklisted endpoint for session: ${endpoint} (failure count: ${state.failureCount})`);
     }
-
-    // Check if this triggers circuit breaker
-    this.checkCircuitBreaker(network);
-  }
-
-  private handleAllEndpointsFailed(network: string): void {
-    const circuitBreaker = this.circuitBreakers.get(network);
-    if (!circuitBreaker) return;
-
-    circuitBreaker.consecutiveFailures++;
-    circuitBreaker.lastFailureTime = new Date();
-    
-    // Calculate exponential backoff delay
-    const baseDelay = this.CIRCUIT_BREAKER_BASE_DELAY;
-    const exponentialDelay = Math.min(
-      baseDelay * Math.pow(2, circuitBreaker.consecutiveFailures - 1),
-      this.CIRCUIT_BREAKER_MAX_DELAY
-    );
-    
-    circuitBreaker.nextRetryTime = new Date(Date.now() + exponentialDelay);
-    circuitBreaker.isOpen = true;
-    
-    console.warn(`Circuit breaker opened for ${network}: retry in ${Math.ceil(exponentialDelay / 1000)}s (attempt ${circuitBreaker.consecutiveFailures})`);
-  }
-
-  private checkCircuitBreaker(network: string): void {
-    const networkEndpoints = this.endpoints[network] || [];
-    const allBlacklisted = networkEndpoints.every(endpoint => {
-      const state = this.endpointStates.get(endpoint);
-      return state?.isBlacklisted;
-    });
-
-    if (allBlacklisted) {
-      console.warn(`All endpoints blacklisted for ${network}, considering circuit breaker`);
-      this.handleAllEndpointsFailed(network);
-    }
   }
 
   private findOldestFailedEndpoint(network: string): string | null {
@@ -237,26 +166,11 @@ export class EndpointProvider {
           state.lastUsed = new Date(0);
         }
       });
-      
-      // Reset circuit breaker
-      const circuitBreaker = this.circuitBreakers.get(network);
-      if (circuitBreaker) {
-        circuitBreaker.isOpen = false;
-        circuitBreaker.consecutiveFailures = 0;
-        circuitBreaker.nextRetryTime = new Date(0);
-      }
     } else {
       // Clear all blacklisted endpoints
       this.endpointStates.forEach(state => {
         state.isBlacklisted = false;
         state.lastUsed = new Date(0);
-      });
-      
-      // Reset all circuit breakers
-      this.circuitBreakers.forEach(circuitBreaker => {
-        circuitBreaker.isOpen = false;
-        circuitBreaker.consecutiveFailures = 0;
-        circuitBreaker.nextRetryTime = new Date(0);
       });
     }
   }
@@ -266,11 +180,6 @@ export class EndpointProvider {
     available: number; 
     blacklisted: string[];
     endpointDetails: Record<string, { failureCount: number; lastUsed: string; isBlacklisted: boolean }>;
-    circuitBreaker: {
-      isOpen: boolean;
-      consecutiveFailures: number;
-      nextRetryTime: string;
-    };
   } {
     const networkEndpoints = this.endpoints[network] || [];
     const blacklisted = networkEndpoints.filter(endpoint => {
@@ -288,18 +197,11 @@ export class EndpointProvider {
       };
     });
     
-    const circuitBreaker = this.circuitBreakers.get(network);
-    
     return {
       total: networkEndpoints.length,
       available: networkEndpoints.length - blacklisted.length,
       blacklisted,
-      endpointDetails,
-      circuitBreaker: {
-        isOpen: circuitBreaker?.isOpen || false,
-        consecutiveFailures: circuitBreaker?.consecutiveFailures || 0,
-        nextRetryTime: circuitBreaker?.nextRetryTime.toISOString() || 'never'
-      }
+      endpointDetails
     };
   }
 } 
