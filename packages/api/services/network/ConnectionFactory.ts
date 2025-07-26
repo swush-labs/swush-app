@@ -3,7 +3,7 @@ import { polkadot_asset_hub } from '@polkadot-api/descriptors';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { getWsProvider } from 'polkadot-api/ws-provider/node';
 import { withPolkadotSdkCompat } from 'polkadot-api/polkadot-sdk-compat';
-import { NETWORKS_SUPPORTED, CONNECTION_TIMEOUT } from '../constants';
+import { NETWORKS_SUPPORTED, CONNECTION_TIMEOUT, VALIDATION_CACHE_TTL } from '../constants';
 
 export interface AssetHubConnection {
   api: TypedApi<typeof polkadot_asset_hub>;
@@ -13,8 +13,8 @@ export interface AssetHubConnection {
 // Callback type for connection events
 export type ConnectionEventCallback = (network: string, event: 'connected' | 'disconnected' | 'error', error?: Error) => void;
 
-// Validation timeout - more generous than the hardcoded 2s
-const VALIDATION_TIMEOUT = Math.max(CONNECTION_TIMEOUT * 0.5, 5000); // 50% of connection timeout, minimum 5 seconds
+// Validation cache for performance
+const validationCache = new Map<string, { isValid: boolean; timestamp: number }>();
 
 export class ConnectionFactory {
   
@@ -37,10 +37,8 @@ export class ConnectionFactory {
           throw new Error('Failed to create API or client');
         }
 
-        // Set up connection event monitoring for PAPI
+        // Simple connection event notification for PAPI
         if (onConnectionEvent) {
-          // PAPI doesn't have direct connection events, but we can monitor the client
-          // We'll rely on health checks and validation for PAPI connections
           onConnectionEvent(NETWORKS_SUPPORTED.ASSET_HUB, 'connected');
         }
 
@@ -66,13 +64,9 @@ export class ConnectionFactory {
 
     const connectionPromise = async (): Promise<ApiPromise> => {
       try {
-        // Create provider with stable settings
-        const provider = new WsProvider(endpoint, 2000); // Back to 2000ms for stability
+        // Create provider with reasonable timeout
+        const provider = new WsProvider(endpoint, 1500);
         
-        // Enhanced connection state monitoring - set up BEFORE creating API
-        let connectionLost = false;
-        let eventHandlersAttached = false;
-
         const api = await ApiPromise.create({
           provider,
           throwOnConnect: true,
@@ -81,88 +75,35 @@ export class ConnectionFactory {
 
         await api.isReady;
 
-        // Set up robust event handling
+        // Simplified event handling
         if (onConnectionEvent) {
-          const setupEventHandlers = () => {
-            if (eventHandlersAttached) return;
-            
-            try {
-              // Primary: API-level events (most reliable)
-              api.on('connected', () => {
-                connectionLost = false;
-                console.log(`HydraDX connected to ${endpoint}`);
-                onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'connected');
-              });
+          api.on('connected', () => {
+            console.log(`HydraDX connected to ${endpoint}`);
+            onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'connected');
+          });
 
-              api.on('disconnected', () => {
-                if (!connectionLost) {
-                  connectionLost = true;
-                  console.warn(`HydraDX disconnected from ${endpoint}`);
-                  onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'disconnected');
-                }
-              });
+          api.on('disconnected', () => {
+            console.warn(`HydraDX disconnected from ${endpoint}`);
+            onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'disconnected');
+          });
 
-              api.on('error', (error: Error) => {
-                if (!connectionLost) {
-                  connectionLost = true;
-                  console.error(`HydraDX connection error on ${endpoint}:`, error);
-                  onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'error', error);
-                }
-              });
-
-              // Secondary: Provider-level events (backup detection)
-              const wsProvider = provider as any;
-              if (wsProvider.websocket) {
-                wsProvider.websocket.on('close', (code: number, reason: string) => {
-                  if (!connectionLost) {
-                    connectionLost = true;
-                    console.warn(`HydraDX WebSocket closed - Code: ${code}, Reason: ${reason}`);
-                    onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'disconnected');
-                  }
-                });
-
-                wsProvider.websocket.on('error', (error: Error) => {
-                  if (!connectionLost) {
-                    connectionLost = true;
-                    console.error(`HydraDX WebSocket error:`, error);
-                    onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'error', error);
-                  }
-                });
-              }
-              
-              eventHandlersAttached = true;
-            } catch (error) {
-              console.warn('Error setting up event handlers:', error);
-              // Continue without provider events, rely on API events
-            }
-          };
-
-          // Set up events immediately
-          setupEventHandlers();
-          
-          // Retry event setup after a short delay in case WebSocket wasn't ready
-          setTimeout(setupEventHandlers, 100);
+          api.on('error', (error: Error) => {
+            console.error(`HydraDX connection error on ${endpoint}:`, error);
+            onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'error', error);
+          });
 
           // Initial connected event
           onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'connected');
         }
 
-        // Extended stability check to ensure WebSocket is truly ready
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Verify connection is still active and perform a test query
-        if (!api.isConnected) {
-          throw new Error('Connection lost during initial stability check');
-        }
-        
-        // Test WebSocket stability with a lightweight query
+        // Basic connection test - no extended stability delays
         try {
           await Promise.race([
             api.rpc.system.chain(),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Stability test timeout')), 3000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Connection test timeout')), 2000))
           ]);
         } catch (error) {
-          throw new Error(`Connection stability test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          throw new Error(`Connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
 
         return api;
@@ -179,47 +120,57 @@ export class ConnectionFactory {
 
   public static async validateConnection(connection: any, network: string): Promise<boolean> {
     try {
+      // Check cache first for performance
+      const cacheKey = `${network}_${Date.now()}`;
+      const cached = validationCache.get(network);
+      if (cached && Date.now() - cached.timestamp < VALIDATION_CACHE_TTL) {
+        return cached.isValid;
+      }
+
+      let isValid = false;
+
       if (network === NETWORKS_SUPPORTED.ASSET_HUB) {
         // For Asset Hub (PAPI), check if AssetConversionApi is accessible
         const assetHubConn = connection as AssetHubConnection;
-        if (!assetHubConn?.api?.apis?.AssetConversionApi) {
-          return false;
-        }
-        return true;
-      } 
-      
-      if (network === NETWORKS_SUPPORTED.HYDRA_DX) {
-        // For HydraDX (Polkadot.js), perform comprehensive validation
+        isValid = !!(assetHubConn?.api?.apis?.AssetConversionApi);
+      } else if (network === NETWORKS_SUPPORTED.HYDRA_DX) {
+        // For HydraDX (Polkadot.js), perform basic validation
         const hydraApi = connection as ApiPromise;
         
         // Basic connection check
         if (!hydraApi?.isConnected) {
-          return false;
-        }
-
-        // Enhanced validation: attempt an actual query to detect stale connections
-        try {
-          // Use a lightweight query with configurable timeout based on CONNECTION_TIMEOUT
-          const validationPromise = hydraApi.rpc.system.chain();
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Validation timeout')), VALIDATION_TIMEOUT)
-          );
-          
-          await Promise.race([validationPromise, timeoutPromise]);
-          return true;
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          // Only log as warning if it's not a timeout (timeouts are expected during network issues)
-          if (errorMessage.includes('Validation timeout')) {
-            console.warn(`HydraDX connection validation timed out after ${VALIDATION_TIMEOUT}ms`);
-          } else {
-            console.warn(`HydraDX connection validation failed:`, errorMessage);
+          isValid = false;
+        } else {
+          // Lightweight query with timeout
+          try {
+            const validationPromise = hydraApi.rpc.system.chain();
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Validation timeout')), 3000)
+            );
+            
+            await Promise.race([validationPromise, timeoutPromise]);
+            isValid = true;
+          } catch (error) {
+            console.warn(`HydraDX connection validation failed:`, error);
+            isValid = false;
           }
-          return false;
         }
       }
 
-      return false;
+      // Cache the result
+      validationCache.set(network, { isValid, timestamp: Date.now() });
+      
+      // Clean up old cache entries
+      if (validationCache.size > 10) {
+        const now = Date.now();
+        for (const [key, value] of validationCache.entries()) {
+          if (now - value.timestamp > VALIDATION_CACHE_TTL) {
+            validationCache.delete(key);
+          }
+        }
+      }
+
+      return isValid;
     } catch (error) {
       console.warn(`Connection validation failed for ${network}:`, error);
       return false;
@@ -239,21 +190,14 @@ export class ConnectionFactory {
 
   public static async disconnectHydradx(connection: ApiPromise): Promise<void> {
     try {
-        if (!connection) return;
-        
-        // Add timeout protection for disconnect operation
-        await Promise.race([
-          connection.disconnect(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Disconnect timeout')), 5000))
-        ]);
-        
-        // Force WebSocket closure as safety net
-        const provider = (connection as any).provider;
-        if (provider?.websocket?.readyState === 1) {
-            provider.websocket.close(1000, 'Connection cleanup');
-        }
+      if (!connection) return;
+      
+      await Promise.race([
+        connection.disconnect(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Disconnect timeout')), 5000))
+      ]);
     } catch (error) {
-        console.warn('Error disconnecting HydraDX connection:', error);
+      console.warn('Error disconnecting HydraDX connection:', error);
     }
   }
 } 

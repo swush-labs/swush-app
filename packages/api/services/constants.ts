@@ -10,7 +10,7 @@ export const NETWORKS_SUPPORTED = {
   HYDRA_DX: 'hydra_dx'
 } as const;
 
-// Network endpoints configuration
+// Network endpoints configuration - keep all for production redundancy
 export const NETWORK_ENDPOINTS = {
   [NETWORKS_SUPPORTED.ASSET_HUB]: [
     'wss://polkadot-asset-hub-rpc.polkadot.io',
@@ -38,6 +38,7 @@ export const NETWORK_ENDPOINTS = {
 
 export const NUMBER_FORMAT_OPTIONS = { round: 2, trim: true, commify: false };
 
-// Connection timeout for initial connection attempts (reduced for faster failover)
-export const CONNECTION_TIMEOUT = 10000; // 10 seconds
-export const CONNECTION_HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
+// Production timeouts optimized for lower user volume
+export const CONNECTION_TIMEOUT = 12000; // 12 seconds - reasonable for production
+export const CONNECTION_HEALTH_CHECK_INTERVAL = 60000; // 1 minute - less aggressive than 30s
+export const VALIDATION_CACHE_TTL = 30000; // 30 seconds - cache validation results
