@@ -36,6 +36,7 @@ export class ConnectionManager {
     private isShuttingDown: boolean = false;
     private healthCheckInterval: NodeJS.Timeout | null = null;
     private reconnectionTimeouts: Map<string, NodeJS.Timeout> = new Map();
+    private connectionLocks: Map<string, Promise<void>> = new Map();
     
     // Observer pattern for services that depend on connections
     private connectionObservers: Map<string, Set<ConnectionObserver>> = new Map();
@@ -252,8 +253,40 @@ export class ConnectionManager {
     }
 
     private async connectToNetwork(network: string): Promise<void> {
+        // Don't start new connections if shutting down
+        if (this.isShuttingDown) return;
+
+        // Check if there's already a connection attempt in progress
+        const existingLock = this.connectionLocks.get(network);
+        if (existingLock) {
+            // Wait for the existing connection attempt to complete
+            await existingLock;
+            return;
+        }
+
         const connectionState = this.connections.get(network);
-        if (!connectionState || connectionState.isConnecting) return;
+        if (!connectionState) return;
+
+        // If already connected and ready, no need to reconnect
+        if (connectionState.isReady && connectionState.connection) {
+            return;
+        }
+
+        // Create a new connection lock to prevent race conditions
+        const connectionPromise = this.performConnection(network);
+        this.connectionLocks.set(network, connectionPromise);
+
+        try {
+            await connectionPromise;
+        } finally {
+            // Always clean up the lock when done
+            this.connectionLocks.delete(network);
+        }
+    }
+
+    private async performConnection(network: string): Promise<void> {
+        const connectionState = this.connections.get(network);
+        if (!connectionState || this.isShuttingDown) return;
 
         connectionState.isConnecting = true;
         connectionState.isReady = false;
@@ -530,6 +563,17 @@ export class ConnectionManager {
         }
         this.reconnectionTimeouts.clear();
 
+        // Wait for any ongoing connection attempts to complete
+        if (this.connectionLocks.size > 0) {
+            console.log('Waiting for ongoing connection attempts to complete...');
+            try {
+                await Promise.allSettled(Array.from(this.connectionLocks.values()));
+            } catch (error) {
+                console.warn('Error waiting for connection locks to complete:', error);
+            }
+        }
+        this.connectionLocks.clear();
+
         try {
             const cleanupPromises = Array.from(this.connections.keys()).map(network => 
                 this.cleanupConnection(network)
@@ -541,8 +585,7 @@ export class ConnectionManager {
         } catch (error) {
             console.error('Error during ConnectionManager disconnect:', error);
             throw error;
-        } finally {
-            this.isShuttingDown = false;
         }
+        // Note: isShuttingDown remains true after disconnect to prevent new connections
     }
 } 

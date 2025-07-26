@@ -73,9 +73,17 @@ export class EndpointProvider {
     }
 
     // Simple round-robin selection from available endpoints
-    const index = this.currentIndex[network] % availableEndpoints.length;
-    this.currentIndex[network] = (this.currentIndex[network] + 1) % availableEndpoints.length;
+    if (!this.currentIndex[network]) {
+      this.currentIndex[network] = 0;
+    }
+    
+    // Find the current index position in the available endpoints array
+    const currentGlobalIndex = this.currentIndex[network];
+    const index = currentGlobalIndex % availableEndpoints.length;
     const selectedEndpoint = availableEndpoints[index];
+    
+    // Update global index for next selection
+    this.currentIndex[network] = (currentGlobalIndex + 1) % networkEndpoints.length;
 
     // Update state
     const state = this.endpointStates.get(selectedEndpoint);
