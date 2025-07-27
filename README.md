@@ -12,6 +12,7 @@
 #### 1. Install dependencies:
 ```bash
 pnpm i
+pnpm papi
 ```
 
 #### 2. Start the development servers:
