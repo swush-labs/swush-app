@@ -15,8 +15,7 @@ export default function SwapPage() {
             backgroundImage: 'url(/swush-background.png)'
           }}
         >
-          {/* Dark overlay for better text readability */}
-          <div className="absolute inset-0 bg-black/20"></div>
+          
         </div>
         
         <Suspense fallback={<LoadState />}>
