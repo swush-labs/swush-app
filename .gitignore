@@ -40,7 +40,6 @@ apps/web/node_modules
 apps/web/.next
 apps/web/dist
 apps/web/build
-apps/web/public
 apps/web/.yalc
 apps/web/out/*
 
@@ -54,7 +53,7 @@ packages/api/public
 **/node_modules
 **/dist
 **/build
-**/public
+
 
 .turbo
 output.log
