@@ -42,13 +42,13 @@ export const SwapField = memo(function SwapField({
 
   return (
     <motion.div 
-      className={`group relative ${isInput ? 'p-5' : 'p-6'} rounded-2xl bg-forest-800/95 backdrop-blur-md border border-forest-600/60 shadow-xl hover:border-flame-400/50 hover:shadow-flame-500/20 transition-all duration-300`}
+      className={`group relative ${isInput ? 'p-5' : 'p-6'} rounded-2xl bg-forest-800/60 backdrop-blur-md border border-forest-600/30 shadow-lg shadow-black/10 hover:border-forest-500/30 hover:bg-forest-800/80 transition-all duration-300`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: isInput ? 0 : 0.1 }}
     >
       {/* Subtle hover glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-flame-500/0 to-flame-400/0 group-hover:from-flame-500/5 group-hover:to-flame-400/5 rounded-2xl transition-all duration-300 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-flame-500/0 to-flame-400/0 group-hover:from-flame-500/8 group-hover:to-flame-400/8 rounded-2xl transition-all duration-300 pointer-events-none"></div>
       
       {/* Content */}
       <div className="relative z-10">
@@ -82,7 +82,7 @@ export const SwapField = memo(function SwapField({
         <Dialog open={openDialog} onOpenChange={setOpenDialog}>
           <DialogTrigger asChild>
             <div className="flex-shrink-0">
-              <div className="flex items-center gap-3 pl-2 py-3 rounded-xl bg-forest-800 hover:bg-forest-700 border-forest-600 hover:border-flame-400 transition-all duration-200 cursor-pointer">
+              <div className="flex items-center gap-3 pl-2 py-3 rounded-xl hover:bg-forest-800 border-forest-600 hover:border-flame-400 transition-all duration-200 cursor-pointer">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-flame-400 to-flame-500 flex items-center justify-center shadow-lg">
                   <span className="text-white text-lg font-bold">{token.icon}</span>
                 </div>
