@@ -38,12 +38,26 @@ export class FetchAssetService {
     }
 
     private async setupCacheRefresh(): Promise<void> {
-        // Register cache refresh for assets
+        // Register cache refresh for assets with proper dependency checking
         this.cacheService.registerRefreshCallback(
             CACHE_KEYS.MERGED_ASSETS,
             async () => {
-                const assets = await this.fetchAllAssetsPapi(this.connectionManager.getAssetHubApi()!);
-                await this.cacheService.set(CACHE_KEYS.MERGED_ASSETS, assets);
+                try {
+                    // Check if AssetHub API is available
+                    const assetHubApi = this.connectionManager.getAssetHubApi();
+                    if (!assetHubApi) {
+                        console.log('⚠️ AssetHub API not available, skipping cache refresh');
+                        return;
+                    }
+
+                    console.log('🔄 Starting scheduled cache refresh...');
+                    const assets = await this.fetchAllAssetsPapi(assetHubApi);
+                    this.cacheService.set(CACHE_KEYS.MERGED_ASSETS, assets);
+                    console.log('✅ Scheduled cache refresh completed successfully');
+                } catch (error) {
+                    console.error('❌ Scheduled cache refresh failed:', error instanceof Error ? error.message : error);
+                    // Don't throw - let the timer continue for next attempt
+                }
             },
             FetchAssetService.REFRESH_INTERVALS.ASSETS
         );
@@ -305,7 +319,22 @@ export class FetchAssetService {
         const mergedAssets = new Map<string, Asset>(assetHubAssets);
 
         try {
-            const tradeRouter = await TradeRouterService.getInstance().getTradeRouter();
+            // Check if TradeRouter is available (it might not be during initial bootstrapping or after reconnection)
+            const tradeRouterService = TradeRouterService.getInstance();
+            if (!(tradeRouterService as any).initialized) {
+                console.log('⚠️ TradeRouter not yet initialized, skipping HydraDX enrichment for now');
+                return mergedAssets;
+            }
+
+            // Double-check that TradeRouter is actually functional
+            let tradeRouter;
+            try {
+                tradeRouter = await tradeRouterService.getTradeRouter();
+            } catch (error) {
+                console.log('⚠️ TradeRouter temporarily unavailable, skipping HydraDX enrichment:', error instanceof Error ? error.message : error);
+                return mergedAssets;
+            }
+
             const hydradxPools = await tradeRouter.getPools();
 
             // Process all HydraDX pools
@@ -360,4 +389,6 @@ export class FetchAssetService {
             throw error;
         }
     }
+
+
 }    
