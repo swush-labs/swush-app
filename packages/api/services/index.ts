@@ -16,7 +16,7 @@ export async function initializeSDK(): Promise<void> {
         console.log('Initializing network connections...');
         await ConnectionManager.getInstance().initialize();
 
-        // Step 3: Initialize TradeRouter (self-contained, no asset dependency)
+        // Step 2: Initialize TradeRouter (self-contained, no asset dependency)
         console.log('Initializing trade router...');
         try {
             await TradeRouterService.getInstance().initialize();
@@ -26,7 +26,7 @@ export async function initializeSDK(): Promise<void> {
             // Don't throw - continue with other services
         }
         
-        // Step 2: Initialize Asset Service (which will fetch assets and set up caches)
+        // Step 3: Initialize Asset Service (which will fetch assets and set up caches)
         console.log('Initializing asset service...');
         try {
             await FetchAssetService.getInstance().initialize();
