@@ -16,16 +16,6 @@ export async function initializeSDK(): Promise<void> {
         console.log('Initializing network connections...');
         await ConnectionManager.getInstance().initialize();
 
-        // Step 2: Initialize Asset Service (which will fetch assets and set up caches)
-        console.log('Initializing asset service...');
-        try {
-            await FetchAssetService.getInstance().initialize();
-            console.log('Asset service initialized successfully');
-        } catch (error) {
-            console.warn('⚠️ Asset service initialization failed:', error instanceof Error ? error.message : error);
-            // Don't throw - the server can still run with basic functionality
-        }
-
         // Step 3: Initialize TradeRouter (self-contained, no asset dependency)
         console.log('Initializing trade router...');
         try {
@@ -34,6 +24,16 @@ export async function initializeSDK(): Promise<void> {
         } catch (error) {
             console.warn('⚠️ TradeRouter initialization failed, continuing without it:', error instanceof Error ? error.message : error);
             // Don't throw - continue with other services
+        }
+        
+        // Step 2: Initialize Asset Service (which will fetch assets and set up caches)
+        console.log('Initializing asset service...');
+        try {
+            await FetchAssetService.getInstance().initialize();
+            console.log('Asset service initialized successfully');
+        } catch (error) {
+            console.warn('⚠️ Asset service initialization failed:', error instanceof Error ? error.message : error);
+            // Don't throw - the server can still run with basic functionality
         }
 
         isInitialized = true;
