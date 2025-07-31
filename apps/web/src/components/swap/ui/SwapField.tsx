@@ -56,7 +56,7 @@ export const SwapField = memo(function SwapField({
           {/* Balance display - only show when connected */}
           <div className="flex items-center gap-2">
             <Wallet className="w-4 h-4 text-forest-400" />
-            <span className="text-sm font-medium text-forest-200">
+            <span className="text-sm font-medium text-forest-300">
               {isConnected ? `${displayBalance} ${token?.symbol || ''}` : ''}
             </span>
           </div>
