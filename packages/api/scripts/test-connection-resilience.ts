@@ -37,10 +37,6 @@ async function testConnectionResilience() {
     const initialAssets = await assetService.getAssets();
     console.log(`✅ Got ${initialAssets.size} initial assets`);
     
-    // Check TradeRouter state
-    const hasAssets = (tradeRouterService as any).lastInitializedAssets.length > 0;
-    console.log(`✅ TradeRouter has assets stored: ${hasAssets} (${(tradeRouterService as any).lastInitializedAssets.length} assets)`);
-    
     // Phase 2: Simulate Connection Drop
     console.log('\n🔌 PHASE 2: Simulating Connection Drop...');
     console.log('⚠️  Forcing disconnection to simulate network issues...');
@@ -48,10 +44,6 @@ async function testConnectionResilience() {
     // Manually trigger disconnection (simulates what happens in real disconnections)
     await connectionManager.disconnect();
     console.log('✅ Disconnection completed');
-    
-    // Check TradeRouter state after disconnection  
-    const assetsAfterDisconnect = (tradeRouterService as any).lastInitializedAssets.length;
-    console.log(`📊 TradeRouter assets after disconnect: ${assetsAfterDisconnect} (should be preserved)`);
     
     // Phase 3: Test Reconnection and Recovery
     console.log('\n🔄 PHASE 3: Testing Reconnection and Recovery...');
@@ -69,9 +61,7 @@ async function testConnectionResilience() {
     console.log('✅ HydraDX reconnected successfully');
     
     // Check TradeRouter state after reconnection
-    const assetsAfterReconnect = (tradeRouterService as any).lastInitializedAssets.length;
     const isInitialized = (tradeRouterService as any).initialized;
-    console.log(`📊 TradeRouter assets after reconnect: ${assetsAfterReconnect}`);
     console.log(`📊 TradeRouter initialized: ${isInitialized}`);
     
     // Phase 4: Test TradeRouter Functionality (with delay for restoration)
@@ -160,9 +150,7 @@ async function testConnectionResilience() {
     }
     
     if (tradeRouterService) {
-      const assetsCount = (tradeRouterService as any).lastInitializedAssets.length;
       const isInit = (tradeRouterService as any).initialized;
-      console.log(`📊 TradeRouter - Assets: ${assetsCount}, Initialized: ${isInit}`);
     }
     
     process.exit(1);
