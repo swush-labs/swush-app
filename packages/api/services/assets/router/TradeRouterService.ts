@@ -9,8 +9,8 @@ export class TradeRouterService implements ConnectionObserver {
     private tradeRouter: TradeRouter | null = null;
     private poolService: PoolService | null = null;
     private initialized = false;
-    private lastInitializedAssets: any[] = [];
     private connectionManager: ConnectionManager;
+    private restorationTimeoutId: NodeJS.Timeout | null = null;
 
     private constructor() {
         this.connectionManager = ConnectionManager.getInstance();
@@ -74,7 +74,6 @@ export class TradeRouterService implements ConnectionObserver {
             }
 
             this.initialized = true;
-            this.lastInitializedAssets = []; // No longer storing external assets
             console.log('TradeRouterService initialized successfully');
         } catch (error) {
             this.fullCleanup(); // Reset state completely on initialization failure
@@ -105,17 +104,27 @@ export class TradeRouterService implements ConnectionObserver {
     }
 
     public cleanup(): void {
+        // Cancel any pending restoration timeout
+        if (this.restorationTimeoutId) {
+            clearTimeout(this.restorationTimeoutId);
+            this.restorationTimeoutId = null;
+        }
+        
         this.tradeRouter = null;
         this.poolService = null;
         this.initialized = false;
-        // Don't clear lastInitializedAssets - preserve them for potential reinitalization
     }
 
     private fullCleanup(): void {
+        // Cancel any pending restoration timeout
+        if (this.restorationTimeoutId) {
+            clearTimeout(this.restorationTimeoutId);
+            this.restorationTimeoutId = null;
+        }
+        
         this.tradeRouter = null;
         this.poolService = null;
         this.initialized = false;
-        this.lastInitializedAssets = [];
     }
 
     // ConnectionObserver implementation
@@ -131,10 +140,19 @@ export class TradeRouterService implements ConnectionObserver {
         if (network === NETWORKS_SUPPORTED.HYDRA_DX) {
             console.log('🔄 TradeRouterService: HydraDX connection restored, reinitializing...');
             
+            // Cancel any existing restoration timeout to prevent race conditions
+            if (this.restorationTimeoutId) {
+                clearTimeout(this.restorationTimeoutId);
+                this.restorationTimeoutId = null;
+            }
+            
             // Schedule restoration with a longer delay to ensure API is fully ready
             // This allows the connection to stabilize before attempting complex operations
-            setTimeout(async () => {
+            this.restorationTimeoutId = setTimeout(async () => {
                 try {
+                    // Clear the timeout ID since it's now executing
+                    this.restorationTimeoutId = null;
+                    
                     console.log('🔄 Starting delayed TradeRouter restoration...');
                     await this.initialize(); // No assets needed - self-contained
                     console.log('✅ TradeRouterService restoration completed successfully');
