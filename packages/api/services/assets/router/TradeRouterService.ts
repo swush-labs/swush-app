@@ -136,34 +136,4 @@ export class TradeRouterService implements ConnectionObserver {
         }
     }
 
-    public async onConnectionRestored(network: string, connection: AssetHubConnection | ApiPromise): Promise<void> {
-        if (network === NETWORKS_SUPPORTED.HYDRA_DX) {
-            console.log('🔄 TradeRouterService: HydraDX connection restored, reinitializing...');
-            
-            // Cancel any existing restoration timeout to prevent race conditions
-            if (this.restorationTimeoutId) {
-                clearTimeout(this.restorationTimeoutId);
-                this.restorationTimeoutId = null;
-            }
-            
-            // Schedule restoration with a longer delay to ensure API is fully ready
-            // This allows the connection to stabilize before attempting complex operations
-            this.restorationTimeoutId = setTimeout(async () => {
-                try {
-                    // Clear the timeout ID since it's now executing
-                    this.restorationTimeoutId = null;
-                    
-                    console.log('🔄 Starting delayed TradeRouter restoration...');
-                    await this.initialize(); // No assets needed - self-contained
-                    console.log('✅ TradeRouterService restoration completed successfully');
-                } catch (error) {
-                    console.error('❌ Failed to reinitialize TradeRouterService after connection restoration:', error);
-                    if (error instanceof Error && error.stack) {
-                        console.error('Stack trace:', error.stack);
-                    }
-                    // Don't fail the entire process - cache refresh will work when API is ready
-                }
-            }, 5000); // 5 second delay to ensure API is fully ready
-        }
-    }
 } 
