@@ -89,24 +89,36 @@ export class ConnectionFactory {
             try {
               // Primary: API-level events (most reliable)
               api.on('connected', () => {
-                connectionLost = false;
-                console.log(`HydraDX connected to ${endpoint}`);
-                onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'connected');
+                try {
+                  connectionLost = false;
+                  console.log(`HydraDX connected to ${endpoint}`);
+                  onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'connected');
+                } catch (error) {
+                  console.error('Error in connected event handler:', error);
+                }
               });
 
               api.on('disconnected', () => {
-                if (!connectionLost) {
-                  connectionLost = true;
-                  console.warn(`HydraDX disconnected from ${endpoint}`);
-                  onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'disconnected');
+                try {
+                  if (!connectionLost) {
+                    connectionLost = true;
+                    console.warn(`HydraDX disconnected from ${endpoint}`);
+                    onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'disconnected');
+                  }
+                } catch (error) {
+                  console.error('Error in disconnected event handler:', error);
                 }
               });
 
               api.on('error', (error: Error) => {
-                if (!connectionLost) {
-                  connectionLost = true;
-                  console.error(`HydraDX connection error on ${endpoint}:`, error);
-                  onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'error', error);
+                try {
+                  if (!connectionLost) {
+                    connectionLost = true;
+                    console.error(`HydraDX connection error on ${endpoint}:`, error);
+                    onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'error', error);
+                  }
+                } catch (handlerError) {
+                  console.error('Error in error event handler:', handlerError);
                 }
               });
 
@@ -114,18 +126,26 @@ export class ConnectionFactory {
               const wsProvider = provider as any;
               if (wsProvider.websocket) {
                 wsProvider.websocket.on('close', (code: number, reason: string) => {
-                  if (!connectionLost) {
-                    connectionLost = true;
-                    console.warn(`HydraDX WebSocket closed - Code: ${code}, Reason: ${reason}`);
-                    onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'disconnected');
+                  try {
+                    if (!connectionLost) {
+                      connectionLost = true;
+                      console.warn(`HydraDX WebSocket closed - Code: ${code}, Reason: ${reason}`);
+                      onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'disconnected');
+                    }
+                  } catch (error) {
+                    console.error('Error in WebSocket close event handler:', error);
                   }
                 });
 
                 wsProvider.websocket.on('error', (error: Error) => {
-                  if (!connectionLost) {
-                    connectionLost = true;
-                    console.error(`HydraDX WebSocket error:`, error);
-                    onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'error', error);
+                  try {
+                    if (!connectionLost) {
+                      connectionLost = true;
+                      console.error(`HydraDX WebSocket error:`, error);
+                      onConnectionEvent(NETWORKS_SUPPORTED.HYDRA_DX, 'error', error);
+                    }
+                  } catch (handlerError) {
+                    console.error('Error in WebSocket error event handler:', handlerError);
                   }
                 });
               }
