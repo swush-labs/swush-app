@@ -18,6 +18,18 @@ export default function SwapPage() {
           
         </div>
         
+        {/* Logo at top left */}
+        <div className="absolute top-4 left-4 md:top-2 md:left-6 z-10">
+          <Image
+            src="/swush-font.svg"
+            alt="Swush Logo"
+            width={148}
+            height={52}
+            className="w-28 h-auto md:w-32 lg:w-36"
+            priority
+          />
+        </div>
+        
         <Suspense fallback={<LoadState />}>
           <SwapContainer />
         </Suspense>
