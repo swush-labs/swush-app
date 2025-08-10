@@ -3,12 +3,15 @@ import { useQueryState, parseAsString, parseAsInteger } from 'nuqs'
 /**
  * Centralized query param configuration for the swap page
  * This follows nuqs best practices for organization and type safety
+ * 
+ * Note: We use asset IDs instead of symbols to handle multiple assets 
+ * with the same symbol (e.g., USDC vs USDC Snowbridge)
  */
 export const swapQueryParams = {
-  // Token selection
+  // Token selection - using asset IDs for unique identification
   useFromTokenState: () => useQueryState(
     'from',
-    parseAsString.withDefault('DOT').withOptions({
+    parseAsString.withDefault('').withOptions({
       shallow: false, // Trigger server re-render if needed
       history: 'replace' // Don't create history entries for token changes
     })
@@ -16,7 +19,7 @@ export const swapQueryParams = {
   
   useToTokenState: () => useQueryState(
     'to', 
-    parseAsString.withDefault('USDT').withOptions({
+    parseAsString.withDefault('').withOptions({
       shallow: false,
       history: 'replace'
     })
