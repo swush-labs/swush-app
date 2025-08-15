@@ -1,10 +1,8 @@
 endpoint: 
-- wss://hydration-rpc.n.dwellir.com
-- wss://hydration.dotters.network
-- wss://rpc.helikon.io/hydradx
-#  - wss://hydradx.paras.ibp.network
-#  - wss://hydradx.paras.dotters.network
-#  - wss://hydration.ibp.network
+  - wss://hydration-rpc.n.dwellir.com
+  - wss://hydration.ibp.network
+  - wss://rpc.helikon.io/hydradx
+  - wss://hydration.dotters.network
 mock-signature-host: true
 runtime-log-level: 3
 port: 3422
