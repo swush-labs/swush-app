@@ -40,6 +40,7 @@ const config: Config = {
         blackPearl: "#01151D",
         darkSlateGray: "#1F3041",
         bluishCyan: "#022029",
+        burningOrange: "#FB6D3F",
   		},
   		borderRadius: {
   			lg: 'var(--radius)',

@@ -33,7 +33,7 @@ export const SubmitButtonAction = ({
             isConnected={isConnected}
             setIsConnected={setIsConnected}
             setWalletAddress={setWalletAddress}
-            className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-flame-500 to-flame-600 hover:from-flame-600 hover:to-flame-700 text-white rounded-2xl transition-all duration-300 shadow-lg shadow-flame-500/25 hover:shadow-flame-500/40 border border-flame-400/20 backdrop-blur-sm"
+            className="w-full h-[60px] text-xl font-semibold bg-burningOrange hover:bg-burningOrange/80 text-white rounded-full transition-all duration-300"
             onWalletModalClose={() => {
               // Reset swapping state if wallet modal is closed without connecting
               if (isSwapping) {
