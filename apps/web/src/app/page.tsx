@@ -12,7 +12,7 @@ export default function SwapPage() {
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: 'url(/swush-background.png)'
+            backgroundImage: 'url(/swush-background.svg)'
           }}
         >
           
