@@ -240,7 +240,7 @@ export function SwapContainer() {
             setSlippageTolerance={setSlippageTolerance}
           />
 
-          <div className="space-y-8">
+          <div className="space-y-7">
             <div className="">
               <SwapField
                 type="input"

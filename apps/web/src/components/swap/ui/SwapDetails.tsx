@@ -85,7 +85,7 @@ export const SwapDetails = memo(function SwapDetails({
 
   return (
     <motion.div
-      className="p-4 rounded-xl bg-slate-800/20 backdrop-blur-sm border border-slate-700/20 shadow-lg"
+      className="px-3"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.2 }}
