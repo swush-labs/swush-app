@@ -40,6 +40,7 @@ const config: Config = {
         blackPearl: "#01151D",
         darkSlateGray: "#1F3041",
         bluishCyan: "#022029",
+        blueWhale: "#003843",
         burningOrange: "#FB6D3F",
         creole: "#1C0902",
         zinwallditeBrown: "#2F1005",

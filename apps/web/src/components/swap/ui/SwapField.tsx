@@ -82,7 +82,7 @@ export const SwapField = memo(function SwapField({
         <Dialog open={openDialog} onOpenChange={setOpenDialog}>
           <DialogTrigger asChild>
             <div className={`flex-shrink-0${!isInput ? ' pt-2' : ''}`}>
-              <div className="flex items-center gap-3 rounded-xl hover:bg-forest-800 border-forest-600 hover:border-flame-400 transition-all duration-200 cursor-pointer">
+              <div className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-blueWhale border-forest-600 hover:border-flame-400 transition-all duration-200 cursor-pointer">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-flame-400 to-flame-500 flex items-center justify-center shadow-lg">
                   <span className="text-white text-lg font-bold">{token.icon}</span>
                 </div>
