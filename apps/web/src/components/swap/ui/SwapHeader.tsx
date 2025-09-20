@@ -41,8 +41,8 @@ export const SwapHeader = ({
               <Settings className="w-5 h-5" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-slate-900 border-slate-800">
-            <DialogHeader>
+          <DialogContent className="bg-blackPearl border-darkSlateGray">
+            <DialogHeader className="flex items-center justify-center" >
               <DialogTitle className="text-white">Settings</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -52,7 +52,7 @@ export const SwapHeader = ({
                   type="number"
                   value={slippageTolerance}
                   onChange={(e) => setSlippageTolerance(parseFloat(e.target.value))}
-                  className="bg-slate-800 border-slate-700 text-white"
+                  className="bg-woodsmoke border-0 text-white no-arrows"
                 />
               </div>
             </div>
