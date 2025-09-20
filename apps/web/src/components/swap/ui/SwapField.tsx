@@ -7,7 +7,7 @@ import { TokenButton } from '../button/TokenButton';
 import { AssetList } from './AssetList';
 import { SwapFieldProps } from '../types';
 import { formatBalance } from '../utils';
-import { Loader2, ChevronDown, Wallet } from 'lucide-react';
+import { Loader2, ChevronDown, Wallet, ChevronLeft } from 'lucide-react';
 
 export const SwapField = memo(function SwapField({
   type,
@@ -95,8 +95,15 @@ export const SwapField = memo(function SwapField({
             </div>
           </DialogTrigger>
           <DialogContent className="bg-blackPearl border-darkSlateGray">
-            <DialogHeader>
-              <DialogTitle className="text-white">Select a token</DialogTitle>
+            <DialogHeader className="relative" >
+              
+              <div className="w-full flex items-center justify-center" >
+              <DialogTitle className="text-white text-lg font-medium">Select a token</DialogTitle>
+              </div>
+              {/* <div className="absolute w-full h-full" >
+              <ChevronLeft className="size-5 text-white" />
+              </div> */}
+              
             </DialogHeader>
             <AssetList 
               assets={availableTokens} 
