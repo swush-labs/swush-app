@@ -245,6 +245,10 @@ export const WalletButton = ({
   const isChopsticksMode = chopsticksService.isChopsticksMode();
 
   const handleConnectClick = () => {
+    // This section is just for Demo
+    setIsConnected(true);
+    return;
+    // above section is for demo
     if (isChopsticksMode) {
       handleChopsticksConnect();
     } else {
