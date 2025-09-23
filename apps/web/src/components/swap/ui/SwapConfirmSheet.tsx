@@ -1,9 +1,52 @@
-import { useEffect, useState } from "react";
-import { AlertCircle, ArrowDown, CheckCircle, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { AlertCircle, ArrowDown, CheckCircle, ChevronLeft, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBalance } from "../utils";
 import { FeeBreakdown } from "../hooks/types";
 import { SwapToasts, TOAST_IDS } from "../utils/toastUtils";
+import { Dialog, DialogClose, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import Image from "next/image";
+import { cn } from "@/lib/utils";
+
+interface SubTextProps {
+  className?: string
+  children: React.ReactNode | React.ReactNode[]
+}
+const SubText:React.FC<SubTextProps> = ({
+  className,
+  children,
+}) => {
+  return (
+    <p className={cn("text-sm font-normal text-white/70",className)} >{children}</p>
+  )
+}
+
+interface SwapCardProps {
+  label?: string
+  token: string
+  tokenIcon?: string
+  amount: string
+}
+const SwapCard: React.FC<SwapCardProps> = ({
+  label,
+  token,
+  tokenIcon,
+  amount
+}) => {
+  return (
+    <div className="space-y-1" >
+      {label && <p className="text-white text-sm font-medium" >{label}</p>}
+      <div className="bg-midnight border-darkSlateGray border h-[90px] flex items-center rounded-2xl p-6" >
+        {
+          tokenIcon ? <Image src={tokenIcon} alt="token-icon" className="size-[45px]" /> :
+          <div className="size-[45px] rounded-full bg-blackPearl" ></div>
+        }
+        <p className="text-[20px] font-medium uppercase ml-3 text-white" >{token ? token : "NOT FOUND"}</p>
+        <p className="ml-auto text-white text-[38px] font-medium" >{amount}</p>
+      </div>
+    </div>
+  )
+}
 
 export interface SimulationResult {
   success: boolean;
@@ -65,6 +108,55 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
     SwapToasts.dismiss(TOAST_IDS.SWAP_STATUS);
     onClose();
   };
+
+  return (
+    <Dialog open={isOpen}>
+      <DialogContent className="w-[517px] h-[647px] px-6 pt-4 bg-blackPearl border-darkSlateGray" isCloseIconVisible={false} isOverlayVisible={false} >
+        <div>
+          <div className="relative flex items-center justify-center" >
+            <DialogClose>
+              <ChevronLeft className="text-white absolute left-0 self-center" />
+            </DialogClose>
+            <p className="text-lg font-medium text-white h-fit" >Confirm Swap</p>
+          </div>
+          <div className="flex flex-col items-stretch justify-start mt-7" >
+            <SwapCard 
+              label="You Pay"
+              token={inputToken}
+              amount={inputAmount}
+            />
+            <div className="flex justify-center relative mt-[14px] h-[20px]" >
+              <div className="absolute bottom-[-10px] size-[30px] rounded-full bg-burningOrange flex items-center justify-center self-center" >
+                <ArrowDown className="text-white size-5" />
+              </div>
+            </div>
+            <SwapCard 
+              label="You Receive"
+              token={outputToken}
+              amount={outputAmount}
+            />
+
+            <div className="grid grid-cols-2 gap-y-5 mt-[61px]" >
+              <SubText>Network Fee</SubText>
+              <SubText className="justify-self-end" >
+              {simulationResult?.estimatedFee && simulationResult.estimatedFee !== '0' 
+                ? `${simulationResult.estimatedFee} ${inputToken}` 
+                : '—'}
+              </SubText>
+              <SubText>Slippage Tolerance</SubText>
+              <SubText className="justify-self-end" >{slippageTolerance}%</SubText>
+              <SubText>Minimum Received</SubText>
+              <SubText className="justify-self-end" >
+              {outputAmount && parseFloat(outputAmount) > 0
+                ? `${formatBalance((parseFloat(outputAmount) * (1 - slippageTolerance / 100)).toString(), true)} ${outputToken}`
+                : '—'}
+              </SubText>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
 
   return (
     <div 

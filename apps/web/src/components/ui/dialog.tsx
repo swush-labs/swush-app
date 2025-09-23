@@ -31,14 +31,15 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
 interface DialogContentProps {
   isCloseIconVisible?: boolean
+  isOverlayVisible?: boolean
 }
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & DialogContentProps
->(({ className, children, isCloseIconVisible, ...props }, ref) => (
+>(({ className, children, isCloseIconVisible = true, isOverlayVisible = true, ...props }, ref) => (
   <DialogPortal>
-    <DialogOverlay />
+    { isOverlayVisible && <DialogOverlay /> }
     <DialogPrimitive.Content
       ref={ref}
       className={cn(

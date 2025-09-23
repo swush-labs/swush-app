@@ -98,6 +98,7 @@ export function SwapContainer() {
     showConfirmation,
     simulationResult,
     isConfirmingSwap,
+    setShowConfirmation,
     handleSimulationComplete,
     handleConfirmSwap,
     handleCancelSwap,
@@ -301,7 +302,10 @@ export function SwapContainer() {
               isSwapping={isSwapping}
               setIsConnected={setIsConnected}
               setWalletAddress={setWalletAddress}
-              onSwap={() => handleSwapExecution(isConnected)}
+              onSwap={() => {
+                setShowConfirmation(true);
+                // handleSwapExecution(isConnected)
+              }}
               insufficientBalance={insufficientBalance}
               disabled={!inputAmount || inputAmount === '' || parseFloat(inputAmount) <= 0 || insufficientBalance}
             />
