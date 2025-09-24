@@ -42,7 +42,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
           <div className="size-[45px] rounded-full bg-blackPearl" ></div>
         }
         <p className="text-[20px] font-medium uppercase ml-3 text-white" >{token ? token : "NOT FOUND"}</p>
-        <p className="ml-auto text-white text-[38px] font-medium" >{amount}</p>
+        <p className="ml-auto text-white text-[20px] font-medium" >{amount}</p>
       </div>
     </div>
   )
@@ -111,7 +111,7 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
 
   return (
     <Dialog open={isOpen}>
-      <DialogContent className="w-[517px] h-[647px] px-6 pt-4 bg-blackPearl border-darkSlateGray" isCloseIconVisible={false} isOverlayVisible={false} >
+      <DialogContent className="w-[517px] h-[608px] px-6 pt-4 bg-blackPearl border-darkSlateGray" isCloseIconVisible={false}  >
         <div>
           <div className="relative flex items-center justify-center" >
             <DialogClose onClick={handleClose} >
@@ -153,16 +153,20 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
               </SubText>
             </div>
 
-            <Button 
-              variant="primary"
-              size="primary"
-              className="mt-[26px]"
-            >Confirm Swap</Button>
+            <div className="flex items-center flex-row-reverse gap-x-2" >
+              <Button 
+                variant="primary"
+                size="primary"
+                className="mt-[26px] w-full"
+              >Confirm Swap</Button>
 
-            <button
-              className="text-[20px] font-medium hover:bg-transparent text-white mt-5"
-              onClick={handleClose}
-            >Close</button>
+              <button
+                className="text-[20px] font-medium hover:bg-transparent text-white mt-5 w-full rounded-full bg-midnight h-[60px]"
+                onClick={handleClose}
+              >Close</button>
+            </div>
+
+            
           </div>
         </div>
       </DialogContent>
