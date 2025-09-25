@@ -98,6 +98,8 @@ export function SwapContainer() {
     showConfirmation,
     simulationResult,
     isConfirmingSwap,
+    isSwapComplete,
+    isSwappingInProgress,
     setShowConfirmation,
     handleSimulationComplete,
     handleConfirmSwap,
@@ -336,7 +338,9 @@ export function SwapContainer() {
       />
 
       <SwapCompleteDialog 
-
+        isOpen={isSwappingInProgress || isSwapComplete}
+        isSwappingInProgress={isSwappingInProgress}
+        isSwapComplete={isSwapComplete}
       />
     </>
   )

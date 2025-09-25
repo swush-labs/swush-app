@@ -48,6 +48,7 @@ const config: Config = {
   			greyBlue: '#6C86AD',
   			midnight: '#011F2A',
 			"tealish-green": "#01E17B",
+			tune: "#303746",
   			woodsmoke: '#0A0B0D',
   			zinwallditeBrown: '#2F1005',
   			card: {

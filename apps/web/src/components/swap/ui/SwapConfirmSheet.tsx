@@ -158,6 +158,7 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
                 variant="primary"
                 size="primary"
                 className="mt-[26px] w-full"
+                onClick={onConfirm}
               >Confirm Swap</Button>
 
               <button
