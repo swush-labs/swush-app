@@ -5,6 +5,47 @@ import { Zap } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
+interface SwushPointCardProps {
+    points: number
+    className?: string
+}
+
+const SwushPointCard:React.FC<SwushPointCardProps> = ({
+    className,
+    points
+}) => {
+    return (
+        <div className={cn("w-[194px] rounded-xl border border-white pt-11 pb-12 flex flex-col items-center gap-y-7 bg-gradient-to-b from-myrtle to-black", className)} >
+            <Image src="/images/swush-coin.png" alt="coin" width={105} height={105} />
+            <div className="flex flex-col items-center gap-y-1" >
+                <p className="text-white text-[38px] font-extrabold" >{points}+</p>
+                <p className="text-white text-base font-normal" >Swush Points</p>
+            </div>
+        </div>
+    )
+}
+
+interface SecretGiftProps {
+    className?: string
+    onMouseDown?: () => void
+}
+
+const SecretGift:React.FC<SecretGiftProps> = ({
+    className,
+    onMouseDown
+}) => {
+    return (
+        <div className={cn("flex flex-col items-center gap-y-[29px]", className)} onMouseDown={onMouseDown} >
+            <div className="w-[210px] py-20 rounded-xl bg-gradient-to-b from-blueberry-blue to-prussian-blue flex items-center justify-center" >
+                <div className="rounded-full w-[140px] h-[140px] bg-faded-orange/10 flex items-center justify-center" >
+                    <Image src="/icons/gift-box.svg" alt="gift-box icon" width={64} height={64} className="size-16" />
+                </div>
+            </div>
+
+            <p className="text-center text-cloud text-base font-normal w-[263px]" >“Swipe or click to reveal your reward!”</p>
+        </div>
+    )
+}
 
 interface SwapCompleteDialogProps {
     isOpen?: boolean
@@ -29,6 +70,7 @@ export function SwapCompleteDialog({
     duration,
 }:SwapCompleteDialogProps) {
     const [swapProgress, setSwapProgress] = useState<number>(10)
+    const [isGiftRevealed, setIsGiftRevealed] = useState<boolean>(false)
 
     useEffect(() => {
         if(!isSwapComplete) return
@@ -62,7 +104,7 @@ export function SwapCompleteDialog({
                     )
                 }
                 {
-                    isSwapComplete && swapProgress >= 100 && (
+                    (isSwapComplete && swapProgress >= 100) && (
                         <div className="flex flex-col items-center pb-[46px] pt-[36px]" >
                             <div className="flex items-center justify-center rounded-full bg-tune size-[65px]" >
                                 <Image src="/icons/check_circle.svg" alt="check-icon" width={40} height={40} />
@@ -70,6 +112,13 @@ export function SwapCompleteDialog({
 
                             <p className="text-white text-[32px] font-bold" >Swap Complete!</p>
                             <p className="text-cloud text-base font-normal" >{`${inputAmount} ${inputToken} → ${outputAmount} ${outputToken} in ${duration / 1000}s`}</p>
+
+                            {
+                                isGiftRevealed ? <SwushPointCard points={60} className="mt-[61px]" /> :
+                                <SecretGift className="mt-[29px]" onMouseDown={() => {
+                                    setIsGiftRevealed(true)
+                                }} />
+                            }
                         </div>
                     )
                 }
