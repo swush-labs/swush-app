@@ -44,7 +44,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
           <div className="size-[45px] rounded-full bg-blackPearl" ></div>
         }
         <p className="text-[20px] font-medium uppercase ml-3 text-white" >{token ? token : "NOT FOUND"}</p>
-        <p className="ml-auto text-white text-[20px] font-medium" >{amount}</p>
+        <p className="ml-auto text-white text-4xl font-medium" >{amount}</p>
       </div>
     </div>
   )
