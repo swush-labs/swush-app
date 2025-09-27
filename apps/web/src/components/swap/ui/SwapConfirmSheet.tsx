@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { AlertCircle, ArrowDown, CheckCircle, ChevronLeft, X } from "lucide-react";
+import { AlertCircle, ArrowDown, CheckCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBalance } from "../utils";
 import { FeeBreakdown } from "../hooks/types";
 import { SwapToasts, TOAST_IDS } from "../utils/toastUtils";
-import { Dialog, DialogClose, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -117,7 +117,7 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
         <div>
           <div className="relative flex items-center justify-center" >
             <DialogClose onClick={handleClose} >
-              <ChevronLeft className="text-white absolute left-0 self-center" />
+              <X className="text-white absolute right-0 self-center" />
             </DialogClose>
             <p className="text-lg font-medium text-white h-fit" >Confirm Swap</p>
           </div>
