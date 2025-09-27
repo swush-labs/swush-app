@@ -44,7 +44,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
           <div className="size-[45px] rounded-full bg-blackPearl" ></div>
         }
         <p className="text-[20px] font-medium uppercase ml-3 text-white" >{token ? token : "NOT FOUND"}</p>
-        <p className="ml-auto text-white text-4xl font-medium" >{amount}</p>
+        <p className="ml-auto text-white max-sm:text-2xl text-4xl font-medium max-w-44 overflow-hidden" >{amount}</p>
       </div>
     </div>
   )
@@ -163,12 +163,12 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
               <Button 
                 variant="primary"
                 size="primary"
-                className="mt-[26px] w-full"
+                className="mt-[26px] w-full max-sm:text-sm"
                 onClick={onConfirm}
               >Confirm Swap</Button>
 
               <button
-                className="text-[20px] font-medium hover:bg-midnight/80 text-white mt-5 w-full rounded-full bg-midnight h-[60px]"
+                className="max-sm:text-sm text-[20px] font-medium hover:bg-midnight/80 text-white mt-5 w-full rounded-full bg-midnight h-[60px]"
                 onClick={handleClose}
               >Close</button>
             </div>
