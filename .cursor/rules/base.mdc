@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+
+This is a Next.js project with Polkadot API (PAPI) with web package at apps\web.
+
+For any major code changes, follow the @ui.mdc rules to ensure best practices are maintained.
