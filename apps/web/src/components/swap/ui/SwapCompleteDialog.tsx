@@ -107,7 +107,7 @@ export function SwapCompleteDialog({
                     (isSwappingInProgress || swapProgress < 100) && (
                         <div className="w-full h-full flex items-center justify-center gap-x-2 py-[78px]" >
                             <Zap className="size-8 text-white" />
-                            <p className="text-xl sm:text-[32px] font-bold text-white" >Swapping in Progress…</p>
+                            <p className="text-lg sm:text-xl font-bold text-white" >Swapping in Progress…</p>
 
                             <Progress 
                                 className="absolute left-[-5px] w-[110%] bottom-[-7px] h-4" 
