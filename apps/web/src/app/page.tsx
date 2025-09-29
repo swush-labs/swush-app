@@ -12,11 +12,16 @@ export default function SwapPage() {
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: 'url(/swush-background.svg)'
+            backgroundImage: 'url(/images/background.png)'
           }}
         >
-          
-        </div>
+          </div>
+        <div 
+          className="absolute w-screen h-screen origin-bottom-right bg-fixed bg-[position:bottom_40px_right_40px] bottom-0 right-0 bg-contain bg-no-repeat"
+          style={{
+            backgroundImage: 'url(/images/firefly-n-mascot.png)'
+          }}
+        ></div>
         
         {/* Logo at top left */}
         <div className="absolute top-4 left-4 md:top-2 md:left-6 z-10">
