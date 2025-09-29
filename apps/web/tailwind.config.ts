@@ -201,9 +201,9 @@ const config: Config = {
   			}
   		},
 		screens: {
-			short: { raw: '(max-height: 400px)' },
-			tall: { raw: '(max-height: 720px)' },
-			grande: { raw: '(max-height: 800px)' },
+			short: { raw: '(min-height: 400px)' },
+			tall: { raw: '(min-height: 720px)' },
+			grande: { raw: '(min-height: 800px)' },
 			venti: { raw: '(min-height: 801px)' },
 		},
   		backdropBlur: {

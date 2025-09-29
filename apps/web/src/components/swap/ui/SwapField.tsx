@@ -67,7 +67,7 @@ export const SwapField = memo(function SwapField({
 
   return (
     <motion.div 
-      className={`group relative p-6 rounded-2xl bg-blackPearl border-darkSlateGray border backdrop-blur-md shadow-lg shadow-black/25`}
+      className={`group relative p-4 sm:p-6 rounded-2xl bg-blackPearl border-darkSlateGray border backdrop-blur-md shadow-lg shadow-black/25`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: isInput ? 0 : 0.1 }}
@@ -77,7 +77,7 @@ export const SwapField = memo(function SwapField({
       
       {/* Content */}
       <div className="relative z-10">
-        <div className="flex justify-between items-center mb-9">
+        <div className="flex justify-between items-center mb-4 tall:mb-9">
           {/* Balance display - only show when connected */}
           <div className="flex items-center gap-2">
             <Wallet className="w-4 h-4 text-white/60" />
