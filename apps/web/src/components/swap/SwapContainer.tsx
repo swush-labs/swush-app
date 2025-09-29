@@ -207,15 +207,15 @@ export function SwapContainer() {
     <>
 
       {/* Main Content */}
-      <div className="w-full h-full flex flex-col items-center pt-12 sm:-top-10 sm:justify-center px-4 md:px-4 relative z-10 overflow-y-scroll no-scrollbar">
-        <div className="w-full max-w-[474px] space-y-5 md:space-y-4">
+      <div className="w-full h-full flex flex-col items-center pt-16 sm:-top-10 sm:justify-center px-4 md:px-4 relative z-10 overflow-y-scroll no-scrollbar">
+        <div className="w-full max-w-md space-y-5 md:space-y-4">
           <SwapHeader
             slippageTolerance={slippageTolerance}
             setSlippageTolerance={setSlippageTolerance}
             onHistoryClick={() => setShowHistory(true)}
           />
 
-          <div className="space-y-4 tall:space-y-7">
+          <div className="space-y-4">
             <div className="">
               <SwapField
                 type="input"
