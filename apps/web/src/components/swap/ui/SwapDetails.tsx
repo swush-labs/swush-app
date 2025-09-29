@@ -4,6 +4,21 @@ import { TokenInfo } from '../types';
 import { FeeBreakdown } from '../hooks/types';
 import { formatAmount } from '@/services/balances/utils';
 import { NUMBER_FORMAT_OPTIONS } from '@/services/constants';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+
+interface SubTextProps {
+  className?: string
+  children?: React.ReactNode | React.ReactNode[]
+}
+const SubText:React.FC<SubTextProps> = ({
+  children,
+  className,
+}) => {
+  return (
+    <p className={cn("text-white/70 text-xs sm:text-sm font-normal",className)} >{children}</p>
+  )
+}
 
 // Define DOT token information for fee display
 const DOT_DECIMALS = 10;
@@ -17,6 +32,7 @@ interface SwapDetailsProps {
   feeBreakdown?: FeeBreakdown;
   route: string;
   isLoading?: boolean;
+  isProcessing?: boolean;
 }
 
 export const SwapDetails = memo(function SwapDetails({
@@ -26,7 +42,8 @@ export const SwapDetails = memo(function SwapDetails({
   maxTransactionFee,
   feeBreakdown,
   route,
-  isLoading = false
+  isLoading = false,
+  isProcessing = false,
 }: SwapDetailsProps) {
   // Format fees for display if available - memoized for performance
   const formattedFees = useMemo(() => {
@@ -85,75 +102,37 @@ export const SwapDetails = memo(function SwapDetails({
 
   return (
     <motion.div
-      className="p-4 rounded-xl bg-slate-800/20 backdrop-blur-sm border border-slate-700/20 shadow-lg"
+      className="px-3"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.2 }}
     >
-      <div className="space-y-2">
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-400">Minimum Received</span>
-            <span className="text-slate-300">
-              {displayValue(minimumReceived, outputToken.symbol)}
-            </span>
-          </div>
+      <div className="grid grid-cols-2 gap-y-3 sm:gap-y-3" >
+        <SubText>Minimum Received</SubText>
+        <SubText className="justify-self-end" >
+          {
+            isProcessing ? <Skeleton className="w-20 h-5" /> : displayValue(minimumReceived, outputToken.symbol)
+          }
+        </SubText>
+        <SubText>Max Transaction Fee</SubText>
+        <SubText className="justify-self-end" >
+          {
+            isProcessing ? <Skeleton className="w-16 h-5" /> : displayValue(formattedMaxFee, DOT_SYMBOL)
+          }
+        </SubText>
+        <SubText>Route</SubText>
+        <SubText className="justify-self-end" >
+          {
+            isProcessing ? <Skeleton className="w-16 h-5" /> : displayValue(route, '', '—')
+          }
+        </SubText>
+      </div>
+    </motion.div>
+  );
+}); 
 
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-400">Max Transaction Fee</span>
-            <span className="text-slate-300">
-              {displayValue(formattedMaxFee, DOT_SYMBOL)}
-            </span>
-          </div>
-          {/*           
-          {feeBreakdown && formattedFees ? (
-            <div className="space-y-1.5 pt-2 border-t border-slate-700/50">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-400">Network Fee</span>
-                <span className="text-slate-300">
-                  {formattedFees.transaction} {inputToken.symbol}
-                </span>
-              </div>
-              
-              {feeBreakdown.xcmFee > 0 && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-400">XCM Fee</span>
-                  <span className="text-slate-300">
-                    {formattedFees.xcm} {inputToken.symbol}
-                  </span>
-                </div>
-              )}
-              
-             <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-400">Trading Fee</span>
-                <span className="text-slate-300">
-                  {formattedFees.trading} {inputToken.symbol}
-                </span>
-              </div> 
-              
-              <div className="flex items-center justify-between text-sm font-medium pt-1 border-t border-slate-700/50">
-                <span className="text-slate-400">Total Fees</span>
-                <span className="text-slate-300">
-                  {formattedFees.total} {inputToken.symbol}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-400">Max Transaction Fee</span>
-              <span className="text-slate-300">
-                {formattedMaxFee} {inputToken.symbol}
-              </span>
-            </div>
-          )} */}
 
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-400">Route</span>
-            <span className="text-slate-300">{displayValue(route, '', '—')}</span>
-          </div>
-        </div>
-
-        {/* TODO: figure out path for asset hub and hydra dx, also is this necessary? 
+{/* TODO: figure out path for asset hub and hydra dx, also is this necessary? 
     <Collapsible>
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-center gap-2 pt-2 text-sm text-slate-400 hover:text-slate-300 transition-colors">
@@ -176,7 +155,3 @@ export const SwapDetails = memo(function SwapDetails({
             </div>
           </CollapsibleContent>
         </Collapsible> */}
-      </div>
-    </motion.div>
-  );
-}); 

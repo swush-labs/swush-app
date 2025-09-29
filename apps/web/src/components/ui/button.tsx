@@ -18,13 +18,18 @@ const buttonVariants = cva(
           "bg-neutral-100 text-neutral-900 hover:bg-neutral-100/80 dark:bg-neutral-800 dark:text-neutral-50 dark:hover:bg-neutral-800/80",
         ghost: "hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
         link: "text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-50",
+        primary: "bg-burningOrange rounded-full text-white text-[20px] font-medium",
+        tonalRounded: "bg-bluishCyan rounded-full hover:bg-creole text-white hover:text-burningOrange active:bg-zinwallditeBrown",
       },
       size: {
         default: "h-10 px-4 py-2",
+        xss: "h-5 rounded-md px-3",
         xs: "h-7 rounded-md px-2",
         sm: "h-9 rounded-md px-3",
         lg: "h-11 rounded-md px-8",
+        primary: "h-[60px]",
         icon: "h-10 w-10",
+        iconLg: "w-[69px] h-[33px]"
       },
     },
     defaultVariants: {

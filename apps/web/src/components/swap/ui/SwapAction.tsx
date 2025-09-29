@@ -33,7 +33,7 @@ export const SubmitButtonAction = ({
             isConnected={isConnected}
             setIsConnected={setIsConnected}
             setWalletAddress={setWalletAddress}
-            className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-flame-500 to-flame-600 hover:from-flame-600 hover:to-flame-700 text-white rounded-2xl transition-all duration-300 shadow-lg shadow-flame-500/25 hover:shadow-flame-500/40 border border-flame-400/20 backdrop-blur-sm"
+            className="w-full h-[60px] text-xl font-semibold bg-burningOrange hover:bg-burningOrange/80 text-white rounded-full transition-all duration-300"
             onWalletModalClose={() => {
               // Reset swapping state if wallet modal is closed without connecting
               if (isSwapping) {
@@ -45,21 +45,16 @@ export const SubmitButtonAction = ({
         ) : (
           <motion.button
             className={`
-              relative w-full h-14 text-lg font-semibold rounded-2xl transition-all duration-300 overflow-hidden backdrop-blur-sm
+              relative w-full h-14 text-lg font-semibold rounded-full transition-all duration-300 overflow-hidden backdrop-blur-sm
               ${insufficientBalance 
                 ? 'bg-gradient-to-r from-red-500/80 to-red-600/80 text-white border border-red-400/30 shadow-red-500/20' 
                 : disabled
                 ? 'bg-forest-700/50 text-forest-400 border border-forest-600/30'
-                : 'bg-gradient-to-r from-flame-500 to-flame-400 hover:from-flame-400 hover:to-flame-300 text-white border border-flame-400/30 shadow-lg shadow-flame-500/25 hover:shadow-flame-400/40'
+                : 'bg-burningOrange hover:from-flame-400 hover:to-flame-300 text-white border border-flame-400/30'
               }
             `}
             onClick={onSwap}
             disabled={disabled}
-            whileHover={!disabled ? { 
-              scale: 1.02,
-              boxShadow: "0 10px 30px rgba(255, 107, 53, 0.3)"
-            } : {}}
-            whileTap={!disabled ? { scale: 0.98 } : {}}
           >
             {/* Animated flame-like background effect */}
             {!disabled && !insufficientBalance && (

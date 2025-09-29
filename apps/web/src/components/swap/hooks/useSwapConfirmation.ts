@@ -16,6 +16,8 @@ export function useSwapConfirmation({ setIsSwapping }: UseSwapConfirmationProps)
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [isConfirmingSwap, setIsConfirmingSwap] = useState(false);
+  const [isSwapComplete, setIsSwapComplete] = useState(false);
+  const [isSwappingInProgress, setIsSwappingInProgress] = useState(false);
 
   // Handle simulation results and confirmation
   const handleSimulationComplete = useCallback(async (result: SimulationResult) => {
@@ -42,7 +44,12 @@ export function useSwapConfirmation({ setIsSwapping }: UseSwapConfirmationProps)
   
   const handleConfirmSwap = useCallback(() => {
     setIsConfirmingSwap(true); // Set confirming state before closing sheet
+    setIsSwappingInProgress(true);
     setShowConfirmation(false);
+    setTimeout(() => {
+      setIsSwapComplete(true);
+      setIsSwappingInProgress(false);
+    },3000)
     if (window.swapConfirmResolve) {
       window.swapConfirmResolve(true);
       window.swapConfirmResolve = undefined;
@@ -62,6 +69,8 @@ export function useSwapConfirmation({ setIsSwapping }: UseSwapConfirmationProps)
   const resetConfirmationState = useCallback(() => {
     setShowConfirmation(false);
     setIsConfirmingSwap(false);
+    setIsSwapComplete(false);
+    setIsSwappingInProgress(false);
     if (window.swapConfirmResolve) {
       window.swapConfirmResolve(false);
       window.swapConfirmResolve = undefined;
@@ -73,6 +82,8 @@ export function useSwapConfirmation({ setIsSwapping }: UseSwapConfirmationProps)
     setShowConfirmation,
     simulationResult,
     isConfirmingSwap,
+    isSwapComplete,
+    isSwappingInProgress,
     handleSimulationComplete,
     handleConfirmSwap,
     handleCancelSwap,

@@ -2,16 +2,26 @@ import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { TokenButton } from '../button/TokenButton';
-import { AssetListProps, TokenInfo } from '../types';
+import { AssetListProps, NetworkTokenInfo, AssetGroup } from '../types';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
-export const AssetList = ({ assets, onSelect, currentAsset, onClose }: AssetListProps) => {
+export const AssetList = ({ assetGroups, onSelect, currentAsset, onClose }: AssetListProps) => {
   const [searchQuery, setSearchQuery] = useState('');
-  
-  const filteredAssets = assets.filter((asset: TokenInfo) => 
-    asset.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
 
-  const handleSelect = (asset: any) => {
+  const filteredGroups = assetGroups.filter((group: AssetGroup) => {
+    const q = searchQuery.toLowerCase();
+    if (!q) return true;
+    return (
+      group.symbol.toLowerCase().includes(q) ||
+      group.name.toLowerCase().includes(q) ||
+      group.network ||
+      group.tokens.some(t => (t.network || '').toLowerCase().includes(q))
+    );
+  });
+
+  const handleSelect = (asset: NetworkTokenInfo) => {
     onSelect(asset);
     onClose();
   };
@@ -19,30 +29,66 @@ export const AssetList = ({ assets, onSelect, currentAsset, onClose }: AssetList
   return (
     <div className="space-y-4">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-davyGray w-8 h-8" />
         <Input
           placeholder="Search assets..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 bg-slate-800 border-slate-700 text-white"
+          className="pl-12 bg-woodsmoke text-white text-opacity-30 border-0 h-[54px]"
         />
       </div>
-      <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-2">
-        {filteredAssets.map((token) => (
-          <TokenButton
-            key={token.name}
-            symbol={token.symbol}
-            token={token.name}
-            icon={
-              <div className={`w-full h-full ${
-                token.name === currentAsset.name ? 'bg-blue-500' : 'bg-slate-600'
-              } rounded-full flex items-center justify-center`}>
-                <span className="text-white text-lg font-bold">{token.icon}</span>
+      <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-3 no-scrollbar">
+        {filteredGroups?.length > 0 ? filteredGroups.map((group) => (
+          <div key={group.symbol} className={cn("rounded-lg",
+            expandedSymbol === group.symbol && "bg-midnight"
+          )}>
+            <button
+              className="w-full flex items-center justify-between px-4 py-3"
+              onClick={() => setExpandedSymbol(prev => prev === group.symbol ? null : group.symbol)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-flame-400 to-flame-500 flex items-center justify-center">
+                  <span className="text-white text-lg font-bold">{group.icon}</span>
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-white font-semibold">{group.symbol}</span>
+                  <span className="text-forest-400 text-xs">{group.tokens.length} Networks</span>
+                </div>
               </div>
-            }
-            onClick={() => handleSelect(token)}
-          />
-        ))}
+              <span className="text-forest-400">$0</span>
+            </button>
+
+            {expandedSymbol === group.symbol && (
+              <div className="flex items-start px-9 gap-x-3" >
+                <Image src="/icons/curve-arrow-down-right.svg" alt="arrow-icon" width={7} height={30} className="w-[7px] h-[30px]" />
+                <div className="pb-3 space-y-3">
+                  {group.tokens.map((token) => (
+                    <TokenButton
+                      key={`${group.symbol}-${token.id}-${token.network || 'default'}`}
+                      symbol={group.symbol}
+                      token={token.network || token.name}
+                      network={token.network || ''}
+                      icon={
+                        <div className={`w-full h-full ${
+                          token.name === currentAsset.name ? 'bg-blue-500' : 'bg-slate-600'
+                        } rounded-full flex items-center justify-center`}>
+                          <span className="text-white text-lg font-bold">{group.icon}</span>
+                        </div>
+                      }
+                      onClick={() => handleSelect(token)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )) : (
+          <div className="flex flex-col items-center mt-10" >
+            <Image src="/images/nothing-found.png" alt="nothing-found" width={160} height={160} />
+            <p className="text-white text-base font-medium mt-6 mb-1" >Token not found</p>
+            <p className="text-greyBlue text-sm" >Try changing your search query</p>
+          </div>
+        )}
       </div>
     </div>
   );

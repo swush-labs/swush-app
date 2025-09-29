@@ -21,6 +21,20 @@ export interface TokenInfo {
   symbol: string;
   icon: string;
   decimals: number;
+  network?: string;
+}
+
+// Extended token information that can optionally include a network/chain label
+// Note: NetworkTokenInfo is now equivalent to TokenInfo since network was added to TokenInfo
+export interface NetworkTokenInfo extends TokenInfo {}
+
+// Group of the same asset symbol across multiple networks
+export interface AssetGroup {
+  symbol: string;
+  name: string;
+  icon: string;
+  network: string;
+  tokens: NetworkTokenInfo[];
 }
 
 export interface DetailedRouteInfo {
@@ -31,9 +45,9 @@ export interface DetailedRouteInfo {
 }
 
 export interface AssetListProps {
-  assets: any[];
-  onSelect: (asset: any) => void;
-  currentAsset: any;
+  assetGroups: AssetGroup[];
+  onSelect: (asset: NetworkTokenInfo) => void;
+  currentAsset: NetworkTokenInfo;
   onClose: () => void;
 }
 
@@ -41,6 +55,7 @@ export interface TokenButtonProps {
   token: string;
   symbol: string;
   icon: React.ReactNode;
+  network: string;
   onClick: () => void;
 }
 
@@ -74,6 +89,7 @@ export interface SwapFieldProps {
   isLoading?: boolean;
   balancesLoaded?: boolean;
   isConnected?: boolean;
+  isProcessing?: boolean;
   error?: string | null;
 }
 

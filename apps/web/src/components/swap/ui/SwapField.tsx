@@ -1,13 +1,14 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { TokenButton } from '../button/TokenButton';
 import { AssetList } from './AssetList';
-import { SwapFieldProps } from '../types';
+import { SwapFieldProps, AssetGroup } from '../types';
 import { formatBalance } from '../utils';
-import { Loader2, ChevronDown, Wallet } from 'lucide-react';
+import { Loader2, ChevronDown, Wallet, ChevronLeft } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export const SwapField = memo(function SwapField({
   type,
@@ -24,8 +25,10 @@ export const SwapField = memo(function SwapField({
   isLoading,
   balancesLoaded = true,
   isConnected = false,
+  isProcessing = false,
   error
 }: SwapFieldProps) {
+  console.log({isProcessing})
   const isInput = type === 'input';
   const bgColor = isInput ? 'bg-pink-500' : 'bg-blue-500';
   const displayBalance = formatBalance(balance, balancesLoaded);
@@ -40,9 +43,31 @@ export const SwapField = memo(function SwapField({
     }
   }, [onAmountChange]);
 
+  // Group available tokens by symbol to create cascading UI (symbol -> networks)
+  const assetGroups = useMemo<AssetGroup[]>(() => {
+    const map = new Map<string, AssetGroup>();
+    availableTokens.forEach((t) => {
+      const existing = map.get(t.symbol);
+      // Preserve the actual network information instead of using token name
+      const tokenWithNetwork = { ...t, network: t.network };
+      if (existing) {
+        existing.tokens.push(tokenWithNetwork);
+      } else {
+        map.set(t.symbol, {
+          symbol: t.symbol,
+          name: t.name,
+          icon: t.icon,
+          network: t.network || 'Unknown',
+          tokens: [tokenWithNetwork]
+        });
+      }
+    });
+    return Array.from(map.values());
+  }, [availableTokens]);
+
   return (
     <motion.div 
-      className={`group relative p-5 rounded-2xl bg-forest-800/60 backdrop-blur-md border border-forest-600/30 shadow-lg shadow-black/10 hover:border-forest-500/30 hover:bg-forest-800/80 transition-all duration-300`}
+      className={`group relative p-4 sm:p-6 rounded-2xl bg-blackPearl border-darkSlateGray border backdrop-blur-md shadow-lg shadow-black/25`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: isInput ? 0 : 0.1 }}
@@ -52,10 +77,10 @@ export const SwapField = memo(function SwapField({
       
       {/* Content */}
       <div className="relative z-10">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-4 tall:mb-9">
           {/* Balance display - only show when connected */}
           <div className="flex items-center gap-2">
-            <Wallet className="w-4 h-4 text-forest-400" />
+            <Wallet className="w-4 h-4 text-white/60" />
             <span className="text-sm font-medium text-forest-300">
               {isConnected ? `${displayBalance} ${token?.symbol || ''}` : ''}
             </span>
@@ -67,9 +92,9 @@ export const SwapField = memo(function SwapField({
               <Button
                 key={label}
                 variant="default"
-                size="sm"
+                size="xss"
                 onClick={() => onPercentageSelect?.(value)}
-                className="text-xs font-medium bg-forest-700/50 border-forest-600 text-forest-300 hover:bg-forest-600 hover:text-white transition-all duration-200"
+                className="text-[10px] font-medium bg-bluishCyan border-forest-600 text-white/50 hover:bg-creole hover:text-white transition-all duration-200"
                 disabled={isLoading || !balance || parseFloat(balance) <= 0}
               >
                 {label}
@@ -78,11 +103,11 @@ export const SwapField = memo(function SwapField({
           </div>
         </div>
 
-      <div className="flex items-center">
+      <div className="flex items-end">
         <Dialog open={openDialog} onOpenChange={setOpenDialog}>
           <DialogTrigger asChild>
-            <div className={`flex-shrink-0${!isInput ? ' pt-2' : ''}`}>
-              <div className="flex items-center gap-3 pl-2 py-3 rounded-xl hover:bg-forest-800 border-forest-600 hover:border-flame-400 transition-all duration-200 cursor-pointer">
+            <div className="flex-shrink-0">
+              <div className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-blueWhale border-forest-600 hover:border-flame-400 transition-all duration-200 cursor-pointer">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-flame-400 to-flame-500 flex items-center justify-center shadow-lg">
                   <span className="text-white text-lg font-bold">{token.icon}</span>
                 </div>
@@ -94,12 +119,19 @@ export const SwapField = memo(function SwapField({
               </div>
             </div>
           </DialogTrigger>
-          <DialogContent className="bg-forest-900 border-forest-800">
-            <DialogHeader>
-              <DialogTitle className="text-white">Select a token</DialogTitle>
+          <DialogContent className="bg-blackPearl border-darkSlateGray rounded-xl w-full max-w-[90%] sm:max-w-lg">
+            <DialogHeader className="relative" >
+              
+              <div className="w-full flex items-center justify-center" >
+              <DialogTitle className="text-white text-lg font-medium">All Networks</DialogTitle>
+              </div>
+              {/* <div className="absolute w-full h-full" >
+              <ChevronLeft className="size-5 text-white" />
+              </div> */}
+              
             </DialogHeader>
             <AssetList 
-              assets={availableTokens} 
+              assetGroups={assetGroups} 
               onSelect={onTokenSelect}
               currentAsset={token}
               onClose={() => setOpenDialog(false)}
@@ -107,15 +139,18 @@ export const SwapField = memo(function SwapField({
           </DialogContent>
         </Dialog>
         <div className="flex-1 relative">
+          {
+            !isInput && isProcessing ? <Skeleton className="w-full max-w-24 sm:max-w-52 h-11 justify-self-end" /> :
+          
           <Input
             type="text"
             inputMode="decimal"
             value={amount}
             onChange={handleInputChange}
             readOnly={!isInput}
-            className="border-0 bg-transparent text-2xl md:text-3xl text-white focus-visible:ring-0 focus-visible:ring-offset-0 text-right appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className="border-0 bg-transparent px-0 text-2xl md:text-3xl text-white focus-visible:ring-0 focus-visible:ring-offset-0 text-right appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             placeholder="0"
-          />
+          />}
         </div>
       </div>
       

@@ -16,7 +16,6 @@ const SwapHistoryDialog = dynamic(() => import('@/components/swap/ui/SwapHistory
 import { useSwapTokens } from '@/components/swap/hooks/useSwapTokens'
 import { useTokenBalances } from '@/components/swap/hooks/useTokenBalances'
 import { useSwapRoute } from '@/components/swap/hooks/useSwapRoute'
-import { useSwapSteps } from '@/components/swap/hooks/useSwapSteps'
 import { useAssetConversionSwap } from '@/components/swap/hooks/useAssetConversionSwap'
 import { useSwapConfirmation } from '@/components/swap/hooks/useSwapConfirmation'
 import { useSwapExecution } from '@/components/swap/hooks/useSwapExecution'
@@ -24,6 +23,7 @@ import { useSwapHistory } from '@/components/swap/hooks/useSwapHistory'
 import { LoadState } from '@/components/swap/ui/LoadState'
 import { ArrowSymbolDown } from '@/components/swap'
 import { calculateMinimumReceived } from '@/components/swap'
+import { SwapCompleteDialog } from './ui/SwapCompleteDialog'
 
 export function SwapContainer() {
   // UI state
@@ -71,31 +71,24 @@ export function SwapContainer() {
     estimatedFees,
     feeBreakdown,
     debouncedFetchRoute,
+    isProcessing,
     resetRoute
   } = useSwapRoute({
     inputToken,
     outputToken
   })
 
-  // Swap steps
-  const {
-    swapSteps,
-    isSwapping,
-    setIsSwapping,
-    showSwapProgress,
-    handleSwap,
-    handleSignStep,
-    closeSwapProgress,
-  } = useSwapSteps({
-    inputToken: inputToken?.symbol || 'TOKEN',
-    outputToken: outputToken?.symbol || 'TOKEN'
-  })
+  // Swap state
+  const [isSwapping, setIsSwapping] = useState(false)
 
   // Swap confirmation
   const {
     showConfirmation,
     simulationResult,
     isConfirmingSwap,
+    isSwapComplete,
+    isSwappingInProgress,
+    setShowConfirmation,
     handleSimulationComplete,
     handleConfirmSwap,
     handleCancelSwap,
@@ -127,11 +120,6 @@ export function SwapContainer() {
       setInputAmount('');
       resetRoute(); // This will reset the output amount and route state
 
-      // Slight delay before closing the progress modal to show success state
-      setTimeout(() => {
-        closeSwapProgress();
-      }, 1500);
-
       // Reset confirmation UI state
       resetConfirmationState();
     },
@@ -141,7 +129,6 @@ export function SwapContainer() {
       resetRoute();
       setIsSwapping(false);
       resetConfirmationState();
-      closeSwapProgress();
     },
     onSimulationComplete: handleSimulationComplete,
     onBalanceUpdateNeeded: handleBalanceUpdateNeeded
@@ -154,10 +141,8 @@ export function SwapContainer() {
     inputAmount,
     insufficientBalance,
     executeAssetConversionSwap,
-    handleSwap,
     setIsSwapping,
-    setIsConfirmingSwap: resetConfirmationState,
-    closeSwapProgress
+    setIsConfirmingSwap: resetConfirmationState
   });
 
   // Handle wallet disconnect with confirmation state cleanup
@@ -220,27 +205,17 @@ export function SwapContainer() {
 
   return (
     <>
-      {/* Header Actions */}
-      <HeaderActions
-        isConnected={isConnected}
-        setIsConnected={setIsConnected}
-        setWalletAddress={setWalletAddress}
-        walletAddress={walletAddress}
-        onDisconnect={handleWalletDisconnect}
-        onHistoryClick={() => setShowHistory(true)}
-        isSwapping={isSwapping}
-        setIsSwapping={setIsSwapping}
-      />
 
       {/* Main Content */}
-      <div className="w-full flex flex-col items-center justify-start px-4 py-4 md:px-4 md:py-4 relative z-10">
+      <div className="w-full h-full flex flex-col items-center pt-16 sm:-top-10 sm:justify-center px-4 md:px-4 relative z-10 overflow-y-scroll no-scrollbar">
         <div className="w-full max-w-md space-y-5 md:space-y-4">
           <SwapHeader
             slippageTolerance={slippageTolerance}
             setSlippageTolerance={setSlippageTolerance}
+            onHistoryClick={() => setShowHistory(true)}
           />
 
-          <div className="space-y-8">
+          <div className="space-y-4">
             <div className="">
               <SwapField
                 type="input"
@@ -277,6 +252,7 @@ export function SwapContainer() {
                 isLoading={routeState.isLoading || (isConnected && isBalanceLoading)}
                 balancesLoaded={balancesLoaded}
                 isConnected={isConnected}
+                isProcessing={isProcessing}
                 error={routeState.error}
               />
             </div>
@@ -289,6 +265,7 @@ export function SwapContainer() {
               feeBreakdown={feeBreakdown || simulationResult?.feeBreakdown}
               route={routeDex || ''}
               isLoading={routeState.isLoading}
+              isProcessing={isProcessing}
             />
 
             <SubmitButtonAction
@@ -296,7 +273,10 @@ export function SwapContainer() {
               isSwapping={isSwapping}
               setIsConnected={setIsConnected}
               setWalletAddress={setWalletAddress}
-              onSwap={() => handleSwapExecution(isConnected)}
+              onSwap={() => {
+                setShowConfirmation(true);
+                // handleSwapExecution(isConnected)
+              }}
               insufficientBalance={insufficientBalance}
               disabled={!inputAmount || inputAmount === '' || parseFloat(inputAmount) <= 0 || insufficientBalance}
             />
@@ -324,6 +304,18 @@ export function SwapContainer() {
         slippageTolerance={slippageTolerance}
         simulationResult={simulationResult}
         isConfirming={isConfirmingSwap}
+      />
+
+      <SwapCompleteDialog 
+        isOpen={isSwappingInProgress || isSwapComplete}
+        isSwappingInProgress={isSwappingInProgress}
+        isSwapComplete={isSwapComplete}
+        inputAmount={inputAmount}
+        inputToken={inputToken.symbol}
+        outputAmount={outputAmount}
+        outputToken={outputToken.name}
+        duration={4000}
+        onClose={resetConfirmationState}
       />
     </>
   )

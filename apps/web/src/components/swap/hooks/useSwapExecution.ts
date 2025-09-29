@@ -8,10 +8,8 @@ interface UseSwapExecutionProps {
   inputAmount: string;
   insufficientBalance: boolean;
   executeAssetConversionSwap: () => Promise<void>;
-  handleSwap: (isUserConnected: boolean) => void;
   setIsSwapping: (value: boolean) => void;
   setIsConfirmingSwap: (value: boolean) => void;
-  closeSwapProgress: () => void;
 }
 
 export function useSwapExecution({
@@ -20,10 +18,8 @@ export function useSwapExecution({
   inputAmount,
   insufficientBalance,
   executeAssetConversionSwap,
-  handleSwap,
   setIsSwapping,
-  setIsConfirmingSwap,
-  closeSwapProgress
+  setIsConfirmingSwap
 }: UseSwapExecutionProps) {
   
   const handleSwapExecution = useCallback(async (isUserConnected: boolean) => {
@@ -48,9 +44,6 @@ export function useSwapExecution({
     }
 
     try {
-      // Show the swap progress modal
-      handleSwap(isUserConnected);
-
       // Execute the actual swap
       await executeAssetConversionSwap();
     } catch (error) {
@@ -61,18 +54,15 @@ export function useSwapExecution({
       }
       setIsSwapping(false);
       setIsConfirmingSwap(false); // Reset confirmation UI state on error
-      closeSwapProgress();
     }
   }, [
     inputToken, 
     outputToken, 
     inputAmount, 
     insufficientBalance,
-    handleSwap, 
     executeAssetConversionSwap, 
     setIsSwapping, 
-    setIsConfirmingSwap,
-    closeSwapProgress
+    setIsConfirmingSwap
   ]);
 
   return {
