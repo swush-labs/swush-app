@@ -17,7 +17,7 @@ const SubText:React.FC<SubTextProps> = ({
   children,
 }) => {
   return (
-    <p className={cn("text-sm font-normal text-white/70 max-w-24 sm:max-w-40",className)} >{children}</p>
+    <p className={cn("text-sm font-normal text-white/70 max-w-40",className)} >{children}</p>
   )
 }
 
@@ -113,15 +113,15 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
 
   return (
     <Dialog open={isOpen || true}>
-      <DialogContent className="w-[90%] sm:w-full max-w-[517px] px-6 pt-4 pb-8 bg-blackPearl border-darkSlateGray rounded-xl" isCloseIconVisible={false}  >
+      <DialogContent className="w-[90%] sm:w-full max-w-md px-4 sm:px-6 py-4 sm:pb-8 bg-blackPearl border-darkSlateGray rounded-xl" isCloseIconVisible={false}  >
         <div>
           <div className="relative flex items-center justify-center" >
-            <DialogClose onClick={handleClose} >
-              <X className="text-white absolute right-0 self-center" />
+            <DialogClose onClick={handleClose} className="absolute right-0 self-center" >
+              <X className="text-white" />
             </DialogClose>
             <p className="text-lg font-medium text-white h-fit" >Confirm Swap</p>
           </div>
-          <div className="flex flex-col items-stretch justify-start mt-7" >
+          <div className="flex flex-col items-stretch justify-start mt-6" >
             <div className="bg-midnight border border-darkSlateGray rounded-2xl pt-4 pb-4 shadow-[4px_4px_12px_0_rgba(0,0,0,0.25)]" >
               <SwapCard 
                 label="You Pay"
@@ -142,7 +142,7 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-y-5 mt-8" >
+            <div className="grid grid-cols-2 gap-y-4 mt-8" >
               <SubText>Network Fee</SubText>
               <SubText className="justify-self-end" >
               {simulationResult?.estimatedFee && simulationResult.estimatedFee !== '0' 
