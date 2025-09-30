@@ -103,7 +103,7 @@ export const SwapField = memo(function SwapField({
           </div>
         </div>
 
-      <div className="flex items-end">
+      <div className="flex items-center">
         <Dialog open={openDialog} onOpenChange={setOpenDialog}>
           <DialogTrigger asChild>
             <div className="flex-shrink-0">
