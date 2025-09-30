@@ -113,7 +113,7 @@ export const SwapField = memo(function SwapField({
                 </div>
                 <div className="flex flex-col items-start w-[60px] md:w-[80px]">
                   <span className="font-semibold text-white truncate w-full">{token.symbol}</span>
-                  <span className="text-sm text-forest-400 truncate w-full" title={token.name}>{token.name}</span>
+                  <span className="text-sm text-forest-400 truncate w-full" title={token.network}>{token.network}</span>
                 </div>
                 <ChevronDown className="w-5 h-5 text-forest-400 flex-shrink-0" />
               </div>

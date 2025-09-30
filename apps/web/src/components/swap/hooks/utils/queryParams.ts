@@ -5,10 +5,10 @@ import { useQueryState, parseAsString, parseAsInteger } from 'nuqs'
  * This follows nuqs best practices for organization and type safety
  */
 export const swapQueryParams = {
-  // Token selection
+  // Token selection - using IDs to preserve network information
   useFromTokenState: () => useQueryState(
     'from',
-    parseAsString.withDefault('DOT').withOptions({
+    parseAsString.withDefault('0').withOptions({ // Default to DOT (id: '0')
       shallow: false, // Trigger server re-render if needed
       history: 'replace' // Don't create history entries for token changes
     })
@@ -16,7 +16,7 @@ export const swapQueryParams = {
   
   useToTokenState: () => useQueryState(
     'to', 
-    parseAsString.withDefault('USDT').withOptions({
+    parseAsString.withDefault('2').withOptions({ // Default to USDT on Asset Hub (id: '2')
       shallow: false,
       history: 'replace'
     })

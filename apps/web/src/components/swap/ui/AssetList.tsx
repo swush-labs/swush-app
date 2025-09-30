@@ -29,12 +29,12 @@ export const AssetList = ({ assetGroups, onSelect, currentAsset, onClose }: Asse
   return (
     <div className="space-y-4">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-davyGray w-8 h-8" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-davyGray w-5 h-5" />
         <Input
           placeholder="Search assets..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-12 bg-woodsmoke text-white text-opacity-30 border-0 h-[54px]"
+          className="pl-11 bg-woodsmoke text-white text-opacity-30 border-0 h-12 text-sm"
         />
       </div>
       <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-3 no-scrollbar">
@@ -47,15 +47,15 @@ export const AssetList = ({ assetGroups, onSelect, currentAsset, onClose }: Asse
               onClick={() => setExpandedSymbol(prev => prev === group.symbol ? null : group.symbol)}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-flame-400 to-flame-500 flex items-center justify-center">
-                  <span className="text-white text-lg font-bold">{group.icon}</span>
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-flame-400 to-flame-500 flex items-center justify-center">
+                  <span className="text-white text-base font-bold">{group.icon}</span>
                 </div>
                 <div className="flex flex-col items-start">
-                  <span className="text-white font-semibold">{group.symbol}</span>
+                  <span className="text-white text-sm font-semibold">{group.symbol}</span>
                   <span className="text-forest-400 text-xs">{group.tokens.length} Networks</span>
                 </div>
               </div>
-              <span className="text-forest-400">$0</span>
+              <span className="text-forest-400 text-sm">$0</span>
             </button>
 
             {expandedSymbol === group.symbol && (
@@ -72,7 +72,7 @@ export const AssetList = ({ assetGroups, onSelect, currentAsset, onClose }: Asse
                         <div className={`w-full h-full ${
                           token.name === currentAsset.name ? 'bg-blue-500' : 'bg-slate-600'
                         } rounded-full flex items-center justify-center`}>
-                          <span className="text-white text-lg font-bold">{group.icon}</span>
+                          <span className="text-white text-sm font-bold">{group.icon}</span>
                         </div>
                       }
                       onClick={() => handleSelect(token)}

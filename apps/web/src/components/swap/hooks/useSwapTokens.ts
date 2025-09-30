@@ -118,9 +118,9 @@ export function useSwapTokens() {
   const [assets, setAssets] = useState<AssetWithId[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Use centralized query params configuration
-  const [fromSymbol, setFromSymbol] = useFromTokenState();
-  const [toSymbol, setToSymbol] = useToTokenState();
+  // Use centralized query params configuration - store token IDs to preserve network
+  const [fromTokenId, setFromTokenId] = useFromTokenState();
+  const [toTokenId, setToTokenId] = useToTokenState();
 
   // Fetch assets only once during initialization
   useEffect(() => {
@@ -142,63 +142,40 @@ export function useSwapTokens() {
     fetchAssets();
   }, [isInitialized]);
 
-  // Convert symbols to token objects
-  const inputToken = useMemo(() => {
-    if (!assets.length || !fromSymbol) return null;
-    
-    const asset = assets.find(asset => 
-      asset.metadata.symbol.toUpperCase() === fromSymbol.toUpperCase()
-    );
-    
-    if (!asset) return null;
-    
-    return {
-      id: asset.id,
-      name: asset.metadata.name,
-      symbol: asset.metadata.symbol,
-      icon: asset.metadata.symbol.charAt(0),
-      decimals: asset.metadata.decimals,
-      network: (asset.metadata as any).network || 'Unknown'
-    };
-  }, [assets, fromSymbol]);
-
-  const outputToken = useMemo(() => {
-    if (!assets.length || !toSymbol) return null;
-    
-    const asset = assets.find(asset => 
-      asset.metadata.symbol.toUpperCase() === toSymbol.toUpperCase()
-    );
-    
-    if (!asset) return null;
-    
-    return {
-      id: asset.id,
-      name: asset.metadata.name,
-      symbol: asset.metadata.symbol,
-      icon: asset.metadata.symbol.charAt(0),
-      decimals: asset.metadata.decimals,
-      network: (asset.metadata as any).network || 'Unknown'
-    };
-  }, [assets, toSymbol]);
-
-  // Token selection handlers that update URL automatically
-  const setInputToken = (token: TokenInfo) => {
-    setFromSymbol(token.symbol);
-  };
-
-  const setOutputToken = (token: TokenInfo) => {
-    setToSymbol(token.symbol);
-  };
-
-  // Convert assets to tokens for selection
-  const tokens = useMemo(() => assets.map(asset => ({
+  // Helper function to convert asset to TokenInfo
+  const assetToToken = (asset: AssetWithId): TokenInfo => ({
     id: asset.id,
     name: asset.metadata.name,
     symbol: asset.metadata.symbol,
     icon: asset.metadata.symbol.charAt(0),
     decimals: asset.metadata.decimals,
-    network: (asset.metadata as any).network || 'Unknown'
-  })), [assets]);
+    network: (asset.metadata as unknown as { network?: string }).network || 'Unknown'
+  });
+
+  // Convert token IDs to token objects
+  const inputToken = useMemo(() => {
+    if (!assets.length || !fromTokenId) return null;
+    const asset = assets.find(a => a.id === fromTokenId);
+    return asset ? assetToToken(asset) : null;
+  }, [assets, fromTokenId]);
+
+  const outputToken = useMemo(() => {
+    if (!assets.length || !toTokenId) return null;
+    const asset = assets.find(a => a.id === toTokenId);
+    return asset ? assetToToken(asset) : null;
+  }, [assets, toTokenId]);
+
+  // Token selection handlers that update URL with token ID
+  const setInputToken = (token: TokenInfo) => {
+    setFromTokenId(token.id);
+  };
+
+  const setOutputToken = (token: TokenInfo) => {
+    setToTokenId(token.id);
+  };
+
+  // Convert assets to tokens for selection
+  const tokens = useMemo(() => assets.map(assetToToken), [assets]);
 
   return {
     inputToken,
