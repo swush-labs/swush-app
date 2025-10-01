@@ -10,7 +10,7 @@ import { SwapConfirmSheet } from '@/components/swap/ui/SwapConfirmSheet'
 import { SwapHistoryDialog } from '@/components/swap/ui/SwapHistoryDialog'
 import { useXcmTokens } from '@/components/swap/hooks/useXcmTokens'
 import { useTokenBalances } from '@/components/swap/hooks/useTokenBalances'
-import { useSwapRoute } from '@/components/swap/hooks/useSwapRoute'
+import { useXcmRoute } from '@/components/swap/hooks/useXcmRoute'
 import { useAssetConversionSwap } from '@/components/swap/hooks/useAssetConversionSwap'
 import { useSwapConfirmation } from '@/components/swap/hooks/useSwapConfirmation'
 import { useSwapExecution } from '@/components/swap/hooks/useSwapExecution'
@@ -71,7 +71,7 @@ export function SwapContainer() {
     resetBalances();
   }, [resetBalances]);
 
-  // Swap route
+  // Swap route - now using real ParaSpell RouterBuilder with parallel fetching
   const {
     outputAmount,
     routeDex,
@@ -80,10 +80,18 @@ export function SwapContainer() {
     feeBreakdown,
     debouncedFetchRoute,
     isProcessing,
+    isLoadingQuote,
+    isLoadingFees,
     resetRoute
-  } = useSwapRoute({
+  } = useXcmRoute({
     inputToken,
-    outputToken
+    outputToken,
+    walletAddress,
+    slippageTolerance,
+    // Pass helpers from useXcmTokens
+    getOptimalExchanges,
+    determineCurrency,
+    getTAssetFromKey,
   })
 
   // Swap state
@@ -112,6 +120,7 @@ export function SwapContainer() {
   }, [refreshBalances]);
 
   // Asset conversion swap hook with simulation callback
+  // TODO Phase 3: Update this to use new route data structure
   const {
     executeSwap: executeAssetConversionSwap,
     isFinalized
@@ -122,7 +131,10 @@ export function SwapContainer() {
     slippageTolerance,
     inputAmount,
     outputAmount,
-    routeState,
+    routeState: {
+      ...routeState,
+      data: routeState.data as any // Type compatibility for Phase 2 - will update in Phase 3
+    },
     onSuccess: () => {
       // Reset all swap-related states
       setInputAmount('');
@@ -261,10 +273,10 @@ export function SwapContainer() {
                 openDialog={openOutputDialog}
                 setOpenDialog={setOpenOutputDialog}
                 availableTokens={tokens}
-                isLoading={routeState.isLoading || (isConnected && isBalanceLoading)}
+                isLoading={isLoadingQuote || (isConnected && isBalanceLoading)}
                 balancesLoaded={balancesLoaded}
                 isConnected={isConnected}
-                isProcessing={isProcessing}
+                isProcessing={isLoadingQuote}
                 error={routeState.error}
               />
             </div>
@@ -278,6 +290,8 @@ export function SwapContainer() {
               route={routeDex || ''}
               isLoading={routeState.isLoading}
               isProcessing={isProcessing}
+              isLoadingQuote={isLoadingQuote}
+              isLoadingFees={isLoadingFees}
             />
 
             <SubmitButtonAction

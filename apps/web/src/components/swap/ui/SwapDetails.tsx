@@ -1,9 +1,6 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import { TokenInfo } from '../types';
-import { FeeBreakdown } from '../hooks/types';
-import { formatAmount } from '@/services/balances/utils';
-import { NUMBER_FORMAT_OPTIONS } from '@/services/constants';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
@@ -16,88 +13,35 @@ const SubText:React.FC<SubTextProps> = ({
   className,
 }) => {
   return (
-    <p className={cn("text-white/70 text-xs sm:text-sm font-normal",className)} >{children}</p>
+    <span className={cn("text-white/70 text-xs sm:text-sm font-normal",className)} >{children}</span>
   )
 }
-
-// Define DOT token information for fee display
-const DOT_DECIMALS = 10;
-const DOT_SYMBOL = 'DOT';
 
 interface SwapDetailsProps {
   minimumReceived: string;
   outputToken?: TokenInfo | null;
   inputToken?: TokenInfo | null;
-  maxTransactionFee: string;
-  feeBreakdown?: FeeBreakdown;
+  maxTransactionFee: string; // Now just a formatted string (e.g., "0.001 DOT + 0.0005 USDC")
+  feeBreakdown?: unknown; // Keeping for backward compatibility but not used
   route: string;
   isLoading?: boolean;
   isProcessing?: boolean;
+  isLoadingQuote?: boolean; // Separate loading state for quote
+  isLoadingFees?: boolean; // Separate loading state for fees
 }
 
 export const SwapDetails = memo(function SwapDetails({
   minimumReceived,
   outputToken,
-  inputToken,
   maxTransactionFee,
-  feeBreakdown,
   route,
-  isLoading = false,
-  isProcessing = false,
+  isLoadingQuote = false,
+  isLoadingFees = false,
 }: SwapDetailsProps) {
-  // Format fees for display if available - memoized for performance
-  const formattedFees = useMemo(() => {
-    if (!feeBreakdown) return null;
-    
-    return (() => {
-    // Check if it's the standard FeeBreakdown interface
-    if (feeBreakdown && typeof feeBreakdown === 'object' && 'transactionFee' in feeBreakdown && 'xcmFee' in feeBreakdown && 'tradingFee' in feeBreakdown && 'totalFee' in feeBreakdown) {
-      const standardFees = feeBreakdown as {
-        transactionFee?: bigint;
-        xcmFee?: bigint;
-        tradingFee?: bigint;
-        totalFee?: bigint;
-      };
-      return {
-        transaction: standardFees.transactionFee !== undefined ? formatAmount(standardFees.transactionFee, inputToken?.decimals || 10, NUMBER_FORMAT_OPTIONS).decimal : '0',
-        xcm: standardFees.xcmFee !== undefined ? formatAmount(standardFees.xcmFee, inputToken?.decimals || 10, NUMBER_FORMAT_OPTIONS).decimal : '0',
-        trading: standardFees.tradingFee !== undefined ? formatAmount(standardFees.tradingFee, inputToken?.decimals || 10, NUMBER_FORMAT_OPTIONS).decimal : '0',
-        total: standardFees.totalFee !== undefined ? formatAmount(standardFees.totalFee, inputToken?.decimals || 10, NUMBER_FORMAT_OPTIONS).decimal : '0'
-      };
-    }
-    // Handle custom fee breakdown from enhanced simulation
-    else if (feeBreakdown && typeof feeBreakdown === 'object' && 'total' in feeBreakdown) {
-      const customFees = feeBreakdown as { total?: string };
-      return {
-        transaction: '0',
-        xcm: '0',
-        trading: '0',
-        total: customFees.total || '0'
-      };
-    }
-    // Fallback for unknown structure
-    else {
-      return {
-        transaction: '0',
-        xcm: '0',
-        trading: '0',
-        total: '0'
-      };
-    }
-    })();
-  }, [feeBreakdown, inputToken?.decimals]);
-
-  // Format max transaction fee always using DOT decimals - ensure it's never undefined
-  const formattedMaxFee = useMemo(() => {
-    if (!maxTransactionFee || maxTransactionFee === '0') return '';
-    return formatAmount(BigInt(maxTransactionFee), DOT_DECIMALS, NUMBER_FORMAT_OPTIONS).decimal;
-  }, [maxTransactionFee]);
-
   // Helper function to display values with proper empty states
-  const displayValue = (value: string, symbol: string, placeholder = '—') => {
-    if (isLoading) return '...';
-    if (!value || value === '' || value === 'NaN') return placeholder;
-    return `${value} ${symbol}`;
+  const displayValue = (value: string, suffix = '', placeholder = '—') => {
+    if (!value || value === '' || value === '0' || value === 'NaN') return placeholder;
+    return suffix ? `${value} ${suffix}` : value;
   };
 
   return (
@@ -110,21 +54,27 @@ export const SwapDetails = memo(function SwapDetails({
       <div className="grid grid-cols-2 gap-y-3 sm:gap-y-3" >
         <SubText>Minimum Received</SubText>
         <SubText className="justify-self-end" >
-          {
-            isProcessing ? <Skeleton className="w-20 h-5" /> : displayValue(minimumReceived, outputToken?.symbol || '')
-          }
+          {isLoadingQuote ? (
+            <Skeleton className="w-20 h-5 animate-pulse" />
+          ) : (
+            displayValue(minimumReceived, outputToken?.symbol || '')
+          )}
         </SubText>
-        <SubText>Max Transaction Fee</SubText>
+        <SubText>Transaction Fee</SubText>
         <SubText className="justify-self-end" >
-          {
-            isProcessing ? <Skeleton className="w-16 h-5" /> : displayValue(formattedMaxFee, DOT_SYMBOL)
-          }
+          {isLoadingFees ? (
+            <Skeleton className="w-24 h-5 animate-pulse" />
+          ) : (
+            displayValue(maxTransactionFee)
+          )}
         </SubText>
         <SubText>Route</SubText>
         <SubText className="justify-self-end" >
-          {
-            isProcessing ? <Skeleton className="w-16 h-5" /> : displayValue(route, '', '—')
-          }
+          {isLoadingQuote ? (
+            <Skeleton className="w-16 h-5 animate-pulse" />
+          ) : (
+            displayValue(route)
+          )}
         </SubText>
       </div>
     </motion.div>

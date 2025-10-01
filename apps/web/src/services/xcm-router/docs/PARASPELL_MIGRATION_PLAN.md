@@ -367,9 +367,9 @@ export function useXcmRoute({
 
       // Get best quote from RouterBuilder
       const quoteResult = await RouterBuilder()
-        .from(inputToken.networkChain as any)
-        .to(outputToken.networkChain as any)
-        .exchange(exchangesToUse as any)
+        .from(inputToken.networkChain)
+        .to(outputToken.networkChain)
+        .exchange(exchangesToUse)
         .currencyFrom(determineCurrency(fromAsset))
         .currencyTo(determineCurrency(toAsset))
         .amount(amountInSmallestUnit)
