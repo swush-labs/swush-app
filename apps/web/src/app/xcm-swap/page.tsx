@@ -1,10 +1,26 @@
 "use client"
 
+import dynamicImport from 'next/dynamic'
 import { useState } from 'react'
 import { Button } from "@/components/ui/button"
-import { SwapProgress } from '@/components/swap/ui/SwapProgress'
 import { AlertCircle, ArrowRight, CheckCircle2, CircleDashed } from 'lucide-react'
 import type { SigningStep } from '@/components/swap/types'
+
+// Dynamically import SwapProgress to prevent WASM loading during build
+const SwapProgress = dynamicImport(
+  () => import('@/components/swap/ui/SwapProgress').then(mod => ({ default: mod.SwapProgress })),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      </div>
+    )
+  }
+)
+
+// Force dynamic rendering to avoid WASM prerendering issues
+export const dynamic = 'force-dynamic'
 
 export default function XcmSwapPage() {
   const [showProgress, setShowProgress] = useState(false)
@@ -349,4 +365,4 @@ export default function XcmSwapPage() {
       )}
     </div>
   )
-} 
+}

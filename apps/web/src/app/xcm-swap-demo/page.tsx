@@ -1,11 +1,29 @@
 "use client"
 
+import dynamicImport from 'next/dynamic'
 import { useState } from 'react'
 import { Button } from "@/components/ui/button"
-import { SwapProgress } from '@/components/swap/ui/SwapProgress'
-import { SwapPreview } from '@/components/swap/ui/SwapPreview'
-import { SwapFailureOptions } from '@/components/swap/ui/SwapFailureOptions'
+import { AlertCircle, ArrowRight, CheckCircle2, CircleDashed } from 'lucide-react'
 import type { SigningStep } from '@/components/swap/types'
+
+// Dynamically import WASM-dependent components
+const SwapProgress = dynamicImport(
+  () => import('@/components/swap/ui/SwapProgress').then(mod => ({ default: mod.SwapProgress })),
+  { ssr: false }
+)
+
+const SwapPreview = dynamicImport(
+  () => import('@/components/swap/ui/SwapPreview').then(mod => ({ default: mod.SwapPreview })),
+  { ssr: false }
+)
+
+const SwapFailureOptions = dynamicImport(
+  () => import('@/components/swap/ui/SwapFailureOptions').then(mod => ({ default: mod.SwapFailureOptions })),
+  { ssr: false }
+)
+
+// Force dynamic rendering to avoid WASM prerendering issues
+export const dynamic = 'force-dynamic'
 
 export default function XcmSwapDemoPage() {
   const [currentView, setCurrentView] = useState<'preview' | 'progress' | 'home'>('home')
@@ -315,4 +333,4 @@ export default function XcmSwapDemoPage() {
       )}
     </div>
   )
-} 
+}
