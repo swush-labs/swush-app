@@ -91,27 +91,3 @@ export const SwapDetails = memo(function SwapDetails({
   );
 }); 
 
-
-{/* TODO: figure out path for asset hub and hydra dx, also is this necessary? 
-    <Collapsible>
-          <CollapsibleTrigger className="w-full">
-            <div className="flex items-center justify-center gap-2 pt-2 text-sm text-slate-400 hover:text-slate-300 transition-colors">
-              <span>Show more details</span>
-              <Search className="w-4 h-4" />
-            </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="space-y-3 pt-3 border-t border-slate-700/50">
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-400">Routing Path</span>
-                </div>
-                <div className="">
-                  <p className="text-xs text-slate-300 font-medium leading-relaxed">
-                    {`${inputToken?.symbol || 'Token'} → ${outputToken?.symbol || 'Token'}`}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CollapsibleContent>
-        </Collapsible> */}
