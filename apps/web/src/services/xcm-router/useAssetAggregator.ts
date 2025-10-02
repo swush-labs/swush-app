@@ -67,7 +67,7 @@ const createUnifiedNetworkData = (
 
 const useAssetAggregator = (
   from: TChain | undefined,
-  exchangeNode: readonly TExchangeChain[] | TExchangeChain[],
+  exchangeNode: TExchangeChain[],
   to: TChain | undefined
 ) => {
   // Extract registry metadata for targeted queries (memoized to prevent infinite loops)

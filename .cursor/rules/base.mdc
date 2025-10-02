@@ -9,8 +9,8 @@ For any major code changes, follow the @ui.mdc rules to ensure best practices ar
 Priority Instructions:
   - Avoid use of any and use the proper type.
 
-
-
 When implementing changes or fixes, always 
 - check if the server is already running on the default port (3000) on our Windows OS using the command `netstat -ano | findstr :3000`
 - If the development server is not running on 3000, run `pnpm dev:ui` to start the Next.js development server and wait for 5-10 seconds to ensure the server is running.
+
+`pnpm build` -> check apps/web 

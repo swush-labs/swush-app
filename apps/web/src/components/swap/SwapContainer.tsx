@@ -39,12 +39,16 @@ export function SwapContainer() {
     setInputToken, 
     outputToken, 
     setOutputToken, 
-    tokens,
+    // ✅ Separate token lists for input/output fields
+    fromTokens,
+    toTokens,
+    // ✅ Loading state
+    isInitialLoad,
     // Expose helpers for Phase 2 (routing)
     getOptimalExchanges,
     determineCurrency,
     getTAssetFromKey,
-    // For loading state check
+    // For debugging/inspection (can be removed later)
     unifiedFromAssets,
     unifiedToAssets,
   } = useXcmTokens()
@@ -222,8 +226,9 @@ export function SwapContainer() {
     showHistory
   });
 
-  // Show loading state only while assets are actually loading
-  if (unifiedFromAssets?.length === 0 || unifiedToAssets?.length === 0) {
+  // Show loading state only during initial asset loading
+  // Once assets load once, show the UI even if they become empty later
+  if (isInitialLoad) {
     return <LoadState />
   }
 
@@ -252,7 +257,7 @@ export function SwapContainer() {
                 onAmountChange={handleInputChange}
                 openDialog={openInputDialog}
                 setOpenDialog={setOpenInputDialog}
-                availableTokens={tokens}
+                availableTokens={fromTokens}
                 percentageOptions={percentageOptions}
                 onPercentageSelect={(value) => handleInputChange((parseFloat(inputBalance) * value).toString())}
                 isLoading={isConnected && isBalanceLoading}
@@ -272,7 +277,7 @@ export function SwapContainer() {
                 }}
                 openDialog={openOutputDialog}
                 setOpenDialog={setOpenOutputDialog}
-                availableTokens={tokens}
+                availableTokens={toTokens}
                 isLoading={isLoadingQuote || (isConnected && isBalanceLoading)}
                 balancesLoaded={balancesLoaded}
                 isConnected={isConnected}

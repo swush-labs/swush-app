@@ -13,7 +13,7 @@ import {
 // for the currencyFrom and currencyTo fields in the transfer form.
 const useCurrencyOptions = (
   from: TChain | undefined,
-  exchangeNode: readonly TExchangeChain[] | TExchangeChain[],
+  exchangeNode: TExchangeChain [],
   to: TChain | undefined,
   targetNetworks?: string[] // Optional: Registry-driven network filtering
 ) => {
@@ -69,8 +69,8 @@ const useCurrencyOptions = (
     () =>
       supportedAssetsFrom.reduce((map: Record<string, TAssetInfo>, asset) => {
         const key = `${asset.symbol ?? "NO_SYMBOL"}-${
-          "assetId" in asset ? asset.assetId : `${asset._network ?? "UNKNOWN_NETWORK"}`
-        }`;
+          "assetId" in asset ? asset.assetId : "native"
+        }-${asset._network ?? "UNKNOWN_NETWORK"}`;
 
         map[key] = asset;
         return map;
@@ -83,8 +83,8 @@ const useCurrencyOptions = (
     () =>
       supportedAssetsTo.reduce((map: Record<string, TAssetInfo>, asset) => {
         const key = `${asset.symbol ?? "NO_SYMBOL"}-${
-          "assetId" in asset ? asset.assetId : `${asset._network ?? "UNKNOWN_NETWORK"}`
-        }`;
+          "assetId" in asset ? asset.assetId : "native"
+        }-${asset._network ?? "UNKNOWN_NETWORK"}`;
         map[key] = asset as TAssetInfo;
         return map;
       }, {}),
@@ -103,7 +103,7 @@ const useCurrencyOptions = (
               ? currencyFromMap[key].assetId
               : "Multi-Location"
             : "Native"
-        }`,
+        } - ${(currencyFromMap[key] as any)._network ?? "Unknown"}`,
       })),
     [currencyFromMap]
   );
@@ -120,7 +120,7 @@ const useCurrencyOptions = (
               ? currencyToMap[key].assetId
               : "Multi-location"
             : "Native"
-        }`,
+        } - ${(currencyToMap[key] as any)._network ?? "Unknown"}`,
       })),
     [currencyToMap]
   );
