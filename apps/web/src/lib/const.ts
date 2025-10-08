@@ -2,7 +2,7 @@
 export const BALANCE_FETCH_TIMEOUT = 300000; //30 seconds
 
 //timeout for fetching routes
-export const ROUTE_FETCH_TIMEOUT = 300;
+export const ROUTE_FETCH_TIMEOUT = 800;
 
 
 // Balance refresh constants
