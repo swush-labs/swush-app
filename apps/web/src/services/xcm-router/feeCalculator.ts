@@ -1,7 +1,6 @@
 import { TRouterXcmFeeResult } from "@paraspell/xcm-router";
 import { formatAmount } from '@/services/balances/utils';
 import { NUMBER_FORMAT_OPTIONS } from '@/services/constants';
-import type { TokenInfo } from '@/components/swap/types';
 
 export type FeeDetail = {
   rawAmount: string;
@@ -40,46 +39,36 @@ export const safeStringify = (obj: any): string => {
  * Calculates total fees from RouterBuilder fee result
  * Aggregates fees by currency and converts to human-readable format
  * 
- * @param feeResult - Fee result from ParaSpell XCM Router
- * @param inputToken - Input token info (used for origin chain fees)
- * @param outputToken - Output token info (used for destination chain fees)
+ * @param feeResult - Fee result from ParaSpell XCM Router (includes asset decimals)
  */
-export const calculateTotalFees = (
-  feeResult: TRouterXcmFeeResult,
-  inputToken: TokenInfo,
-  outputToken: TokenInfo
-): FeeSummary => {
+export const calculateTotalFees = (feeResult: TRouterXcmFeeResult): FeeSummary => {
   const feeMap = new Map<string, { raw: bigint; decimals: number }>();
   
   /**
-   * Helper to get decimals for a currency
-   * Priority: asset decimals from fee result > token info > fallback to input token decimals
+   * Get decimals from asset info - throws if not available
+   * This ensures we never use incorrect decimal values
    */
-  const getDecimalsForCurrency = (currency: string, assetDecimals?: number): number => {
-    // First, try to use the decimals from the fee result
+  const getDecimals = (currency: string, assetDecimals?: number): number => {
+    // Use decimals from fee result asset (should always be present from ParaSpell)
     if (assetDecimals !== undefined && assetDecimals > 0) {
       return assetDecimals;
     }
-    // Match currency to our known tokens
-    if (currency === inputToken.symbol) {
-      return inputToken.decimals;
-    }
-    if (currency === outputToken.symbol) {
-      return outputToken.decimals;
-    }
-    // Fallback to input token decimals (most fees are in origin chain currency)
-    console.warn(`⚠️ Unknown decimals for currency ${currency}, using input token decimals as fallback`);
-    return inputToken.decimals;
+    
+    throw new Error(
+      `Missing decimals for currency ${currency}. ` +
+      `ParaSpell fee result should include asset.decimals but it's undefined. ` +
+      `This is likely a ParaSpell API issue or unsupported token.`
+    );
   };
   
   // Process origin fees
   const originFee = BigInt(feeResult.origin.fee || "0");
-  const originDecimals = getDecimalsForCurrency(feeResult.origin.currency, feeResult.origin.asset?.decimals);
+  const originDecimals = getDecimals(feeResult.origin.currency, feeResult.origin.asset?.decimals);
   feeMap.set(feeResult.origin.currency, { raw: originFee, decimals: originDecimals });
   
   // Process destination fees
   const destFee = BigInt(feeResult.destination.fee || "0");
-  const destDecimals = getDecimalsForCurrency(feeResult.destination.currency, feeResult.destination.asset?.decimals);
+  const destDecimals = getDecimals(feeResult.destination.currency, feeResult.destination.asset?.decimals);
   const existingDest = feeMap.get(feeResult.destination.currency);
   if (existingDest) {
     feeMap.set(feeResult.destination.currency, { 
@@ -93,7 +82,7 @@ export const calculateTotalFees = (
   // Process hops fees
   feeResult.hops.forEach(hop => {
     const hopFee = BigInt(hop.result.fee || "0");
-    const hopDecimals = getDecimalsForCurrency(hop.result.currency, hop.result.asset?.decimals);
+    const hopDecimals = getDecimals(hop.result.currency, hop.result.asset?.decimals);
     const existingHop = feeMap.get(hop.result.currency);
     if (existingHop) {
       feeMap.set(hop.result.currency, { 

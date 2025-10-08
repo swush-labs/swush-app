@@ -328,16 +328,26 @@ export function useXcmRoute({
       if (feesSettled.status === 'fulfilled') {
         const feeResult: TRouterXcmFeeResult = feesSettled.value;
 
-        // Calculate and format fees using token info
-        const feeSummary = calculateTotalFees(feeResult, inputToken, outputToken);
-        setFeeBreakdown(feeSummary);
-        setEstimatedFees(formatFeeSummary(feeSummary));
+        try {
+          // Calculate and format fees (decimals come from fee result's asset info)
+          const feeSummary = calculateTotalFees(feeResult);
+          setFeeBreakdown(feeSummary);
+          setEstimatedFees(formatFeeSummary(feeSummary));
 
-        //print feeSummary which is bigint 
-        console.log('✅ Fees calculated:', safeStringify(feeSummary));
-        console.log('✅ Simplified Fees calculated:', formatFeeSummary(feeSummary));
+          console.log('✅ Fees calculated:', safeStringify(feeSummary));
+          console.log('✅ Simplified Fees:', formatFeeSummary(feeSummary));
 
-        setIsLoadingFees(false);
+          setIsLoadingFees(false);
+        } catch (feeError) {
+          // Handle missing decimals gracefully - show quote but indicate fee calculation failed
+          console.error('❌ Fee calculation failed:', feeError);
+          setEstimatedFees('—');
+          setFeeBreakdown(undefined);
+          setIsLoadingFees(false);
+          
+          // Optional: Could show a warning to user that fees couldn't be calculated
+          // but swap quote is still valid
+        }
       } else {
         console.error('❌ Fees fetch failed:', feesSettled.reason);
         // Don't throw - quote is more important than fees
