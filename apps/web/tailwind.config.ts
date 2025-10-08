@@ -57,6 +57,7 @@ const config: Config = {
 			tune: "#303746",
   			woodsmoke: '#0A0B0D',
   			zinwallditeBrown: '#2F1005',
+			"black-wallet-fill": '#001219',
   			card: {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
