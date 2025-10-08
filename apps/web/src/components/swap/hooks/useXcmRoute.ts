@@ -12,7 +12,7 @@ import type {
 // Our types
 import type { TokenInfo } from '@/components/swap/types';
 import type { FeeSummary } from '@/services/xcm-router/feeCalculator';
-import { calculateTotalFees, formatFeeSummary } from '@/services/xcm-router/feeCalculator';
+import { calculateTotalFees, formatFeeSummary, safeStringify } from '@/services/xcm-router/feeCalculator';
 import { formatAmount } from '@/services/balances/utils';
 import { NUMBER_FORMAT_OPTIONS } from '@/services/constants';
 import { ROUTE_FETCH_TIMEOUT } from '@/lib/const';
@@ -328,12 +328,14 @@ export function useXcmRoute({
       if (feesSettled.status === 'fulfilled') {
         const feeResult: TRouterXcmFeeResult = feesSettled.value;
 
-        // Calculate and format fees (multi-currency support)
-        const feeSummary = calculateTotalFees(feeResult);
+        // Calculate and format fees using token info
+        const feeSummary = calculateTotalFees(feeResult, inputToken, outputToken);
         setFeeBreakdown(feeSummary);
         setEstimatedFees(formatFeeSummary(feeSummary));
 
-        console.log('✅ Fees calculated:', formatFeeSummary(feeSummary));
+        //print feeSummary which is bigint 
+        console.log('✅ Fees calculated:', safeStringify(feeSummary));
+        console.log('✅ Simplified Fees calculated:', formatFeeSummary(feeSummary));
 
         setIsLoadingFees(false);
       } else {
