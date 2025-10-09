@@ -4,8 +4,6 @@ import { AnimatedGlowBorder } from './AnimatedGlowBorder';
 
 interface SubmitButtonProps {
   isConnected: boolean;
-  setIsConnected: (value: boolean) => void;
-  setWalletAddress: (value: string) => void;
   onSwap: () => void;
   isSwapping: boolean;
   insufficientBalance: boolean;
@@ -15,8 +13,6 @@ interface SubmitButtonProps {
 
 export const SubmitButtonAction = ({
   isConnected,
-  setIsConnected,
-  setWalletAddress,
   onSwap,
   isSwapping,
   insufficientBalance,

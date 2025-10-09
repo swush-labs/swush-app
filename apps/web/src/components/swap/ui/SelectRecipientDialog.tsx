@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, CircleAlert, X } from "lucide-react";
+import { ArrowRight, CircleAlert, X, Check } from "lucide-react";
+import { useSelectedAccount } from "@/components/wallet/use-selected-account";
+import { shortenAddress } from "@/lib/utils";
+import Identicon from "@polkadot/react-identicon";
 
 interface SelectRecipientDialogProps {
     isOpen?: boolean
@@ -13,6 +16,8 @@ export default function SelectRecipientDialog({
     onConnectWalletClick,
     onOpenChange
 }:SelectRecipientDialogProps) {
+    const { selectedAccount } = useSelectedAccount();
+    
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange} >
             <DialogContent className="w-11/12 sm:w-full max-w-lg p-6 rounded-xl sm:rounded-xl bg-midnight border border-dark-slate-gray" isCloseIconVisible={false} >
@@ -22,12 +27,37 @@ export default function SelectRecipientDialog({
                 </div>
                 <div className="bg-blackPearl border-dark-slate-gray rounded-2xl flex flex-col items-stretch p-6 overflow-hidden relative mt-4" >
                     <p className="text-white text-sm font-normal" >Your wallet</p>
-                    <Button 
-                        variant="primary" 
-                        // size="primary"
-                        className="text-base mt-1"
-                        onClick={onConnectWalletClick} 
-                    >Connect Wallet</Button>
+                    
+                    {selectedAccount ? (
+                        <div className="mt-2 p-4 rounded-xl bg-black-wallet-fill border border-burning-orange/30 flex items-center gap-3">
+                            <Identicon
+                                value={selectedAccount.address}
+                                size={40}
+                                theme="polkadot"
+                                className="rounded-full"
+                            />
+                            <div className="flex-1">
+                                <div className="text-white font-medium">
+                                    {selectedAccount.platform === "polkadot" && 'name' in selectedAccount 
+                                        ? selectedAccount.name 
+                                        : "Account"}
+                                </div>
+                                <div className="text-white/60 text-sm font-mono">
+                                    {shortenAddress(selectedAccount.address)}
+                                </div>
+                                <div className="text-xs text-white/50">
+                                    {selectedAccount.walletName}
+                                </div>
+                            </div>
+                            <Check className="w-5 h-5 text-burning-orange" />
+                        </div>
+                    ) : (
+                        <Button 
+                            variant="primary" 
+                            className="text-base mt-1"
+                            onClick={onConnectWalletClick} 
+                        >Connect Wallet</Button>
+                    )}
 
                     <div className="my-8 relative flex justify-center" >
                         <div className="flex items-center absolute w-[120%] self-center" >

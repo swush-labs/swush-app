@@ -1,4 +1,4 @@
-import React, { ButtonHTMLAttributes, memo, ReactNode, useCallback, useMemo } from 'react';
+import React, { ButtonHTMLAttributes, ReactNode, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,15 +6,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { TokenButton } from '../button/TokenButton';
 import { AssetList } from './AssetList';
 import { SwapFieldProps, AssetGroup } from '../types';
-import { formatBalance } from '../utils';
-import { Loader2, ChevronDown, Wallet, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ChevronDown, Wallet, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { cn, shortenAddress } from '@/lib/utils';
+import { useSelectedAccount } from '@/components/wallet/use-selected-account';
 
-const WalletButton:React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({className,children,...props}) => {
+const WalletButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ className, children, ...props }) => {
   return (
-    <button 
-      className={cn("rounded-full py-1 px-3 flex items-center text-burning-orange bg-blue-whale hover:bg-blue-whale/70", className)} 
+    <button
+      className={cn("rounded-full py-1 px-3 flex items-center text-burning-orange bg-blue-whale hover:bg-blue-whale/70", className)}
       {...props}
     >
       <Wallet className="w-3 h-3" />
@@ -24,7 +24,7 @@ const WalletButton:React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({c
   )
 }
 
-export const SwapField = memo(function SwapField({
+export function SwapField({
   type,
   token,
   amount,
@@ -45,13 +45,14 @@ export const SwapField = memo(function SwapField({
   onSelectRecipientClick,
 }: SwapFieldProps) {
   const isInput = type === 'input';
-  const bgColor = isInput ? 'bg-pink-500' : 'bg-blue-500';
-  const displayBalance = formatBalance(balance, balancesLoaded);
+
+  // Get selected account for display
+  const { selectedAccount } = useSelectedAccount();
 
   // Handle input change with validation
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    
+
     // Only allow valid number inputs
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
       onAmountChange?.(value);
@@ -81,7 +82,7 @@ export const SwapField = memo(function SwapField({
   }, [availableTokens]);
 
   return (
-    <motion.div 
+    <motion.div
       className={`group relative p-4 sm:p-6 rounded-2xl bg-blackPearl border-dark-slate-gray border backdrop-blur-md shadow-lg shadow-black/25`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -89,23 +90,20 @@ export const SwapField = memo(function SwapField({
     >
       {/* Subtle hover glow effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-flame-500/0 to-flame-400/0 group-hover:from-flame-500/8 group-hover:to-flame-400/8 rounded-2xl transition-all duration-300 pointer-events-none"></div>
-      
+
       {/* Content */}
       <div className="relative z-10">
         <div className="flex justify-between items-center mb-4 tall:mb-9">
-          {/* Balance display - only show when connected */}
+          {/* Empty left side - balance display removed */}
           <div className="flex items-center gap-2">
-            <Wallet className="w-4 h-4 text-white/60" />
+            {/* <Wallet className="w-4 h-4 text-white/60" />
             <span className="text-sm font-medium text-forest-300">
               {isConnected ? `${displayBalance} ${token?.symbol || ''}` : ''}
-            </span>
+            </span> */}
           </div>
-          
+
           {/* Percentage options for input (Pay) field - on the right side */}
-          {
-            isInput ? false ?
-            
-            <div className="flex gap-2">
+          {/*      <div className="flex gap-2">
               {percentageOptions && percentageOptions?.map(({ label, value }) => (
                 <Button
                   key={label}
@@ -119,73 +117,89 @@ export const SwapField = memo(function SwapField({
                 </Button>
               ))}
             </div>
+          */}
 
-            :
-
-            <WalletButton onClick={onConnectWalletClick} >Connect Wallet</WalletButton>
-          
-            : <WalletButton onClick={onSelectRecipientClick} >Select recipient</WalletButton>
+          {/* Wallet connection status / Select recipient button */}
+          {
+            isInput ? (
+              isConnected && selectedAccount ? (
+                // Show connected status with shortened address - clickable to change account
+                <button
+                  onClick={onConnectWalletClick}
+                  className="rounded-full py-1 px-3 flex items-center text-white bg-blue-whale/50 border border-burning-orange/30 hover:bg-blue-whale/70 hover:border-burning-orange/50 transition-all cursor-pointer"
+                >
+                  <Check className="w-3 h-3 text-burning-orange" />
+                  <p className="text-xs font-normal ml-1">{shortenAddress(selectedAccount.address)}</p>
+                </button>
+              ) : (
+                // Show connect wallet button
+                <WalletButton onClick={onConnectWalletClick}>Connect Wallet</WalletButton>
+              )
+            ) : (
+              // Output field - keep select recipient button
+              <WalletButton onClick={onSelectRecipientClick}>Select recipient</WalletButton>
+            )
           }
         </div>
 
-      <div className="flex items-center">
-        <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DialogTrigger asChild>
-            <div className="flex-shrink-0">
-              <div className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-blue-whale border-forest-600 hover:border-flame-400 transition-all duration-200 cursor-pointer">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-flame-400 to-flame-500 flex items-center justify-center shadow-lg">
-                  <span className="text-white text-lg font-bold">{token?.icon || '?'}</span>
+        <div className="flex items-center">
+          <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+            <DialogTrigger asChild>
+              <div className="flex-shrink-0">
+                <div className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-blue-whale border-forest-600 hover:border-flame-400 transition-all duration-200 cursor-pointer">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-flame-400 to-flame-500 flex items-center justify-center shadow-lg">
+                    <span className="text-white text-lg font-bold">{token?.icon || '?'}</span>
+                  </div>
+                  <div className="flex flex-col items-start w-[60px] md:w-[80px]">
+                    <span className="font-semibold text-white truncate w-full">{token?.symbol || 'Select Token'}</span>
+                    <span className="text-sm text-forest-400 truncate w-full" title={token?.network}>{token?.network || 'Network'}</span>
+                  </div>
+                  <ChevronDown className="w-5 h-5 text-forest-400 flex-shrink-0" />
                 </div>
-                <div className="flex flex-col items-start w-[60px] md:w-[80px]">
-                  <span className="font-semibold text-white truncate w-full">{token?.symbol || 'Select Token'}</span>
-                  <span className="text-sm text-forest-400 truncate w-full" title={token?.network}>{token?.network || 'Network'}</span>
+              </div>
+            </DialogTrigger>
+            <DialogContent className="bg-blackPearl border-dark-slate-gray rounded-xl w-full max-w-[90%] sm:max-w-lg">
+              <DialogHeader className="relative" >
+
+                <div className="w-full flex items-center justify-center" >
+                  <DialogTitle className="text-white text-lg font-medium">All Networks</DialogTitle>
                 </div>
-                <ChevronDown className="w-5 h-5 text-forest-400 flex-shrink-0" />
-              </div>
-            </div>
-          </DialogTrigger>
-          <DialogContent className="bg-blackPearl border-dark-slate-gray rounded-xl w-full max-w-[90%] sm:max-w-lg">
-            <DialogHeader className="relative" >
-              
-              <div className="w-full flex items-center justify-center" >
-              <DialogTitle className="text-white text-lg font-medium">All Networks</DialogTitle>
-              </div>
-              {/* <div className="absolute w-full h-full" >
+                {/* <div className="absolute w-full h-full" >
               <ChevronLeft className="size-5 text-white" />
               </div> */}
-              
-            </DialogHeader>
-            <AssetList 
-              assetGroups={assetGroups} 
-              onSelect={onTokenSelect}
-              currentAsset={token}
-              onClose={() => setOpenDialog(false)}
-            />
-          </DialogContent>
-        </Dialog>
-        <div className="flex-1 relative">
-          {!isInput && isProcessing ? (
-            <Skeleton className="w-full max-w-24 sm:max-w-52 h-11 ml-auto" />
-          ) : (
-            <Input
-              type="text"
-              inputMode="decimal"
-              value={amount}
-              onChange={handleInputChange}
-              readOnly={!isInput}
-              className="border-0 bg-transparent px-0 text-2xl md:text-3xl text-white focus-visible:ring-0 focus-visible:ring-offset-0 text-right appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              placeholder="0"
-            />
-          )}
+
+              </DialogHeader>
+              <AssetList
+                assetGroups={assetGroups}
+                onSelect={onTokenSelect}
+                currentAsset={token}
+                onClose={() => setOpenDialog(false)}
+              />
+            </DialogContent>
+          </Dialog>
+          <div className="flex-1 relative">
+            {!isInput && isProcessing ? (
+              <Skeleton className="w-full max-w-24 sm:max-w-52 h-11 ml-auto" />
+            ) : (
+              <Input
+                type="text"
+                inputMode="decimal"
+                value={amount}
+                onChange={handleInputChange}
+                readOnly={!isInput}
+                className="border-0 bg-transparent px-0 text-2xl md:text-3xl text-white focus-visible:ring-0 focus-visible:ring-offset-0 text-right appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                placeholder="0"
+              />
+            )}
+          </div>
         </div>
-      </div>
-      
-      {error && (
-        <div className="mt-2 text-sm text-red-400">
-          {error}
-        </div>
-      )}
+
+        {error && (
+          <div className="mt-2 text-sm text-red-400">
+            {error}
+          </div>
+        )}
       </div>
     </motion.div>
   );
-});
+}

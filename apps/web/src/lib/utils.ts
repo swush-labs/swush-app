@@ -16,3 +16,8 @@ export const getNetworkDisplayName = (network: string): string => {
   
   return displayNameMap[network] || network;
 };
+
+export function shortenAddress(address: string, length?: number) {
+  if (!length) length = 4;
+  return `${address.slice(0, length)}...${address.slice(-length)}`;
+}

@@ -2,14 +2,12 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { SwapHeader } from '@/components/swap/ui/SwapHeader'
-import { HeaderActions } from '@/components/swap/ui/SwapHeader'
 import { SwapField } from '@/components/swap/ui/SwapField'
 import { SwapDetails } from '@/components/swap/ui/SwapDetails'
 import { SubmitButtonAction } from '@/components/swap/ui/SwapAction'
 import { SwapConfirmSheet } from '@/components/swap/ui/SwapConfirmSheet'
 import { SwapHistoryDialog } from '@/components/swap/ui/SwapHistoryDialog'
 import { useXcmTokens } from '@/components/swap/hooks/useXcmTokens'
-import { useTokenBalances } from '@/components/swap/hooks/useTokenBalances'
 import { useXcmRoute } from '@/components/swap/hooks/useXcmRoute'
 import { useAssetConversionSwap } from '@/components/swap/hooks/useAssetConversionSwap'
 import { useSwapConfirmation } from '@/components/swap/hooks/useSwapConfirmation'
@@ -21,6 +19,7 @@ import { calculateMinimumReceived } from '@/components/swap/utils'
 import { SwapCompleteDialog } from './ui/SwapCompleteDialog'
 import ConnectWalletDialog from './ui/ConnectWalletDialog'
 import SelectRecipientDialog from './ui/SelectRecipientDialog'
+import { useSelectedAccount } from '@/components/wallet/use-selected-account'
 
 export function SwapContainer() {
   // UI state
@@ -33,9 +32,10 @@ export function SwapContainer() {
   const [isConnectWalletOpen, setIsConnectWalletOpen] = useState(false)
   const [isSelectRecipientOpen, setIsSelectRecipientOpen] = useState(false)
 
-  // Initialize wallet state first to avoid circular dependencies
-  const [isConnected, setIsConnected] = useState(false)
-  const [walletAddress, setWalletAddress] = useState('')
+  // Get selected account from global hook
+  const { selectedAccount } = useSelectedAccount()
+  const isConnected = !!selectedAccount
+  const walletAddress = selectedAccount?.address || ''
 
   // Custom hooks - Token and Balance handling (nuqs handles URL params automatically)
   const { 
@@ -57,27 +57,10 @@ export function SwapContainer() {
     unifiedToAssets,
   } = useXcmTokens()
 
-  // Token balances
-  const {
-    inputBalance,
-    outputBalance,
-    isBalanceLoading,
-    balancesLoaded,
-    resetBalances,
-    refreshBalances
-  } = useTokenBalances({
-    isConnected,
-    walletAddress,
-    inputToken,
-    outputToken
-  })
-
-  // Handle wallet disconnect
+  // Handle wallet disconnect - account management is now handled by the wallet dialog
   const handleDisconnect = useCallback(() => {
-    setIsConnected(false);
-    setWalletAddress('');
-    resetBalances();
-  }, [resetBalances]);
+    // Wallet disconnect cleanup
+  }, []);
 
   // Swap route - now using real ParaSpell RouterBuilder with parallel fetching
   const {
@@ -123,9 +106,8 @@ export function SwapContainer() {
 
   // Handle balance updates after swap
   const handleBalanceUpdateNeeded = useCallback((txHash?: string) => {
-    // Use the simplified refresh approach
-    refreshBalances(true, txHash);
-  }, [refreshBalances]);
+    // Balance updates removed - not needed anymore
+  }, []);
 
   // Asset conversion swap hook with simulation callback
   // TODO Phase 3: Update this to use new route data structure
@@ -176,7 +158,6 @@ export function SwapContainer() {
   // Handle wallet disconnect with confirmation state cleanup
   const handleWalletDisconnect = useCallback(() => {
     handleDisconnect();
-    resetBalances();
     if (showConfirmation) {
       resetConfirmationState();
     }
@@ -184,7 +165,7 @@ export function SwapContainer() {
     resetRoute();
     // Reset input amount
     setInputAmount('');
-  }, [handleDisconnect, showConfirmation, resetConfirmationState, resetBalances, resetRoute]);
+  }, [handleDisconnect, showConfirmation, resetConfirmationState, resetRoute]);
 
   // Effect to reset states when tokens change
   useEffect(() => {
@@ -213,9 +194,10 @@ export function SwapContainer() {
         resetRoute();
       }
 
-      setInsufficientBalance(value !== '' && parseFloat(value) > parseFloat(inputBalance));
+      // Note: Insufficient balance check removed - balance fetching disabled
+      setInsufficientBalance(false);
     }
-  }, [debouncedFetchRoute, inputBalance, resetRoute]);
+  }, [debouncedFetchRoute, resetRoute]);
 
   const percentageOptions = useMemo(() => [
     { label: '25%', value: 0.25 },
@@ -254,7 +236,7 @@ export function SwapContainer() {
                 type="input"
                 token={inputToken}
                 amount={inputAmount}
-                balance={inputBalance}
+                balance=""
                 onTokenSelect={(token) => {
                   setInputToken(token)
                 }}
@@ -263,9 +245,9 @@ export function SwapContainer() {
                 setOpenDialog={setOpenInputDialog}
                 availableTokens={fromTokens}
                 percentageOptions={percentageOptions}
-                onPercentageSelect={(value) => handleInputChange((parseFloat(inputBalance) * value).toString())}
-                isLoading={isConnected && isBalanceLoading}
-                balancesLoaded={balancesLoaded}
+                onPercentageSelect={(value) => handleInputChange("0")}
+                isLoading={false}
+                balancesLoaded={true}
                 isConnected={isConnected}
                 onConnectWalletClick={() => setIsConnectWalletOpen(true)}
               />
@@ -276,15 +258,15 @@ export function SwapContainer() {
                 type="output"
                 token={outputToken}
                 amount={outputAmount}
-                balance={outputBalance}
+                balance=""
                 onTokenSelect={(token) => {
                   setOutputToken(token)
                 }}
                 openDialog={openOutputDialog}
                 setOpenDialog={setOpenOutputDialog}
                 availableTokens={toTokens}
-                isLoading={isLoadingQuote || (isConnected && isBalanceLoading)}
-                balancesLoaded={balancesLoaded}
+                isLoading={isLoadingQuote}
+                balancesLoaded={true}
                 isConnected={isConnected}
                 isProcessing={isLoadingQuote}
                 error={routeState.error}
@@ -310,8 +292,6 @@ export function SwapContainer() {
             <SubmitButtonAction
               isConnected={isConnected}
               isSwapping={isSwapping}
-              setIsConnected={setIsConnected}
-              setWalletAddress={setWalletAddress}
               onSwap={() => {
                 setShowConfirmation(true);
                 // handleSwapExecution(isConnected)
