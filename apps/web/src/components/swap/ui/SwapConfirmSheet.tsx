@@ -142,11 +142,26 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
               />
             </div>
 
+            {/* Show warning if simulation indicates potential failure */}
+            {simulationResult && !simulationResult.willSucceed && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mt-4">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="text-red-400 w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-red-400 font-medium text-sm">Transaction may fail</p>
+                    <p className="text-red-300/70 text-xs mt-1">
+                      {simulationResult.error || 'Dry-run simulation indicates this swap might not succeed'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-y-4 mt-8" >
               <SubText>Network Fee</SubText>
               <SubText className="justify-self-end" >
               {simulationResult?.estimatedFee && simulationResult.estimatedFee !== '0' 
-                ? `${simulationResult.estimatedFee} ${inputToken}` 
+                ? `${simulationResult.estimatedFee}` 
                 : '—'}
               </SubText>
               <SubText>Slippage Tolerance</SubText>

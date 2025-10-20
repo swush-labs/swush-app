@@ -134,3 +134,41 @@ export const getAdjustedFeeAmount = (fee: string | bigint | undefined, decimals:
   const { decimal } = formatAmount(fee, decimals, NUMBER_FORMAT_OPTIONS);
   return decimal;
 };
+
+/**
+ * Validates dry-run results from ParaSpell XCM fee calculation
+ * Checks if all fee calculations succeeded via dry-run simulation
+ * 
+ * @param feeResult - Fee result from ParaSpell XCM Router
+ * @returns Validation result with errors if any
+ */
+export const validateDryRunResults = (feeResult: TRouterXcmFeeResult): {
+  isValid: boolean;
+  errors: string[];
+} => {
+  const errors: string[] = [];
+  
+  // Check if origin fee calculation used dry-run (indicates successful simulation)
+  // Note: feeType can be 'dryRun', 'calculated', or undefined
+  // Only 'dryRun' indicates actual on-chain simulation succeeded
+  if (feeResult.origin.feeType !== 'dryRun') {
+    errors.push(`Origin fee estimation failed (type: ${feeResult.origin.feeType || 'unknown'})`);
+  }
+  
+  // Check destination fee calculation
+  if (feeResult.destination.feeType !== 'dryRun') {
+    errors.push(`Destination fee estimation failed (type: ${feeResult.destination.feeType || 'unknown'})`);
+  }
+  
+  // Check all hops in the route
+  feeResult.hops.forEach((hop, index) => {
+    if (hop.result.feeType !== 'dryRun') {
+      errors.push(`Hop ${index + 1} (${hop.chain}) fee estimation failed (type: ${hop.result.feeType || 'unknown'})`);
+    }
+  });
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};

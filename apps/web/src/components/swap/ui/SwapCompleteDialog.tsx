@@ -47,6 +47,28 @@ const SecretGift:React.FC<SecretGiftProps> = ({
     )
 }
 
+/**
+ * Format transaction type for display
+ */
+const formatTransactionType = (type: string | null | undefined): string => {
+  if (!type) return 'Processing...';
+  
+  switch (type) {
+    case 'SELECTING_EXCHANGE':
+      return 'Selecting best exchange';
+    case 'TRANSFER':
+      return 'Transferring assets';
+    case 'SWAP':
+      return 'Swapping on DEX';
+    case 'SWAP_AND_TRANSFER':
+      return 'Swapping and transferring';
+    case 'COMPLETED':
+      return 'Completed';
+    default:
+      return type;
+  }
+};
+
 interface SwapCompleteDialogProps {
     isOpen?: boolean
     isSwappingInProgress?: boolean
@@ -57,8 +79,10 @@ interface SwapCompleteDialogProps {
     outputToken: string
     duration: number
     onClose?: () => void
+    currentStep?: number
+    totalSteps?: number
+    currentTransactionType?: string | null
 }
-
 
 export function SwapCompleteDialog({
     isOpen = false,
@@ -70,6 +94,9 @@ export function SwapCompleteDialog({
     outputToken,
     duration,
     onClose,
+    currentStep,
+    totalSteps,
+    currentTransactionType,
 }:SwapCompleteDialogProps) {
     const [swapProgress, setSwapProgress] = useState<number>(10)
     const [isGiftRevealed, setIsGiftRevealed] = useState<boolean>(false)
@@ -105,9 +132,23 @@ export function SwapCompleteDialog({
             )} isCloseIconVisible={swapProgress >= 100 && isGiftRevealed} >
                 {
                     (isSwappingInProgress || swapProgress < 100) && (
-                        <div className="w-full h-full flex items-center justify-center gap-x-2 py-[78px]" >
-                            <Zap className="size-8 text-white" />
-                            <p className="text-lg sm:text-xl font-bold text-white" >Swapping in Progress…</p>
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-y-3 py-[78px]" >
+                            <div className="flex items-center gap-x-2">
+                                <Zap className="size-8 text-white" />
+                                <p className="text-lg sm:text-xl font-bold text-white" >Swapping in Progress…</p>
+                            </div>
+
+                            {/* Show multi-step progress if available */}
+                            {currentStep !== undefined && totalSteps !== undefined && totalSteps > 1 && (
+                                <div className="text-center">
+                                    <p className="text-sm text-white/60">
+                                        Step {currentStep + 1} of {totalSteps}
+                                    </p>
+                                    <p className="text-xs text-white/50 mt-1">
+                                        {formatTransactionType(currentTransactionType)}
+                                    </p>
+                                </div>
+                            )}
 
                             <Progress 
                                 className="absolute left-[-5px] w-[110%] bottom-[-7px] h-4" 

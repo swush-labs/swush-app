@@ -11,8 +11,8 @@
   "dependencies": {
     "@kheopskit/core": "^0.0.21",
     "@kheopskit/react": "^0.0.25",
-    "@paraspell/sdk": "^11.8.4",
-    "@paraspell/xcm-router": "^11.8.4",
+    "@paraspell/sdk": "^11.10.0",
+    "@paraspell/xcm-router": "^11.10.0",
     "@polkadot-labs/hdkd": "^0.0.10",
     "@radix-ui/react-collapsible": "^1.1.1",
     "@radix-ui/react-dialog": "^1.1.2",

@@ -44,12 +44,10 @@ export function useSwapConfirmation({ setIsSwapping }: UseSwapConfirmationProps)
   
   const handleConfirmSwap = useCallback(() => {
     setIsConfirmingSwap(true); // Set confirming state before closing sheet
-    setIsSwappingInProgress(true);
     setShowConfirmation(false);
-    setTimeout(() => {
-      setIsSwapComplete(true);
-      setIsSwappingInProgress(false);
-    },3000)
+    // Note: Don't set isSwappingInProgress here - will be set after wallet signs
+    // Removed setTimeout - real swap execution will handle this
+    
     if (window.swapConfirmResolve) {
       window.swapConfirmResolve(true);
       window.swapConfirmResolve = undefined;

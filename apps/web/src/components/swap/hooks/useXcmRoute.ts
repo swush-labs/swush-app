@@ -17,10 +17,6 @@ import { formatAmount } from '@/services/balances/utils';
 import { NUMBER_FORMAT_OPTIONS } from '@/services/constants';
 import { ROUTE_FETCH_TIMEOUT } from '@/lib/const';
 
-// TEMPORARY: Dummy wallet address until wallet integration is complete
-// TODO: Remove this when wallet library is implemented and use real wallet address
-const DUMMY_WALLET_ADDRESS = '5EWNeodpcQ6iYibJ3jmWVe85nsok1EDG8Kk3aFg8ZzpfY1qX';
-
 /**
  * Convert user input (decimal string) to smallest unit (bigint)
  * 
@@ -70,6 +66,7 @@ interface UseXcmRouteProps {
   outputToken: TokenInfo | null;
   walletAddress?: string;
   slippageTolerance?: number; // Percentage (e.g., 1 for 1%)
+  skipPriceFetch?: boolean; // Skip price/fee fetching for testing
 
   // Helper functions from useXcmTokens
   getOptimalExchanges: (
@@ -124,6 +121,7 @@ export function useXcmRoute({
   outputToken,
   walletAddress,
   slippageTolerance = 1,
+  skipPriceFetch = false, // Default: false (normal behavior)
   getOptimalExchanges,
   determineCurrency,
   getTAssetFromKey,
@@ -164,6 +162,25 @@ export function useXcmRoute({
    * Fetch route and fees from ParaSpell RouterBuilder
    */
   const fetchRoute = useCallback(async (currentInputAmount: string) => {
+    // Skip fetching if flag is set (for testing)
+    if (skipPriceFetch) {
+      console.log('⏭️ Skipping price fetch (skipPriceFetch=true)');
+      setOutputAmount(currentInputAmount); // Mock output = input
+      setRouteDex('HydrationDex (mock)');
+      setEstimatedFees('0.001 DOT (mock)');
+      setRouteState({ 
+        isLoading: false, 
+        error: null, 
+        data: { 
+          amountOut: BigInt(Math.floor(parseFloat(currentInputAmount) * 1e10)),
+          exchange: 'HydrationDex' 
+        } 
+      });
+      setIsLoadingQuote(false);
+      setIsLoadingFees(false);
+      return;
+    }
+
     // Validation - early return if inputs invalid
     if (
       !inputToken ||
@@ -223,9 +240,12 @@ export function useXcmRoute({
       );
 
       // Use optimal exchanges or fallback to HydrationDex
-      const exchangesToUse: TExchangeChain[] = optimalExchanges.length > 0
-        ? optimalExchanges
-        : ['HydrationDex'];
+      // const exchangesToUse: TExchangeChain[] = optimalExchanges.length > 0
+      //   ? optimalExchanges
+      //   : ['HydrationDex'];
+
+      //TODO: hardcode HydrationDex for now
+      const exchangesToUse: TExchangeChain[] = ['HydrationDex'];
 
       // Step 2: Get TAssetInfo for both tokens
       const fromAsset = getTAssetFromKey(inputToken.assetKey, 'from');
@@ -251,33 +271,37 @@ export function useXcmRoute({
         exchanges: exchangesToUse,
       });
 
-      // Step 4: PARALLEL FETCH - Quote and Fees simultaneously!
-      const addressToUse = walletAddress || DUMMY_WALLET_ADDRESS;
-
+      // Step 4: Fetch quote (always) and fees (only if wallet connected)
       //TODO: fix chain type compatibility
-      const [quoteSettled, feesSettled] = await Promise.allSettled([
-        // Fetch quote
-        RouterBuilder()
-          .from(inputToken.networkChain as any) // Type assertion for chain compatibility
-          .to(outputToken.networkChain as any) // Type assertion for chain compatibility
-          .exchange(exchangesToUse as any) // Type assertion needed due to ParaSpell's strict tuple type
-          .currencyFrom(determineCurrency(fromAsset))
-          .currencyTo(determineCurrency(toAsset))
-          .amount(amountInSmallestUnit)
-          .getBestAmountOut(),
+      
+      // Always fetch quote
+      const quotePromise = RouterBuilder()
+        .from(inputToken.networkChain as any) // Type assertion for chain compatibility
+        .to(outputToken.networkChain as any) // Type assertion for chain compatibility
+        .exchange(exchangesToUse as any) // Type assertion needed due to ParaSpell's strict tuple type
+        .currencyFrom(determineCurrency(fromAsset))
+        .currencyTo(determineCurrency(toAsset))
+        .amount(amountInSmallestUnit)
+        .getBestAmountOut();
 
-        // Fetch fees
-        RouterBuilder()
-          .from(inputToken.networkChain as any) // Type assertion for chain compatibility
-          .to(outputToken.networkChain as any) // Type assertion for chain compatibility
-          .exchange(exchangesToUse as any) // Type assertion needed due to ParaSpell's strict tuple type
-          .currencyFrom(determineCurrency(fromAsset))
-          .currencyTo(determineCurrency(toAsset))
-          .amount(amountInSmallestUnit)
-          .senderAddress(addressToUse)
-          .recipientAddress(addressToUse)
-          .slippagePct(slippageTolerance.toString())
-          .getXcmFees()
+      // Only fetch fees if wallet is connected
+      const feesPromise = walletAddress
+        ? RouterBuilder()
+            .from(inputToken.networkChain as any) // Type assertion for chain compatibility
+            .to(outputToken.networkChain as any) // Type assertion for chain compatibility
+            .exchange(exchangesToUse as any) // Type assertion needed due to ParaSpell's strict tuple type
+            .currencyFrom(determineCurrency(fromAsset))
+            .currencyTo(determineCurrency(toAsset))
+            .amount(amountInSmallestUnit)
+            .senderAddress(walletAddress)
+            .recipientAddress(walletAddress)
+            .slippagePct(slippageTolerance.toString())
+            .getXcmFees()
+        : Promise.reject(new Error('No wallet connected'));
+
+      const [quoteSettled, feesSettled] = await Promise.allSettled([
+        quotePromise,
+        feesPromise
       ]);
 
       // Check for stale response
@@ -349,9 +373,16 @@ export function useXcmRoute({
           // but swap quote is still valid
         }
       } else {
-        console.error('❌ Fees fetch failed:', feesSettled.reason);
-        // Don't throw - quote is more important than fees
-        setEstimatedFees('—');
+        // Fees fetch failed - check if it's because wallet not connected
+        const feeError = feesSettled.reason;
+        if (feeError?.message === 'No wallet connected') {
+          console.warn('⚠️ No wallet connected, skipping fee calculation');
+          setEstimatedFees('Connect wallet to see fees');
+        } else {
+          console.error('❌ Fees fetch failed:', feeError);
+          setEstimatedFees('—');
+        }
+        setFeeBreakdown(undefined);
         setIsLoadingFees(false);
       }
 

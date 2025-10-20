@@ -9,9 +9,8 @@ import { SwapConfirmSheet } from '@/components/swap/ui/SwapConfirmSheet'
 import { SwapHistoryDialog } from '@/components/swap/ui/SwapHistoryDialog'
 import { useXcmTokens } from '@/components/swap/hooks/useXcmTokens'
 import { useXcmRoute } from '@/components/swap/hooks/useXcmRoute'
-import { useAssetConversionSwap } from '@/components/swap/hooks/useAssetConversionSwap'
+import { useXcmSwapExecution } from '@/components/swap/hooks/useXcmSwapExecution'
 import { useSwapConfirmation } from '@/components/swap/hooks/useSwapConfirmation'
-import { useSwapExecution } from '@/components/swap/hooks/useSwapExecution'
 import { useSwapHistory } from '@/components/swap/hooks/useSwapHistory'
 import { LoadState } from '@/components/swap/ui/LoadState'
 import { ArrowSymbolDown } from '@/components/swap/ui/ArrowSymbolDown'
@@ -36,6 +35,10 @@ export function SwapContainer() {
   const { selectedAccount } = useSelectedAccount()
   const isConnected = !!selectedAccount
   const walletAddress = selectedAccount?.address || ''
+  // Get polkadotSigner - only available for Polkadot accounts
+  const polkadotSigner = selectedAccount && 'polkadotSigner' in selectedAccount 
+    ? selectedAccount.polkadotSigner 
+    : undefined
 
   // Custom hooks - Token and Balance handling (nuqs handles URL params automatically)
   const { 
@@ -79,6 +82,7 @@ export function SwapContainer() {
     outputToken,
     walletAddress,
     slippageTolerance,
+    skipPriceFetch: true, // 🔥 TEMPORARY: Skip price fetch for testing swap signing
     // Pass helpers from useXcmTokens
     getOptimalExchanges,
     determineCurrency,
@@ -97,40 +101,37 @@ export function SwapContainer() {
     isSwappingInProgress,
     setShowConfirmation,
     handleSimulationComplete,
-    handleConfirmSwap,
+    handleConfirmSwap: originalHandleConfirmSwap,
     handleCancelSwap,
     resetConfirmationState
   } = useSwapConfirmation({
     setIsSwapping
   });
 
-  // Handle balance updates after swap
-  const handleBalanceUpdateNeeded = useCallback((txHash?: string) => {
-    // Balance updates removed - not needed anymore
-  }, []);
-
-  // Asset conversion swap hook with simulation callback
-  // TODO Phase 3: Update this to use new route data structure
+  // XCM Swap execution hook with ParaSpell RouterBuilder
   const {
-    executeSwap: executeAssetConversionSwap,
-    isFinalized
-  } = useAssetConversionSwap({
+    executeSwap,
+    isSwapping: isExecutingSwap,
+    swapStatus: executionStatus,
+    swapError: executionError,
+    currentTransactionType,
+    currentStep,
+    totalSteps
+  } = useXcmSwapExecution({
     inputToken,
     outputToken,
-    walletAddress,
-    slippageTolerance,
     inputAmount,
-    outputAmount,
-    routeState: {
-      ...routeState,
-      data: routeState.data as any // Type compatibility for Phase 2 - will update in Phase 3
-    },
+    slippageTolerance,
+    walletAddress,
+    polkadotSigner,
+    getOptimalExchanges,
+    determineCurrency,
+    getTAssetFromKey,
+    onSimulationComplete: handleSimulationComplete,
     onSuccess: () => {
       // Reset all swap-related states
       setInputAmount('');
-      resetRoute(); // This will reset the output amount and route state
-
-      // Reset confirmation UI state
+      resetRoute();
       resetConfirmationState();
     },
     onError: (error) => {
@@ -139,21 +140,17 @@ export function SwapContainer() {
       resetRoute();
       setIsSwapping(false);
       resetConfirmationState();
-    },
-    onSimulationComplete: handleSimulationComplete,
-    onBalanceUpdateNeeded: handleBalanceUpdateNeeded
+    }
   });
 
-  // Swap execution handling
-  const { handleSwapExecution } = useSwapExecution({
-    inputToken,
-    outputToken,
-    inputAmount,
-    insufficientBalance,
-    executeAssetConversionSwap,
-    setIsSwapping,
-    setIsConfirmingSwap: resetConfirmationState
-  });
+  // Override handleConfirmSwap to use new executeSwap
+  const handleConfirmSwap = useCallback(() => {
+    setShowConfirmation(false);
+    // Don't set isSwapping here - let it be controlled by executeSwap after signing
+    
+    // Execute the swap
+    executeSwap();
+  }, [executeSwap, setShowConfirmation]);
 
   // Handle wallet disconnect with confirmation state cleanup
   const handleWalletDisconnect = useCallback(() => {
@@ -327,8 +324,8 @@ export function SwapContainer() {
       />
 
       <SwapCompleteDialog 
-        isOpen={isSwappingInProgress || isSwapComplete}
-        isSwappingInProgress={isSwappingInProgress}
+        isOpen={isExecutingSwap || isSwapComplete}
+        isSwappingInProgress={isExecutingSwap}
         isSwapComplete={isSwapComplete}
         inputAmount={inputAmount}
         inputToken={inputToken?.symbol || ''}
@@ -336,6 +333,9 @@ export function SwapContainer() {
         outputToken={outputToken?.name || ''}
         duration={4000}
         onClose={resetConfirmationState}
+        currentStep={currentStep}
+        totalSteps={totalSteps}
+        currentTransactionType={currentTransactionType}
       />
 
       <ConnectWalletDialog isOpen={isConnectWalletOpen} onOpenChange={setIsConnectWalletOpen} />
