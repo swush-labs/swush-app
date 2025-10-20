@@ -3,7 +3,6 @@ import { AlertCircle, ArrowDown, CheckCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBalance } from "../utils";
 import { FeeBreakdown } from "../hooks/types";
-import { SwapToasts, TOAST_IDS } from "../utils/toastUtils";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -104,19 +103,12 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
     isConfirming || 
     Boolean(simulationResult && (!simulationResult.success || simulationResult.willSucceed === false));
 
-  // Handle close with toast cleanup
-  const handleClose = () => {
-    // Dismiss any preparation toasts when cancelling
-    SwapToasts.dismiss(TOAST_IDS.SWAP_STATUS);
-    onClose();
-  };
-
   return (
     <Dialog open={isOpen || true}>
       <DialogContent className="w-[90%] sm:w-full max-w-md px-4 py-4 sm:pb-8 bg-blackPearl border-dark-slate-gray rounded-xl sm:rounded-2xl" isCloseIconVisible={false}  >
         <div>
           <div className="relative flex items-center justify-center" >
-            <DialogClose onClick={handleClose} className="absolute right-0 self-center" >
+            <DialogClose onClick={onClose} className="absolute right-0 self-center" >
               <X className="text-white" />
             </DialogClose>
             <p className="text-lg font-medium text-white h-fit" >Confirm Swap</p>
@@ -184,7 +176,7 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
 
               <button
                 className="text-sm sm:text-base font-medium hover:bg-midnight/80 text-white mt-5 w-full rounded-full bg-midnight h-[60px]"
-                onClick={handleClose}
+                onClick={onClose}
               >Close</button>
             </div>
 

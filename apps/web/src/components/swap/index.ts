@@ -15,7 +15,10 @@ export { SwapConfirmSheet } from './ui/SwapConfirmSheet'
 export { SwapHistoryDialog } from './ui/SwapHistoryDialog'
 
 // Hooks
-export { useSwapConfirmation } from './hooks/useSwapConfirmation'
+export { useSwapFlow } from './hooks/useSwapFlow'
+export type { SwapFlowStage, SwapFlowState } from './hooks/useSwapFlow'
+export { useXcmSwapExecution } from './hooks/useXcmSwapExecution'
+export type { ExecutionDetails, SuccessDetails, ErrorDetails } from './hooks/useXcmSwapExecution'
 export { useSwapExecution } from './hooks/useSwapExecution'
 export { useSwapHistory } from './hooks/useSwapHistory'
 

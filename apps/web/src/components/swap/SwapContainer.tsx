@@ -10,8 +10,9 @@ import { SwapHistoryDialog } from '@/components/swap/ui/SwapHistoryDialog'
 import { useXcmTokens } from '@/components/swap/hooks/useXcmTokens'
 import { useXcmRoute } from '@/components/swap/hooks/useXcmRoute'
 import { useXcmSwapExecution } from '@/components/swap/hooks/useXcmSwapExecution'
-import { useSwapConfirmation } from '@/components/swap/hooks/useSwapConfirmation'
+import { useSwapFlow } from '@/components/swap/hooks/useSwapFlow'
 import { useSwapHistory } from '@/components/swap/hooks/useSwapHistory'
+import { useParaSpellBalances } from '@/components/swap/hooks/useParaSpellBalances'
 import { LoadState } from '@/components/swap/ui/LoadState'
 import { ArrowSymbolDown } from '@/components/swap/ui/ArrowSymbolDown'
 import { calculateMinimumReceived } from '@/components/swap/utils'
@@ -60,6 +61,25 @@ export function SwapContainer() {
     unifiedToAssets,
   } = useXcmTokens()
 
+  // Balance fetching using ParaSpell SDK
+  const {
+    inputBalance,
+    outputBalance,
+    inputBalanceRaw,
+    outputBalanceRaw,
+    isBalanceLoading,
+    balancesLoaded,
+    resetBalances,
+    refreshBalances,
+  } = useParaSpellBalances({
+    isConnected,
+    walletAddress,
+    inputToken,
+    outputToken,
+    determineCurrency,
+    getTAssetFromKey,
+  });
+
   // Handle wallet disconnect - account management is now handled by the wallet dialog
   const handleDisconnect = useCallback(() => {
     // Wallet disconnect cleanup
@@ -89,80 +109,92 @@ export function SwapContainer() {
     getTAssetFromKey,
   })
 
-  // Swap state
-  const [isSwapping, setIsSwapping] = useState(false)
-
-  // Swap confirmation
+  // Unified swap flow state management
   const {
-    showConfirmation,
-    simulationResult,
-    isConfirmingSwap,
-    isSwapComplete,
-    isSwappingInProgress,
-    setShowConfirmation,
-    handleSimulationComplete,
-    handleConfirmSwap: originalHandleConfirmSwap,
-    handleCancelSwap,
-    resetConfirmationState
-  } = useSwapConfirmation({
-    setIsSwapping
-  });
+    flowState,
+    startConfirmation,
+    confirmSwap,
+    cancelSwap,
+    startExecution,
+    updateExecution,
+    completeSwap,
+    failSwap,
+    reset: resetSwapFlow,
+    isConfirming,
+    isExecuting,
+    isSuccess,
+    isActive
+  } = useSwapFlow();
 
   // XCM Swap execution hook with ParaSpell RouterBuilder
-  const {
-    executeSwap,
-    isSwapping: isExecutingSwap,
-    swapStatus: executionStatus,
-    swapError: executionError,
-    currentTransactionType,
-    currentStep,
-    totalSteps
-  } = useXcmSwapExecution({
+  const { executeSwap } = useXcmSwapExecution({
     inputToken,
     outputToken,
     inputAmount,
+    outputAmount,
     slippageTolerance,
     walletAddress,
     polkadotSigner,
     getOptimalExchanges,
     determineCurrency,
     getTAssetFromKey,
-    onSimulationComplete: handleSimulationComplete,
-    onSuccess: () => {
-      // Reset all swap-related states
+    onExecutionStart: startExecution,
+    onExecutionUpdate: updateExecution,
+    onSuccess: (success) => {
+      completeSwap(success);
+      // Don't auto-reset - let SwapCompleteDialog control its own lifecycle
+      // Dialog will call resetSwapFlow (via onClose) when user dismisses it
+      // This allows user to interact with gift animation without being rushed
       setInputAmount('');
       resetRoute();
-      resetConfirmationState();
+      resetBalances(true);
     },
     onError: (error) => {
-      // Reset all swap-related states
-      setInputAmount('');
-      resetRoute();
-      setIsSwapping(false);
-      resetConfirmationState();
+      failSwap(error);
+      // Auto-reset after showing error state
+      setTimeout(() => {
+        setInputAmount('');
+        resetRoute();
+        resetSwapFlow();
+      }, 5000);
     }
   });
 
-  // Override handleConfirmSwap to use new executeSwap
+  // Handle swap button click - show confirmation sheet
+  const handleSwapClick = useCallback(() => {
+    // Create simulation result from current route data
+    const simulationResult = {
+      success: true,
+      estimatedFee: estimatedFees || '0',
+      feeBreakdown: feeBreakdown as any, // Type cast to match SimulationResult interface
+      willSucceed: !routeState.error,
+      error: routeState.error || undefined
+    };
+    startConfirmation(simulationResult);
+  }, [estimatedFees, feeBreakdown, routeState.error, startConfirmation]);
+
+  // Handle confirm swap - user confirmed in sheet
   const handleConfirmSwap = useCallback(() => {
-    setShowConfirmation(false);
-    // Don't set isSwapping here - let it be controlled by executeSwap after signing
-    
-    // Execute the swap
-    executeSwap();
-  }, [executeSwap, setShowConfirmation]);
+    confirmSwap(); // Transitions to 'awaiting_signature'
+    executeSwap(); // Starts execution
+  }, [confirmSwap, executeSwap]);
+
+  // Handle cancel swap - user cancelled
+  const handleCancelSwap = useCallback(() => {
+    cancelSwap(); // Resets to 'idle'
+  }, [cancelSwap]);
 
   // Handle wallet disconnect with confirmation state cleanup
   const handleWalletDisconnect = useCallback(() => {
     handleDisconnect();
-    if (showConfirmation) {
-      resetConfirmationState();
+    if (isActive) {
+      resetSwapFlow();
     }
     // Reset route state
     resetRoute();
     // Reset input amount
     setInputAmount('');
-  }, [handleDisconnect, showConfirmation, resetConfirmationState, resetRoute]);
+  }, [handleDisconnect, isActive, resetSwapFlow, resetRoute]);
 
   // Effect to reset states when tokens change
   useEffect(() => {
@@ -191,10 +223,14 @@ export function SwapContainer() {
         resetRoute();
       }
 
-      // Note: Insufficient balance check removed - balance fetching disabled
-      setInsufficientBalance(false);
+      // Check for insufficient balance
+      if (value && inputBalance && parseFloat(value) > parseFloat(inputBalance)) {
+        setInsufficientBalance(true);
+      } else {
+        setInsufficientBalance(false);
+      }
     }
-  }, [debouncedFetchRoute, resetRoute]);
+  }, [debouncedFetchRoute, resetRoute, inputBalance]);
 
   const percentageOptions = useMemo(() => [
     { label: '25%', value: 0.25 },
@@ -233,7 +269,7 @@ export function SwapContainer() {
                 type="input"
                 token={inputToken}
                 amount={inputAmount}
-                balance=""
+                balance={inputBalance}
                 onTokenSelect={(token) => {
                   setInputToken(token)
                 }}
@@ -242,9 +278,13 @@ export function SwapContainer() {
                 setOpenDialog={setOpenInputDialog}
                 availableTokens={fromTokens}
                 percentageOptions={percentageOptions}
-                onPercentageSelect={(value) => handleInputChange("0")}
-                isLoading={false}
-                balancesLoaded={true}
+                onPercentageSelect={(value) => {
+                  const balanceNum = parseFloat(inputBalance || '0');
+                  const calculatedAmount = (balanceNum * value).toString();
+                  handleInputChange(calculatedAmount);
+                }}
+                isLoading={isBalanceLoading}
+                balancesLoaded={balancesLoaded}
                 isConnected={isConnected}
                 onConnectWalletClick={() => setIsConnectWalletOpen(true)}
               />
@@ -255,7 +295,7 @@ export function SwapContainer() {
                 type="output"
                 token={outputToken}
                 amount={outputAmount}
-                balance=""
+                balance={outputBalance}
                 onTokenSelect={(token) => {
                   setOutputToken(token)
                 }}
@@ -263,7 +303,7 @@ export function SwapContainer() {
                 setOpenDialog={setOpenOutputDialog}
                 availableTokens={toTokens}
                 isLoading={isLoadingQuote}
-                balancesLoaded={true}
+                balancesLoaded={balancesLoaded}
                 isConnected={isConnected}
                 isProcessing={isLoadingQuote}
                 error={routeState.error}
@@ -277,8 +317,8 @@ export function SwapContainer() {
               minimumReceived={calculateMinimumReceived(outputAmount, slippageTolerance)}
               outputToken={outputToken}
               inputToken={inputToken}
-              maxTransactionFee={estimatedFees || simulationResult?.estimatedFee || '0'}
-              feeBreakdown={feeBreakdown || simulationResult?.feeBreakdown}
+              maxTransactionFee={estimatedFees || flowState.simulationResult?.estimatedFee || '0'}
+              feeBreakdown={feeBreakdown || flowState.simulationResult?.feeBreakdown}
               route={routeDex || ''}
               isLoading={routeState.isLoading}
               isProcessing={isProcessing}
@@ -288,11 +328,8 @@ export function SwapContainer() {
 
             <SubmitButtonAction
               isConnected={isConnected}
-              isSwapping={isSwapping}
-              onSwap={() => {
-                setShowConfirmation(true);
-                // handleSwapExecution(isConnected)
-              }}
+              isSwapping={isActive}
+              onSwap={handleSwapClick}
               insufficientBalance={insufficientBalance}
               disabled={!inputAmount || inputAmount === '' || parseFloat(inputAmount) <= 0 || insufficientBalance}
               isLoadingQuote={isLoadingQuote}
@@ -311,7 +348,7 @@ export function SwapContainer() {
 
       {/* Swap Confirmation Bottom Sheet */}
       <SwapConfirmSheet
-        isOpen={showConfirmation}
+        isOpen={isConfirming}
         onClose={handleCancelSwap}
         onConfirm={handleConfirmSwap}
         inputAmount={inputAmount}
@@ -319,23 +356,23 @@ export function SwapContainer() {
         outputAmount={outputAmount}
         outputToken={outputToken?.symbol || ''}
         slippageTolerance={slippageTolerance}
-        simulationResult={simulationResult}
-        isConfirming={isConfirmingSwap}
+        simulationResult={flowState.simulationResult || null}
+        isConfirming={false}
       />
 
       <SwapCompleteDialog 
-        isOpen={isExecutingSwap || isSwapComplete}
-        isSwappingInProgress={isExecutingSwap}
-        isSwapComplete={isSwapComplete}
+        isOpen={isExecuting || isSuccess}
+        isSwappingInProgress={isExecuting}
+        isSwapComplete={isSuccess}
         inputAmount={inputAmount}
         inputToken={inputToken?.symbol || ''}
         outputAmount={outputAmount}
         outputToken={outputToken?.name || ''}
-        duration={4000}
-        onClose={resetConfirmationState}
-        currentStep={currentStep}
-        totalSteps={totalSteps}
-        currentTransactionType={currentTransactionType}
+        duration={flowState.success?.duration || 4000}
+        onClose={resetSwapFlow}
+        currentStep={flowState.execution?.currentStep}
+        totalSteps={flowState.execution?.totalSteps}
+        currentTransactionType={flowState.execution?.transactionType}
       />
 
       <ConnectWalletDialog isOpen={isConnectWalletOpen} onOpenChange={setIsConnectWalletOpen} />

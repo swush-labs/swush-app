@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { RouterBuilder } from '@paraspell/xcm-router';
 import type { TAssetInfo, TChain } from '@paraspell/sdk';
 import type { 
@@ -10,8 +10,6 @@ import type { PolkadotSigner } from 'polkadot-api';
 
 // Our types
 import type { TokenInfo } from '@/components/swap/types';
-import type { SimulationResult } from '@/components/swap/ui/SwapConfirmSheet';
-import { SwapToasts, TOAST_IDS } from '../utils/toastUtils';
 
 // Import chopsticks endpoints for local development
 import { 
@@ -42,12 +40,43 @@ function toSmallestUnit(amount: string, decimals: number): bigint {
 }
 
 /**
+ * Execution details passed to callbacks
+ */
+export interface ExecutionDetails {
+  currentStep: number;
+  totalSteps: number;
+  transactionType: TRouterEventType | null;
+  statusMessage: string;
+}
+
+/**
+ * Success details passed to onSuccess callback
+ */
+export interface SuccessDetails {
+  duration: number;
+  inputAmount: string;
+  inputToken: string;
+  outputAmount: string;
+  outputToken: string;
+}
+
+/**
+ * Error details passed to onError callback
+ */
+export interface ErrorDetails {
+  message: string;
+  code?: string;
+  userCancelled?: boolean;
+}
+
+/**
  * Props for useXcmSwapExecution hook
  */
 interface UseXcmSwapExecutionProps {
   inputToken: TokenInfo | null;
   outputToken: TokenInfo | null;
   inputAmount: string;
+  outputAmount?: string; // For success callback
   slippageTolerance: number;
   walletAddress: string;
   polkadotSigner: PolkadotSigner | undefined;
@@ -67,10 +96,11 @@ interface UseXcmSwapExecutionProps {
     direction: 'from' | 'to'
   ) => TAssetInfo | undefined;
   
-  // Callbacks
-  onSimulationComplete?: (result: SimulationResult) => Promise<boolean>;
-  onSuccess?: () => void;
-  onError?: (error: Error) => void;
+  // State management callbacks (replaces internal state)
+  onExecutionStart?: (execution: ExecutionDetails) => void;
+  onExecutionUpdate?: (execution: Partial<ExecutionDetails>) => void;
+  onSuccess?: (success: SuccessDetails) => void;
+  onError?: (error: ErrorDetails) => void;
 }
 
 /**
@@ -78,48 +108,65 @@ interface UseXcmSwapExecutionProps {
  */
 interface UseXcmSwapExecutionReturn {
   executeSwap: () => Promise<void>;
-  isSwapping: boolean;
-  swapStatus: string | null;
-  swapError: Error | null;
-  currentTransactionType: TRouterEventType | null;
-  currentStep: number;
-  totalSteps: number;
 }
+
+/**
+ * Format transaction type for user-friendly status messages
+ */
+const formatStatusMessage = (type: TRouterEventType | null): string => {
+  if (!type) return 'Processing...';
+  
+  switch (type) {
+    case 'SELECTING_EXCHANGE':
+      return 'Selecting best exchange...';
+    case 'TRANSFER':
+      return 'Transferring assets to exchange...';
+    case 'SWAP':
+      return 'Swapping on DEX...';
+    case 'SWAP_AND_TRANSFER':
+      return 'Swapping and transferring back...';
+    case 'COMPLETED':
+      return 'Completed!';
+    default:
+      return type;
+  }
+};
 
 /**
  * XCM Swap Execution Hook - Uses ParaSpell RouterBuilder for transaction execution
  * 
+ * Refactored to be stateless - all state management is handled by parent via callbacks.
+ * This hook is purely responsible for executing the swap transaction.
+ * 
  * Features:
  * - Real cross-chain swap execution via RouterBuilder.buildAndSend()
  * - Kheopskit wallet signer integration
- * - Multi-step transaction progress tracking
+ * - Multi-step transaction progress tracking via callbacks
  * - Comprehensive error handling
  * 
- * @param props - Hook configuration
- * @returns Swap execution state and control functions
+ * @param props - Hook configuration including callbacks for state updates
+ * @returns executeSwap function to trigger the swap
  */
 export function useXcmSwapExecution({
   inputToken,
   outputToken,
   inputAmount,
+  outputAmount,
   slippageTolerance,
   walletAddress,
   polkadotSigner,
   getOptimalExchanges,
   determineCurrency,
   getTAssetFromKey,
-  onSimulationComplete,
+  onExecutionStart,
+  onExecutionUpdate,
   onSuccess,
   onError,
 }: UseXcmSwapExecutionProps): UseXcmSwapExecutionReturn {
 
-  // State management
-  const [isSwapping, setIsSwapping] = useState<boolean>(false);
-  const [swapStatus, setSwapStatus] = useState<string | null>(null);
-  const [swapError, setSwapError] = useState<Error | null>(null);
-  const [currentTransactionType, setCurrentTransactionType] = useState<TRouterEventType | null>(null);
-  const [currentStep, setCurrentStep] = useState<number>(0);
-  const [totalSteps, setTotalSteps] = useState<number>(0);
+  // Use ref to track if user has signed (avoids stale closure issue)
+  const hasUserSignedRef = useRef<boolean>(false);
+  const startTimeRef = useRef<number>(0);
 
   /**
    * Execute the swap using ParaSpell RouterBuilder
@@ -127,47 +174,48 @@ export function useXcmSwapExecution({
   const executeSwap = useCallback(async () => {
     // Validation
     if (!inputToken || !outputToken || !walletAddress || !polkadotSigner) {
-      const error = new Error('Missing required parameters: token, wallet, or signer');
-      setSwapError(error);
-      if (onError) onError(error);
+      const errorDetails: ErrorDetails = {
+        message: 'Missing required parameters: token, wallet, or signer',
+        code: 'MISSING_PARAMS'
+      };
+      onError?.(errorDetails);
       return;
     }
 
     if (!inputAmount || parseFloat(inputAmount) <= 0) {
-      const error = new Error('Invalid swap amount');
-      setSwapError(error);
-      if (onError) onError(error);
+      const errorDetails: ErrorDetails = {
+        message: 'Invalid swap amount',
+        code: 'INVALID_AMOUNT'
+      };
+      onError?.(errorDetails);
       return;
     }
 
     // Ensure tokens have required XCM fields
     if (!inputToken.assetKey || !inputToken.networkChain) {
-      const error = new Error('Input token missing assetKey or networkChain');
       console.error('❌ Input token configuration error:', inputToken);
-      setSwapError(error);
-      if (onError) onError(error);
+      const errorDetails: ErrorDetails = {
+        message: 'Input token missing assetKey or networkChain',
+        code: 'INVALID_TOKEN_CONFIG'
+      };
+      onError?.(errorDetails);
       return;
     }
 
     if (!outputToken.assetKey || !outputToken.networkChain) {
-      const error = new Error('Output token missing assetKey or networkChain');
       console.error('❌ Output token configuration error:', outputToken);
-      setSwapError(error);
-      if (onError) onError(error);
+      const errorDetails: ErrorDetails = {
+        message: 'Output token missing assetKey or networkChain',
+        code: 'INVALID_TOKEN_CONFIG'
+      };
+      onError?.(errorDetails);
       return;
     }
 
     try {
-      // Reset state
-      // DON'T set isSwapping=true yet - wait for wallet signature
-      setSwapError(null);
-      setSwapStatus('Preparing swap transaction...');
-      setCurrentTransactionType(null);
-      setCurrentStep(0);
-      setTotalSteps(0);
-
-      // Show initial toast
-      SwapToasts.confirmAndSign();
+      // Reset signing flag and start timer
+      hasUserSignedRef.current = false;
+      startTimeRef.current = Date.now();
 
       console.log('🚀 Starting XCM swap execution:', {
         from: `${inputToken.symbol} (${inputToken.networkChain})`,
@@ -189,8 +237,8 @@ export function useXcmSwapExecution({
       //   ? exchangesToUse
       //   : ['HydrationDex'];
 
-      //TODO: hardcode HydrationDex for now
-      const exchanges: TExchangeChain[] = ['HydrationDex'];
+      //TODO: hardcode AssetHubPolkadotDex for now
+      const exchanges: TExchangeChain[] = ['AssetHubPolkadotDex'];
 
       console.log('📊 Selected exchanges:', exchanges);
 
@@ -212,15 +260,8 @@ export function useXcmSwapExecution({
 
       console.log('💰 Amount in smallest unit:', amountInSmallestUnit.toString());
 
-      // Step 4: Execute swap with RouterBuilder
-      setSwapStatus('Waiting for wallet signature...');
-      
-      // Note: Don't set isSwapping=true yet - wait until after wallet signs
-      // The onStatusChange callback will trigger when transaction actually starts
-
       // Configure RouterBuilder with local chopsticks endpoints for development
-      const USE_LOCAL_ENDPOINTS = process.env.NEXT_PUBLIC_USE_HTTPS === 'false' || 
-                                   process.env.NODE_ENV === 'development';
+      const USE_LOCAL_ENDPOINTS = process.env.NEXT_PUBLIC_USE_LOCAL_ENDPOINTS; 
       
       const routerConfig = USE_LOCAL_ENDPOINTS ? {
         development: true, // Enforce overrides for all chains used
@@ -261,7 +302,7 @@ export function useXcmSwapExecution({
         .recipientAddress(walletAddress) // Same as sender for now
         .signer(polkadotSigner)
         .onStatusChange((status: TRouterEvent) => {
-          // Update UI with current transaction status
+          // Log transaction status update
           console.log(`📡 Transaction status update:`, {
             type: status.type,
             step: status.currentStep !== undefined ? status.currentStep + 1 : '?',
@@ -270,49 +311,45 @@ export function useXcmSwapExecution({
             destinationChain: status.destinationChain,
           });
 
-          // Set isSwapping=true when transaction actually starts (after wallet signs)
-          // This happens when we get the first real transaction event
-          if (status.type !== 'SELECTING_EXCHANGE' && status.type !== 'COMPLETED') {
-            setIsSwapping(true);
-          }
-
-          setCurrentTransactionType(status.type);
-          setCurrentStep(status.currentStep || 0);
-          setTotalSteps(status.routerPlan?.length || 0);
-
-          // Update swap status message based on transaction type
-          if (status.type === 'SELECTING_EXCHANGE') {
-            setSwapStatus('Selecting best exchange...');
-          } else if (status.type === 'TRANSFER') {
-            setSwapStatus('Transferring assets to exchange...');
-          } else if (status.type === 'SWAP') {
-            setSwapStatus('Swapping on DEX...');
-          } else if (status.type === 'SWAP_AND_TRANSFER') {
-            setSwapStatus('Swapping and transferring back...');
-          } else if (status.type === 'COMPLETED') {
-            setSwapStatus('Swap completed successfully!');
+          // CRITICAL: Only notify execution start after user has signed
+          // SELECTING_EXCHANGE happens BEFORE wallet prompt
+          // Actual transaction types (TRANSFER, SWAP, etc.) happen AFTER signing
+          // So we use the first non-SELECTING_EXCHANGE event as our signal
+          if (!hasUserSignedRef.current && status.type !== 'SELECTING_EXCHANGE' && status.type !== 'COMPLETED') {
+            console.log('✅ Transaction signed by user! Execution started...');
+            hasUserSignedRef.current = true;
+            
+            // Notify parent that execution has started
+            onExecutionStart?.({
+              currentStep: status.currentStep || 0,
+              totalSteps: status.routerPlan?.length || 0,
+              transactionType: status.type,
+              statusMessage: formatStatusMessage(status.type)
+            });
+          } else if (hasUserSignedRef.current) {
+            // Update execution progress
+            onExecutionUpdate?.({
+              currentStep: status.currentStep,
+              totalSteps: status.routerPlan?.length,
+              transactionType: status.type,
+              statusMessage: formatStatusMessage(status.type)
+            });
           }
         })
         .build();
 
       // Success!
-      console.log('✅ Swap completed successfully!');
-      setSwapStatus('Swap completed!');
+      const duration = Date.now() - startTimeRef.current;
+      console.log(`✅ Swap completed successfully in ${duration}ms!`);
       
-      // Keep isSwapping=true briefly to show completion, then trigger onSuccess
-      setTimeout(() => {
-        setIsSwapping(false);
-        
-        // Dismiss any active toasts and show success
-        SwapToasts.dismiss(TOAST_IDS.SWAP_STATUS);
-        SwapToasts.swapSuccess({
-          inputAmount,
-          inputToken: inputToken.symbol,
-          outputToken: outputToken.symbol
-        });
-
-        if (onSuccess) onSuccess();
-      }, 1000); // Brief delay to show "completed" state
+      // Notify parent of success
+      onSuccess?.({
+        duration,
+        inputAmount,
+        inputToken: inputToken.symbol,
+        outputAmount: outputAmount || '?',
+        outputToken: outputToken.symbol
+      });
 
     } catch (error: unknown) {
       console.error('❌ XCM swap execution error:', error);
@@ -321,50 +358,47 @@ export function useXcmSwapExecution({
         ? error.message
         : 'Failed to execute swap';
 
-      const swapError = new Error(errorMessage);
-      setSwapError(swapError);
-      setSwapStatus(`Failed: ${errorMessage}`);
-      setIsSwapping(false);
+      // Determine if user cancelled
+      const userCancelled = errorMessage.includes('User rejected') || 
+                            errorMessage.includes('Cancelled') ||
+                            errorMessage.includes('User cancelled');
 
-      // Dismiss any active toasts and show error
-      SwapToasts.dismiss(TOAST_IDS.SWAP_STATUS);
-      
-      // User-friendly error messages
-      if (errorMessage.includes('User rejected') || errorMessage.includes('Cancelled')) {
-        SwapToasts.error('Transaction cancelled by user');
+      // Determine error code
+      let errorCode: string | undefined;
+      if (userCancelled) {
+        errorCode = 'USER_CANCELLED';
       } else if (errorMessage.includes('Insufficient')) {
-        SwapToasts.error('Insufficient balance for swap');
+        errorCode = 'INSUFFICIENT_BALANCE';
       } else if (errorMessage.includes('Network')) {
-        SwapToasts.error('Network error. Please try again.');
-      } else {
-        SwapToasts.error(`Swap failed: ${errorMessage}`);
+        errorCode = 'NETWORK_ERROR';
       }
 
-      if (onError) onError(swapError);
+      // Notify parent of error
+      onError?.({
+        message: errorMessage,
+        code: errorCode,
+        userCancelled
+      });
     }
   }, [
     inputToken,
     outputToken,
     inputAmount,
+    outputAmount,
     slippageTolerance,
     walletAddress,
     polkadotSigner,
     getOptimalExchanges,
     determineCurrency,
     getTAssetFromKey,
-    onSimulationComplete,
+    onExecutionStart,
+    onExecutionUpdate,
     onSuccess,
     onError,
   ]);
 
   return {
     executeSwap,
-    isSwapping,
-    swapStatus,
-    swapError,
-    currentTransactionType,
-    currentStep,
-    totalSteps,
   };
 }
 

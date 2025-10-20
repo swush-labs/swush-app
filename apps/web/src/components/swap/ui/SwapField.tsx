@@ -94,12 +94,16 @@ export function SwapField({
       {/* Content */}
       <div className="relative z-10">
         <div className="flex justify-between items-center mb-4 tall:mb-9">
-          {/* Empty left side - balance display removed */}
+          {/* Balance display */}
           <div className="flex items-center gap-2">
-            {/* <Wallet className="w-4 h-4 text-white/60" />
-            <span className="text-sm font-medium text-forest-300">
-              {isConnected ? `${displayBalance} ${token?.symbol || ''}` : ''}
-            </span> */}
+            {isConnected && token && balance && parseFloat(balance) > 0 ? (
+              <>
+                <Wallet className="w-4 h-4 text-white/60" />
+                <span className="text-sm font-medium text-forest-300">
+                  {balance} {token.symbol}
+                </span>
+              </>
+            ) : null}
           </div>
 
           {/* Percentage options for input (Pay) field - on the right side */}
