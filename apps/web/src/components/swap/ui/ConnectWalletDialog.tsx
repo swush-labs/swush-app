@@ -129,7 +129,7 @@ export default function ConnectWalletDialog({
       } else {
         setCurrentView("wallets");
       }
-    }, [hasConnectedWallets, accounts.length, forceWalletView, connectedWallets, selectedWalletName, selectedAccount]);
+    }, [hasConnectedWallets, accounts.length, forceWalletView, connectedWallets, selectedWalletName, selectedWalletPlatform, selectedAccount]);
 
     // Reset state when modal closes
     useEffect(() => {

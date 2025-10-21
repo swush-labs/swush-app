@@ -3,12 +3,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Remove static export for Vercel deployment
-  // output: 'export',
-  // basePath: process.env.NODE_ENV === 'production' ? '/swush-me-app' : '',
   
-  // Enable WebAssembly support for ParaSpell XCM Router & GalacticCouncil SDK
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
     // CRITICAL: Set the output target to support async/await for WASM
     config.output.environment = {
       ...config.output.environment,
@@ -31,6 +27,37 @@ const nextConfig = {
     // Optimize WASM module output
     if (!isServer) {
       config.output.webassemblyModuleFilename = 'static/wasm/[modulehash].wasm';
+      
+      // 🔥 NEW: Increase memory limit for WASM in development
+      if (dev) {
+        config.optimization = {
+          ...config.optimization,
+          // Prevent creating duplicate WASM instances
+          runtimeChunk: 'single',
+          splitChunks: {
+            chunks: 'all',
+            cacheGroups: {
+              // Group all WASM-related code together
+              wasm: {
+                test: /\.wasm$/,
+                name: 'wasm-modules',
+                priority: 20,
+                enforce: true,
+              },
+              polkadot: {
+                test: /[\\/]node_modules[\\/]@polkadot[\\/]/,
+                name: 'polkadot',
+                priority: 15,
+              },
+              paraspell: {
+                test: /[\\/]node_modules[\\/]@paraspell[\\/]/,
+                name: 'paraspell',
+                priority: 15,
+              },
+            },
+          },
+        };
+      }
     } else {
       config.output.webassemblyModuleFilename = './../static/wasm/[modulehash].wasm';
     }
@@ -41,6 +68,10 @@ const nextConfig = {
       fs: false,
       net: false,
       tls: false,
+      // 🔥 NEW: Prevent crypto polyfill issues
+      crypto: false,
+      stream: false,
+      path: false,
     };
 
     return config;
@@ -48,7 +79,7 @@ const nextConfig = {
 
   // Ensure modern JavaScript target
   experimental: {
-    esmExternals: 'loose', // Allow ESM packages
+    esmExternals: 'loose',
   },
 
   // Transpile specific packages that use WASM
@@ -62,6 +93,10 @@ const nextConfig = {
     '@galacticcouncil/sdk',
     '@paraspell/xcm-router',
     '@paraspell/sdk',
+    // 🔥 NEW: Add @polkadot packages
+    '@polkadot/wasm-crypto',
+    '@polkadot/wasm-crypto-init',
+    '@polkadot/wasm-crypto-wasm',
   ],
 };
 

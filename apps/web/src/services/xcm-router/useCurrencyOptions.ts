@@ -40,7 +40,7 @@ const useCurrencyOptions = (
     // Fallback to original behavior
     const assets = getSupportedAssetsFrom(from, exchange as TExchangeInput);
     return assets.map(asset => ({ ...asset, _network: from } as TAssetInfo & { _network: string }));
-  }, [from, exchangeNode, targetNetworks]);
+  }, [from, exchange, targetNetworks]);
 
   // Get the supported assets for the currencyTo field
   const supportedAssetsTo = useMemo(() => {
@@ -62,7 +62,7 @@ const useCurrencyOptions = (
     // Fallback to original behavior
     const assets = getSupportedAssetsTo(exchange as TExchangeInput, to);
     return assets.map(asset => ({ ...asset, _network: to } as TAssetInfo & { _network: string }));
-  }, [exchangeNode, to, targetNetworks]);
+  }, [exchange, to, targetNetworks]);
 
   // Create a map of the supported assets for the currencyFrom field
   const currencyFromMap = useMemo(

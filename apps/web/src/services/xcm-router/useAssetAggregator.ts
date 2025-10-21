@@ -144,7 +144,7 @@ const useAssetAggregator = (
     return Array.from(assetMap.values())
       .filter(asset => asset.supportedNetworks.length > 0) // Only include assets with validated networks
       .sort((a, b) => a.symbol.localeCompare(b.symbol));
-  }, [currencyFromMap]);
+  }, [currencyFromMap, registryMetadata.expectedAssetKeys]);
 
   // Create unified asset-network structure for TO assets (registry-first)
   const unifiedToAssets = useMemo(() => {
@@ -188,7 +188,7 @@ const useAssetAggregator = (
     return Array.from(assetMap.values())
       .filter(asset => asset.supportedNetworks.length > 0) // Only include assets with validated networks
       .sort((a, b) => a.symbol.localeCompare(b.symbol));
-  }, [currencyToMap]);
+  }, [currencyToMap, registryMetadata.expectedAssetKeys]);
 
   // Helper functions for RouterBuilder compatibility (memoized to prevent infinite loops)
   const getTAssetFromKey = useCallback((key: string, direction: 'from' | 'to'): TAssetInfo | undefined => {
@@ -207,7 +207,7 @@ const useAssetAggregator = (
     const networks = getNetworksForAsset(symbol, direction);
     const networkData = networks.find(n => n.network === network);
     return networkData ? networkData.assetKey : null;
-  }, [unifiedFromAssets, unifiedToAssets]);
+  }, [getNetworksForAsset]);
 
   // Function to get optimal exchanges array for RouterBuilder
   const getOptimalExchanges = useCallback((

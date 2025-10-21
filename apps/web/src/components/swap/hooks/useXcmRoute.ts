@@ -413,6 +413,7 @@ export function useXcmRoute({
     getTAssetFromKey,
     walletAddress,
     slippageTolerance,
+    skipPriceFetch,
   ]);
 
   /**
