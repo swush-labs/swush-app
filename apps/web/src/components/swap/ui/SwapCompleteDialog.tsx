@@ -166,8 +166,7 @@ export function SwapCompleteDialog({
                             </div>
 
                             <p className="text-white text-xl sm:text-3xl font-bold" >Swap Complete!</p>
-                            <p className="text-cloud text-sm sm:text-base font-normal" >{`${inputAmount} ${inputToken} → ${outputAmount} ${outputToken} in ${duration / 1000}s`}</p>
-
+                            <p className="text-cloud text-sm sm:text-base font-normal" >{`${inputAmount} ${inputToken} → ${outputAmount} ${outputToken}`}</p>
                             {
                                 isGiftRevealed ? <SwushPointCard points={60} className="mt-9 sm:mt-16" /> :
                                 <SecretGift className="mt-8" onMouseDown={() => {
