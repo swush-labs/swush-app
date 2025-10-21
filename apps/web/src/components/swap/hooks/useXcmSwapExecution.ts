@@ -15,7 +15,8 @@ import type { TokenInfo } from '@/components/swap/types';
 import { 
   TEST_RPC_POLKADOT, 
   TEST_RPC_ASSET_HUB, 
-  TEST_RPC_HYDRATION 
+  TEST_RPC_HYDRATION, 
+  TEST_RPC_BIFROST
 } from '@/services/constants';
 
 /**
@@ -164,8 +165,9 @@ export function useXcmSwapExecution({
   onError,
 }: UseXcmSwapExecutionProps): UseXcmSwapExecutionReturn {
 
-  // Use ref to track if user has signed (avoids stale closure issue)
-  const hasUserSignedRef = useRef<boolean>(false);
+  // Use ref to track if execution has started (avoids stale closure issue)
+  // This prevents showing "execution started" dialog before user signs the first transaction
+  const hasExecutionStartedRef = useRef<boolean>(false);
   const startTimeRef = useRef<number>(0);
 
   /**
@@ -213,8 +215,8 @@ export function useXcmSwapExecution({
     }
 
     try {
-      // Reset signing flag and start timer
-      hasUserSignedRef.current = false;
+      // Reset execution flag and start timer
+      hasExecutionStartedRef.current = false;
       startTimeRef.current = Date.now();
 
       console.log('🚀 Starting XCM swap execution:', {
@@ -237,9 +239,8 @@ export function useXcmSwapExecution({
       //   ? exchangesToUse
       //   : ['HydrationDex'];
 
-      //TODO: hardcode AssetHubPolkadotDex for now
-      const exchanges: TExchangeChain[] = ['AssetHubPolkadotDex'];
-
+      //TODO: hardcode HydrationDex for now
+      const exchanges: TExchangeChain = 'HydrationDex';
       console.log('📊 Selected exchanges:', exchanges);
 
       // Step 2: Get TAssetInfo for both tokens
@@ -252,25 +253,21 @@ export function useXcmSwapExecution({
         );
       }
 
-      // Step 3: Convert amount to smallest unit (BigInt)
-      const amountInSmallestUnit = toSmallestUnit(
-        inputAmount,
-        inputToken.decimals
-      );
-
-      console.log('💰 Amount in smallest unit:', amountInSmallestUnit.toString());
-
       // Configure RouterBuilder with local chopsticks endpoints for development
       const USE_LOCAL_ENDPOINTS = process.env.NEXT_PUBLIC_USE_LOCAL_ENDPOINTS; 
       
+      // IMPORTANT: Always provide config to explicitly control decimal handling
       const routerConfig = USE_LOCAL_ENDPOINTS ? {
         development: true, // Enforce overrides for all chains used
-        abstractDecimals: false, // We handle decimals manually with toSmallestUnit
+        abstractDecimals: true, // Let ParaSpell handle decimal conversion (accepts string amounts like "4.344")
         apiOverrides: {
           AssetHubPolkadot: TEST_RPC_ASSET_HUB,  // ws://localhost:3421
           Hydration: TEST_RPC_HYDRATION,         // ws://localhost:3422
+          BifrostPolkadot: TEST_RPC_BIFROST     // ws://localhost:3423
         }
-      } : undefined;
+      } : {
+        abstractDecimals: true, // Let ParaSpell handle decimal conversion (accepts string amounts like "4.344")
+      };
 
       console.log('🔧 RouterBuilder config:', {
         useLocalEndpoints: USE_LOCAL_ENDPOINTS,
@@ -284,7 +281,7 @@ export function useXcmSwapExecution({
         exchange: exchanges,
         currencyFrom: determineCurrency(fromAsset),
         currencyTo: determineCurrency(toAsset),
-        amount: amountInSmallestUnit,
+        amount: inputAmount, // Pass as string, not BigInt
         slippagePct: slippageTolerance.toString(),
         senderAddress: walletAddress,
         recipientAddress: walletAddress,
@@ -296,7 +293,7 @@ export function useXcmSwapExecution({
         .exchange(exchanges as any) // Type assertion needed due to ParaSpell's strict tuple type
         .currencyFrom(determineCurrency(fromAsset))
         .currencyTo(determineCurrency(toAsset))
-        .amount(amountInSmallestUnit)
+        .amount(inputAmount) // Pass string amount, let ParaSpell handle conversion
         .slippagePct(slippageTolerance.toString())
         .senderAddress(walletAddress)
         .recipientAddress(walletAddress) // Same as sender for now
@@ -311,13 +308,29 @@ export function useXcmSwapExecution({
             destinationChain: status.destinationChain,
           });
 
+          // Handle COMPLETED status - trigger success callback
+          if (status.type === 'COMPLETED') {
+            const duration = Date.now() - startTimeRef.current;
+            console.log(`✅ Swap completed successfully in ${duration}ms!`);
+            
+            // Notify parent of success
+            onSuccess?.({
+              duration,
+              inputAmount,
+              inputToken: inputToken.symbol,
+              outputAmount: outputAmount || '?',
+              outputToken: outputToken.symbol
+            });
+            return; // Exit early, no need to process further
+          }
+
           // CRITICAL: Only notify execution start after user has signed
           // SELECTING_EXCHANGE happens BEFORE wallet prompt
           // Actual transaction types (TRANSFER, SWAP, etc.) happen AFTER signing
           // So we use the first non-SELECTING_EXCHANGE event as our signal
-          if (!hasUserSignedRef.current && status.type !== 'SELECTING_EXCHANGE' && status.type !== 'COMPLETED') {
+          if (!hasExecutionStartedRef.current && status.type !== 'SELECTING_EXCHANGE') {
             console.log('✅ Transaction signed by user! Execution started...');
-            hasUserSignedRef.current = true;
+            hasExecutionStartedRef.current = true;
             
             // Notify parent that execution has started
             onExecutionStart?.({
@@ -326,7 +339,7 @@ export function useXcmSwapExecution({
               transactionType: status.type,
               statusMessage: formatStatusMessage(status.type)
             });
-          } else if (hasUserSignedRef.current) {
+          } else if (hasExecutionStartedRef.current) {
             // Update execution progress
             onExecutionUpdate?.({
               currentStep: status.currentStep,
@@ -338,18 +351,8 @@ export function useXcmSwapExecution({
         })
         .build();
 
-      // Success!
-      const duration = Date.now() - startTimeRef.current;
-      console.log(`✅ Swap completed successfully in ${duration}ms!`);
-      
-      // Notify parent of success
-      onSuccess?.({
-        duration,
-        inputAmount,
-        inputToken: inputToken.symbol,
-        outputAmount: outputAmount || '?',
-        outputToken: outputToken.symbol
-      });
+      // Note: Success is now handled in onStatusChange COMPLETED event
+      // This ensures proper sequencing and avoids race conditions
 
     } catch (error: unknown) {
       console.error('❌ XCM swap execution error:', error);
@@ -366,7 +369,14 @@ export function useXcmSwapExecution({
       // Determine error code
       let errorCode: string | undefined;
       if (userCancelled) {
-        errorCode = 'USER_CANCELLED';
+        // Provide better context based on whether execution had started
+        if (!hasExecutionStartedRef.current) {
+          errorCode = 'USER_CANCELLED_BEFORE_START';
+          console.log('User cancelled before transaction execution started');
+        } else {
+          errorCode = 'USER_CANCELLED';
+          console.log('User cancelled during transaction execution');
+        }
       } else if (errorMessage.includes('Insufficient')) {
         errorCode = 'INSUFFICIENT_BALANCE';
       } else if (errorMessage.includes('Network')) {

@@ -28,9 +28,9 @@ import { ROUTE_FETCH_TIMEOUT } from '@/lib/const';
  * @returns Amount in smallest unit as bigint
  */
 function toSmallestUnit(amount: string, decimals: number): bigint {
- 
+
   const parsed = parseFloat(amount);
- 
+
   if (parsed > Number.MAX_SAFE_INTEGER) {
     throw new Error('Amount too large');
   }
@@ -168,13 +168,13 @@ export function useXcmRoute({
       setOutputAmount(currentInputAmount); // Mock output = input
       setRouteDex('HydrationDex (mock)');
       setEstimatedFees('0.001 DOT (mock)');
-      setRouteState({ 
-        isLoading: false, 
-        error: null, 
-        data: { 
+      setRouteState({
+        isLoading: false,
+        error: null,
+        data: {
           amountOut: BigInt(Math.floor(parseFloat(currentInputAmount) * 1e10)),
-          exchange: 'HydrationDex' 
-        } 
+          exchange: 'HydrationDex'
+        }
       });
       setIsLoadingQuote(false);
       setIsLoadingFees(false);
@@ -240,12 +240,11 @@ export function useXcmRoute({
       );
 
       // Use optimal exchanges or fallback to HydrationDex
-      // const exchangesToUse: TExchangeChain[] = optimalExchanges.length > 0
-      //   ? optimalExchanges
-      //   : ['HydrationDex'];
+      const exchangesToUse: TExchangeChain[] = optimalExchanges.length > 0
+        ? optimalExchanges
+        : ['HydrationDex'];
 
-      //TODO: hardcode HydrationDex for now
-      const exchangesToUse: TExchangeChain[] = ['HydrationDex'];
+      // const exchangesToUse: TExchangeChain = 'HydrationDex';
 
       // Step 2: Get TAssetInfo for both tokens
       const fromAsset = getTAssetFromKey(inputToken.assetKey, 'from');
@@ -257,46 +256,42 @@ export function useXcmRoute({
         );
       }
 
-      // Step 3: Convert amount to smallest unit (BigInt)
-      const amountInSmallestUnit = toSmallestUnit(
-        currentInputAmount,
-        inputToken.decimals
-      );
-
       console.log('🔄 Fetching XCM quote and fees in parallel:', {
         from: `${inputToken.symbol} (${inputToken.networkChain})`,
         to: `${outputToken.symbol} (${outputToken.networkChain})`,
         amountDecimal: currentInputAmount,
-        amountSmallest: amountInSmallestUnit.toString(),
+        amountToUse: currentInputAmount,
         exchanges: exchangesToUse,
       });
 
       // Step 4: Fetch quote (always) and fees (only if wallet connected)
       //TODO: fix chain type compatibility
-      
+
       // Always fetch quote
-      const quotePromise = RouterBuilder()
+      // Pass config to explicitly enable abstractDecimals for string amounts
+      const quotePromise = RouterBuilder({ abstractDecimals: true })
         .from(inputToken.networkChain as any) // Type assertion for chain compatibility
         .to(outputToken.networkChain as any) // Type assertion for chain compatibility
         .exchange(exchangesToUse as any) // Type assertion needed due to ParaSpell's strict tuple type
         .currencyFrom(determineCurrency(fromAsset))
         .currencyTo(determineCurrency(toAsset))
-        .amount(amountInSmallestUnit)
+        .amount(currentInputAmount) // Use string amount
         .getBestAmountOut();
 
       // Only fetch fees if wallet is connected
+      // Pass config to explicitly enable abstractDecimals for string amounts
       const feesPromise = walletAddress
-        ? RouterBuilder()
-            .from(inputToken.networkChain as any) // Type assertion for chain compatibility
-            .to(outputToken.networkChain as any) // Type assertion for chain compatibility
-            .exchange(exchangesToUse as any) // Type assertion needed due to ParaSpell's strict tuple type
-            .currencyFrom(determineCurrency(fromAsset))
-            .currencyTo(determineCurrency(toAsset))
-            .amount(amountInSmallestUnit)
-            .senderAddress(walletAddress)
-            .recipientAddress(walletAddress)
-            .slippagePct(slippageTolerance.toString())
-            .getXcmFees()
+        ? RouterBuilder({ abstractDecimals: true })
+          .from(inputToken.networkChain as any) // Type assertion for chain compatibility
+          .to(outputToken.networkChain as any) // Type assertion for chain compatibility
+          .exchange(exchangesToUse as any) // Type assertion needed due to ParaSpell's strict tuple type
+          .currencyFrom(determineCurrency(fromAsset))
+          .currencyTo(determineCurrency(toAsset))
+          .amount(currentInputAmount) // Use string amount
+          .senderAddress(walletAddress)
+          .recipientAddress(walletAddress)
+          .slippagePct(slippageTolerance.toString())
+          .getXcmFees()
         : Promise.reject(new Error('No wallet connected'));
 
       const [quoteSettled, feesSettled] = await Promise.allSettled([
@@ -368,7 +363,7 @@ export function useXcmRoute({
           setEstimatedFees('—');
           setFeeBreakdown(undefined);
           setIsLoadingFees(false);
-          
+
           // Optional: Could show a warning to user that fees couldn't be calculated
           // but swap quote is still valid
         }

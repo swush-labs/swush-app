@@ -9,11 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@galacticcouncil/api-augment": "^0.8.1",
     "@kheopskit/core": "^0.0.21",
     "@kheopskit/react": "^0.0.25",
-    "@paraspell/sdk": "^11.10.0",
-    "@paraspell/xcm-router": "^11.10.0",
+    "@paraspell/sdk": "^11.12.1",
+    "@paraspell/xcm-router": "^11.12.1",
     "@polkadot-labs/hdkd": "^0.0.10",
+    "@polkadot/react-identicon": "^3.15.3",
     "@radix-ui/react-collapsible": "^1.1.1",
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-label": "^2.1.0",
@@ -42,9 +44,7 @@
     "react-hot-toast": "^2.4.1",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
-    "wagmi": "^2.17.5",
-    "@polkadot/react-identicon": "^3.15.3"
-
+    "wagmi": "^2.17.5"
   },
   "devDependencies": {
     "@shadcn/ui": "^0.0.4",
