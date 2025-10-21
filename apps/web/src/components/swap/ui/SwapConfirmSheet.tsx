@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { AlertCircle, ArrowDown, CheckCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBalance } from "../utils";
-import { FeeBreakdown } from "../hooks/types";
+import type { FeeSummary } from "@/services/xcm-router/feeCalculator";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -52,7 +52,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
 export interface SimulationResult {
   success: boolean;
   estimatedFee: string;
-  feeBreakdown?: FeeBreakdown;
+  feeBreakdown?: FeeSummary;
   willSucceed: boolean;
   error?: string;
 }
