@@ -9,7 +9,6 @@
   "scripts": {
     "build": "cd apps/web && pnpm build",
     "dev": "cd apps/web && pnpm dev",
-    "dev:api": "pnpm --filter @swush/api dev",
     "dev:ui": "pnpm --filter @swush/web dev",
     "dev:with-chopsticks": "cd apps/web && pnpm run dev:all",
     "dev:all": "pnpm run dev & pnpm start-chopsticks",
