@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { Zap } from "lucide-react";
@@ -133,10 +133,10 @@ export function SwapCompleteDialog({
                 {
                     (isSwappingInProgress || swapProgress < 100) && (
                         <div className="w-full h-full flex flex-col items-center justify-center gap-y-3 py-[78px]" >
-                            <div className="flex items-center gap-x-2">
+                            <DialogTitle className="flex items-center gap-x-2">
                                 <Zap className="size-8 text-white" />
-                                <p className="text-lg sm:text-xl font-bold text-white" >Swapping in Progress…</p>
-                            </div>
+                                <span className="text-lg sm:text-xl font-bold text-white">Swapping in Progress…</span>
+                            </DialogTitle>
 
                             {/* Show multi-step progress if available */}
                             {currentStep !== undefined && totalSteps !== undefined && totalSteps > 1 && (
@@ -165,7 +165,7 @@ export function SwapCompleteDialog({
                                 <Image src="/icons/check_circle.svg" alt="check-icon" width={40} height={40} />
                             </div>
 
-                            <p className="text-white text-xl sm:text-3xl font-bold" >Swap Complete!</p>
+                            <DialogTitle className="text-white text-xl sm:text-3xl font-bold">Swap Complete!</DialogTitle>
                             <p className="text-cloud text-sm sm:text-base font-normal" >{`${inputAmount} ${inputToken} → ${outputAmount} ${outputToken}`}</p>
                             {
                                 isGiftRevealed ? <SwushPointCard points={60} className="mt-9 sm:mt-16" /> :
