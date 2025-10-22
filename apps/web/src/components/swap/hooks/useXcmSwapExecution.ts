@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { RouterBuilder } from '@paraspell/xcm-router';
 import type { TAssetInfo, TChain } from '@paraspell/sdk';
-import type { 
+import type {
   TExchangeChain,
   TRouterEvent,
   TRouterEventType
@@ -12,10 +12,10 @@ import type { PolkadotSigner } from 'polkadot-api';
 import type { TokenInfo } from '@/components/swap/types';
 
 // Import chopsticks endpoints for local development
-import { 
-  TEST_RPC_POLKADOT, 
-  TEST_RPC_ASSET_HUB, 
-  TEST_RPC_HYDRATION, 
+import {
+  TEST_RPC_POLKADOT,
+  TEST_RPC_ASSET_HUB,
+  TEST_RPC_HYDRATION,
   TEST_RPC_BIFROST
 } from '@/services/constants';
 
@@ -25,7 +25,7 @@ import {
  */
 function toSmallestUnit(amount: string, decimals: number): bigint {
   const parsed = parseFloat(amount);
-  
+
   if (parsed > Number.MAX_SAFE_INTEGER) {
     throw new Error('Amount too large');
   }
@@ -81,7 +81,7 @@ interface UseXcmSwapExecutionProps {
   slippageTolerance: number;
   walletAddress: string;
   polkadotSigner: PolkadotSigner | undefined;
-  
+
   // Helpers from useXcmTokens
   getOptimalExchanges: (
     fromKey: string,
@@ -89,14 +89,14 @@ interface UseXcmSwapExecutionProps {
     fromChain: string,
     toChain: string
   ) => TExchangeChain[];
-  
+
   determineCurrency: (asset: TAssetInfo) => any;
-  
+
   getTAssetFromKey: (
     key: string,
     direction: 'from' | 'to'
   ) => TAssetInfo | undefined;
-  
+
   // State management callbacks (replaces internal state)
   onExecutionStart?: (execution: ExecutionDetails) => void;
   onExecutionUpdate?: (execution: Partial<ExecutionDetails>) => void;
@@ -116,7 +116,7 @@ interface UseXcmSwapExecutionReturn {
  */
 const formatStatusMessage = (type: TRouterEventType | null): string => {
   if (!type) return 'Processing...';
-  
+
   switch (type) {
     case 'SELECTING_EXCHANGE':
       return 'Selecting best exchange...';
@@ -139,11 +139,6 @@ const formatStatusMessage = (type: TRouterEventType | null): string => {
  * Refactored to be stateless - all state management is handled by parent via callbacks.
  * This hook is purely responsible for executing the swap transaction.
  * 
- * Features:
- * - Real cross-chain swap execution via RouterBuilder.buildAndSend()
- * - Kheopskit wallet signer integration
- * - Multi-step transaction progress tracking via callbacks
- * - Comprehensive error handling
  * 
  * @param props - Hook configuration including callbacks for state updates
  * @returns executeSwap function to trigger the swap
@@ -254,9 +249,8 @@ export function useXcmSwapExecution({
       }
 
       // Configure RouterBuilder with local chopsticks endpoints for development
-      const USE_LOCAL_ENDPOINTS = process.env.NEXT_PUBLIC_USE_LOCAL_ENDPOINTS; 
-      
-      // IMPORTANT: Always provide config to explicitly control decimal handling
+      const USE_LOCAL_ENDPOINTS = process.env.NEXT_PUBLIC_USE_LOCAL_ENDPOINTS;
+
       const routerConfig = USE_LOCAL_ENDPOINTS ? {
         development: true, // Enforce overrides for all chains used
         abstractDecimals: true, // Let ParaSpell handle decimal conversion (accepts string amounts like "4.344")
@@ -266,7 +260,7 @@ export function useXcmSwapExecution({
           BifrostPolkadot: TEST_RPC_BIFROST     // ws://localhost:3423
         }
       } : {
-        abstractDecimals: true, // Let ParaSpell handle decimal conversion (accepts string amounts like "4.344")
+        abstractDecimals: true,
       };
 
       console.log('🔧 RouterBuilder config:', {
@@ -286,11 +280,11 @@ export function useXcmSwapExecution({
         senderAddress: walletAddress,
         recipientAddress: walletAddress,
       });
-      
+
       await RouterBuilder(routerConfig)
-        .from(inputToken.networkChain as any) // Type assertion for chain compatibility
-        .to(outputToken.networkChain as any) // Type assertion for chain compatibility
-        .exchange(exchanges as any) // Type assertion needed due to ParaSpell's strict tuple type
+        .from(inputToken.networkChain as any)
+        .to(outputToken.networkChain as any)
+        .exchange(exchanges as any)
         .currencyFrom(determineCurrency(fromAsset))
         .currencyTo(determineCurrency(toAsset))
         .amount(inputAmount) // Pass string amount, let ParaSpell handle conversion
@@ -312,7 +306,7 @@ export function useXcmSwapExecution({
           if (status.type === 'COMPLETED') {
             const duration = Date.now() - startTimeRef.current;
             console.log(`✅ Swap completed successfully in ${duration}ms!`);
-            
+
             // Notify parent of success
             onSuccess?.({
               duration,
@@ -325,13 +319,12 @@ export function useXcmSwapExecution({
           }
 
           // CRITICAL: Only notify execution start after user has signed
-          // SELECTING_EXCHANGE happens BEFORE wallet prompt
-          // Actual transaction types (TRANSFER, SWAP, etc.) happen AFTER signing
+          // SELECTING_EXCHANGE happens BEFORE wallet prompt, actual transaction types (TRANSFER, SWAP, etc.) happen AFTER signing
           // So we use the first non-SELECTING_EXCHANGE event as our signal
           if (!hasExecutionStartedRef.current && status.type !== 'SELECTING_EXCHANGE') {
             console.log('✅ Transaction signed by user! Execution started...');
             hasExecutionStartedRef.current = true;
-            
+
             // Notify parent that execution has started
             onExecutionStart?.({
               currentStep: status.currentStep || 0,
@@ -351,8 +344,6 @@ export function useXcmSwapExecution({
         })
         .build();
 
-      // Note: Success is now handled in onStatusChange COMPLETED event
-      // This ensures proper sequencing and avoids race conditions
 
     } catch (error: unknown) {
       console.error('❌ XCM swap execution error:', error);
@@ -362,9 +353,9 @@ export function useXcmSwapExecution({
         : 'Failed to execute swap';
 
       // Determine if user cancelled
-      const userCancelled = errorMessage.includes('User rejected') || 
-                            errorMessage.includes('Cancelled') ||
-                            errorMessage.includes('User cancelled');
+      const userCancelled = errorMessage.includes('User rejected') ||
+        errorMessage.includes('Cancelled') ||
+        errorMessage.includes('User cancelled');
 
       // Determine error code
       let errorCode: string | undefined;
