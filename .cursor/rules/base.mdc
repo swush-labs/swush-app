@@ -4,11 +4,9 @@ alwaysApply: true
 
 This is a Next.js project with Polkadot API (PAPI) with web package at apps\web.
 
-For any major code changes, follow the @ui.mdc rules to ensure best practices are maintained.
-
-Priority Instructions:
-  - Avoid use of any and use the proper type.
-  - No need to create a markdown document unless explicitly asked.
+- No need to create any kind of summary document or report unless explicitly asked.
+- For any major code changes, follow the @ui.mdc rules to ensure best practices are maintained.
+- Avoid use of any and use the proper type.
 
 When implementing changes or fixes, always 
 - check if the server is already running on the default port (3000) on our Windows OS using the command `netstat -ano | findstr :3000`

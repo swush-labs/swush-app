@@ -19,6 +19,10 @@ import {
   TEST_RPC_BIFROST
 } from '@/services/constants';
 
+// XCM Tracking
+import { useXcmTracking } from './useXcmTracking';
+import type { XcmDeliveryStatus, TrackedXcmMessage } from '@/services/xcm-tracker';
+
 /**
  * Convert user input (decimal string) to smallest unit (bigint)
  * Uses string manipulation to preserve precision for large decimals
@@ -48,6 +52,8 @@ export interface ExecutionDetails {
   totalSteps: number;
   transactionType: TRouterEventType | null;
   statusMessage: string;
+  xcmDeliveryStatus?: XcmDeliveryStatus;
+  xcmStatusMessage?: string;
 }
 
 /**
@@ -102,6 +108,10 @@ interface UseXcmSwapExecutionProps {
   onExecutionUpdate?: (execution: Partial<ExecutionDetails>) => void;
   onSuccess?: (success: SuccessDetails) => void;
   onError?: (error: ErrorDetails) => void;
+  
+  // XCM Tracking (optional)
+  enableXcmTracking?: boolean;
+  ocelloidsApiKey?: string;
 }
 
 /**
@@ -158,12 +168,51 @@ export function useXcmSwapExecution({
   onExecutionUpdate,
   onSuccess,
   onError,
+  enableXcmTracking = false,
+  ocelloidsApiKey,
 }: UseXcmSwapExecutionProps): UseXcmSwapExecutionReturn {
 
   // Use ref to track if execution has started (avoids stale closure issue)
   // This prevents showing "execution started" dialog before user signs the first transaction
   const hasExecutionStartedRef = useRef<boolean>(false);
   const startTimeRef = useRef<number>(0);
+
+  // XCM Tracking
+  const {
+    deliveryStatus: xcmDeliveryStatus,
+    statusMessage: xcmStatusMessage,
+    trackRoute,
+    reset: resetXcmTracking,
+    isAllDelivered: xcmAllDelivered,
+  } = useXcmTracking({
+    apiKey: ocelloidsApiKey,
+    enabled: enableXcmTracking,
+    useWildcards: process.env.NEXT_PUBLIC_XCM_TRACKING_USE_WILDCARDS === 'true', // Dev flag
+    onStatusChange: (status, messages) => {
+      console.log('🌐 XCM Delivery Status:', status);
+      console.log('📊 Tracked Messages:', messages);
+      
+      // Update execution details with XCM status
+      onExecutionUpdate?.({
+        xcmDeliveryStatus: status,
+        xcmStatusMessage: xcmStatusMessage,
+      });
+
+      // If all XCM messages delivered, trigger success
+      if (status === 'delivered' && hasExecutionStartedRef.current) {
+        const duration = Date.now() - startTimeRef.current;
+        console.log(`✅ All XCM messages delivered! Total time: ${duration}ms`);
+        
+        onSuccess?.({
+          duration,
+          inputAmount,
+          inputToken: inputToken?.symbol || '?',
+          outputAmount: outputAmount || '?',
+          outputToken: outputToken?.symbol || '?'
+        });
+      }
+    },
+  });
 
   /**
    * Execute the swap using ParaSpell RouterBuilder
@@ -213,6 +262,9 @@ export function useXcmSwapExecution({
       // Reset execution flag and start timer
       hasExecutionStartedRef.current = false;
       startTimeRef.current = Date.now();
+      
+      // Reset XCM tracking
+      resetXcmTracking();
 
       console.log('🚀 Starting XCM swap execution:', {
         from: `${inputToken.symbol} (${inputToken.networkChain})`,
@@ -302,19 +354,37 @@ export function useXcmSwapExecution({
             destinationChain: status.destinationChain,
           });
 
-          // Handle COMPLETED status - trigger success callback
+          // Handle COMPLETED status
           if (status.type === 'COMPLETED') {
-            const duration = Date.now() - startTimeRef.current;
-            console.log(`✅ Swap completed successfully in ${duration}ms!`);
+            console.log(`✅ Router execution completed!`);
 
-            // Notify parent of success
-            onSuccess?.({
-              duration,
-              inputAmount,
-              inputToken: inputToken.symbol,
-              outputAmount: outputAmount || '?',
-              outputToken: outputToken.symbol
-            });
+            // If XCM tracking is enabled, start tracking the route
+            if (enableXcmTracking && inputToken.networkChain && outputToken.networkChain) {
+              console.log('🔭 Starting XCM delivery tracking...');
+              trackRoute(
+                inputToken.networkChain,
+                outputToken.networkChain,
+                walletAddress
+              );
+              
+              // Update status to show XCM delivery pending
+              onExecutionUpdate?.({
+                xcmDeliveryStatus: 'in-flight',
+                xcmStatusMessage: 'Delivering assets cross-chain...',
+              });
+            } else {
+              // No XCM tracking, trigger success immediately
+              const duration = Date.now() - startTimeRef.current;
+              console.log(`✅ Swap completed successfully in ${duration}ms!`);
+
+              onSuccess?.({
+                duration,
+                inputAmount,
+                inputToken: inputToken.symbol,
+                outputAmount: outputAmount || '?',
+                outputToken: outputToken.symbol
+              });
+            }
             return; // Exit early, no need to process further
           }
 

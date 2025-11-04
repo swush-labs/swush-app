@@ -157,7 +157,10 @@ export function SwapContainer() {
         resetRoute();
         resetSwapFlow();
       }, 5000);
-    }
+    },
+    // XCM Tracking (optional - disable for Chopsticks testing)
+    enableXcmTracking: process.env.NEXT_PUBLIC_ENABLE_XCM_TRACKING === 'true',
+    ocelloidsApiKey: process.env.NEXT_PUBLIC_OCELLOIDS_API_KEY,
   });
 
   // Handle swap button click - show confirmation sheet
@@ -373,6 +376,8 @@ export function SwapContainer() {
         currentStep={flowState.execution?.currentStep}
         totalSteps={flowState.execution?.totalSteps}
         currentTransactionType={flowState.execution?.transactionType}
+        xcmDeliveryStatus={flowState.execution?.xcmDeliveryStatus}
+        xcmStatusMessage={flowState.execution?.xcmStatusMessage}
       />
 
       <ConnectWalletDialog isOpen={isConnectWalletOpen} onOpenChange={setIsConnectWalletOpen} />
