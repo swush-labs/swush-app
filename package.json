@@ -26,6 +26,7 @@
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "test:xcm-tracking": "tsx scripts/test-xcm-tracking.ts",
+    "test:xcm-ui-flow": "tsx scripts/test-xcm-ui-flow.ts",
     "clean": "pnpm -r clean",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "start-chopsticks": "npx @acala-network/chopsticks xcm -p packages/chopsticks/config/polkadot_asset_hub.yml -p packages/chopsticks/config/hydration.yml",

@@ -15,9 +15,11 @@ import type {
 export class XcmMessageTracker {
   private messages: Map<string, TrackedXcmMessage> = new Map();
   private onStatusChange?: (status: XcmDeliveryStatus, messages: TrackedXcmMessage[]) => void;
+  private trackingStartTime: number;
 
   constructor(onStatusChange?: (status: XcmDeliveryStatus, messages: TrackedXcmMessage[]) => void) {
     this.onStatusChange = onStatusChange;
+    this.trackingStartTime = Date.now();
   }
 
   /**
@@ -30,6 +32,16 @@ export class XcmMessageTracker {
       || (event.payload.origin?.messageHash as string | undefined)
       || `${event.payload.origin?.chainId}-${event.payload.origin?.blockNumber}-${event.payload.origin?.timestamp}`
       || 'unknown';
+    
+    // Ignore events from before tracking started (prevents old/timeout messages from interfering)
+    const eventTimestamp = event.payload.origin?.timestamp || 0;
+    if (eventTimestamp > 0 && eventTimestamp < this.trackingStartTime) {
+      console.log(`⏭️  Ignoring old message (before tracking started): ${messageId.substring(0, 12)}...`, {
+        eventTime: new Date(eventTimestamp).toISOString(),
+        trackingStarted: new Date(this.trackingStartTime).toISOString(),
+      });
+      return;
+    }
     
     console.log(`🔍 Processing XCM event for message: ${messageId.substring(0, 12)}...`);
     
@@ -208,10 +220,11 @@ export class XcmMessageTracker {
   }
 
   /**
-   * Reset tracker (clear all messages)
+   * Reset tracker (clear all messages and reset tracking start time)
    */
   reset(): void {
     this.messages.clear();
+    this.trackingStartTime = Date.now(); // Reset to current time for next tracking session
     this.notifyStatusChange();
   }
 

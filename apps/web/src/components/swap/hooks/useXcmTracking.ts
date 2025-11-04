@@ -163,6 +163,10 @@ export function useXcmTracking({
         subscriptionIdRef.current = null;
       }
 
+      // Reset tracker for new tracking session (clears old messages and resets timestamp)
+      trackerRef.current?.reset();
+      console.log('🔄 Tracker reset for new tracking session');
+
       console.log('🔭 Starting XCM tracking:', {
         origin: useWildcards ? '*' : originChain,
         destination: useWildcards ? '*' : destinationChain,

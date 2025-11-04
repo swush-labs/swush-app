@@ -182,6 +182,7 @@ export function useXcmSwapExecution({
     deliveryStatus: xcmDeliveryStatus,
     statusMessage: xcmStatusMessage,
     trackRoute,
+    stopTracking,
     reset: resetXcmTracking,
     isAllDelivered: xcmAllDelivered,
   } = useXcmTracking({
@@ -198,10 +199,15 @@ export function useXcmSwapExecution({
         xcmStatusMessage: xcmStatusMessage,
       });
 
-      // If all XCM messages delivered, trigger success
+      // If all XCM messages delivered, trigger success and cleanup
       if (status === 'delivered' && hasExecutionStartedRef.current) {
         const duration = Date.now() - startTimeRef.current;
         console.log(`✅ All XCM messages delivered! Total time: ${duration}ms`);
+        
+        // Stop tracking and cleanup (prevents old messages from interfering)
+        stopTracking();
+        resetXcmTracking();
+        console.log('🛑 XCM tracking stopped and reset');
         
         onSuccess?.({
           duration,
@@ -210,6 +216,16 @@ export function useXcmSwapExecution({
           outputAmount: outputAmount || '?',
           outputToken: outputToken?.symbol || '?'
         });
+      }
+      
+      // If XCM delivery failed, cleanup
+      if (status === 'failed' && hasExecutionStartedRef.current) {
+        console.log('❌ XCM delivery failed, stopping tracking');
+        
+        // Stop tracking and cleanup
+        stopTracking();
+        resetXcmTracking();
+        console.log('🛑 XCM tracking stopped and reset');
       }
     },
   });
