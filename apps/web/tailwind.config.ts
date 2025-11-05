@@ -37,12 +37,13 @@ const config: Config = {
   				'900': '#0F2922'
   			},
 			"baltic-sea": "#242C32",
+			"black-eel": "#434343",
   			blackPearl: '#01151D',
-  			darkSlateGray: '#1F3041',
+  			"dark-slate-gray": '#1F3041',
   			bluishCyan: '#022029',
 			"blueberry-blue": "#0147B4",
-  			blueWhale: '#003843',
-  			burningOrange: '#FB6D3F',
+  			"blue-whale": '#003843',
+  			"burning-orange": '#FB6D3F',
   			cadmiumOrange: '#FF7F1D',
 			cloud: "#C8C5C5",
   			creole: '#1C0902',
@@ -56,6 +57,7 @@ const config: Config = {
 			tune: "#303746",
   			woodsmoke: '#0A0B0D',
   			zinwallditeBrown: '#2F1005',
+			"black-wallet-fill": '#001219',
   			card: {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'

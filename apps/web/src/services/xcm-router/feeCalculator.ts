@@ -38,18 +38,37 @@ export const safeStringify = (obj: any): string => {
 /**
  * Calculates total fees from RouterBuilder fee result
  * Aggregates fees by currency and converts to human-readable format
+ * 
+ * @param feeResult - Fee result from ParaSpell XCM Router (includes asset decimals)
  */
 export const calculateTotalFees = (feeResult: TRouterXcmFeeResult): FeeSummary => {
   const feeMap = new Map<string, { raw: bigint; decimals: number }>();
   
+  /**
+   * Get decimals from asset info - throws if not available
+   * This ensures we never use incorrect decimal values
+   */
+  const getDecimals = (currency: string, assetDecimals?: number): number => {
+    // Use decimals from fee result asset (should always be present from ParaSpell)
+    if (assetDecimals !== undefined && assetDecimals > 0) {
+      return assetDecimals;
+    }
+    
+    throw new Error(
+      `Missing decimals for currency ${currency}. ` +
+      `ParaSpell fee result should include asset.decimals but it's undefined. ` +
+      `This is likely a ParaSpell API issue or unsupported token.`
+    );
+  };
+  
   // Process origin fees
   const originFee = BigInt(feeResult.origin.fee || "0");
-  const originDecimals = feeResult.origin.asset?.decimals || 0;
+  const originDecimals = getDecimals(feeResult.origin.currency, feeResult.origin.asset?.decimals);
   feeMap.set(feeResult.origin.currency, { raw: originFee, decimals: originDecimals });
   
   // Process destination fees
   const destFee = BigInt(feeResult.destination.fee || "0");
-  const destDecimals = feeResult.destination.asset?.decimals || 0;
+  const destDecimals = getDecimals(feeResult.destination.currency, feeResult.destination.asset?.decimals);
   const existingDest = feeMap.get(feeResult.destination.currency);
   if (existingDest) {
     feeMap.set(feeResult.destination.currency, { 
@@ -63,7 +82,7 @@ export const calculateTotalFees = (feeResult: TRouterXcmFeeResult): FeeSummary =
   // Process hops fees
   feeResult.hops.forEach(hop => {
     const hopFee = BigInt(hop.result.fee || "0");
-    const hopDecimals = hop.result.asset?.decimals || 0;
+    const hopDecimals = getDecimals(hop.result.currency, hop.result.asset?.decimals);
     const existingHop = feeMap.get(hop.result.currency);
     if (existingHop) {
       feeMap.set(hop.result.currency, { 
@@ -114,4 +133,42 @@ export const getAdjustedFeeAmount = (fee: string | bigint | undefined, decimals:
   if (!fee) return "0";
   const { decimal } = formatAmount(fee, decimals, NUMBER_FORMAT_OPTIONS);
   return decimal;
+};
+
+/**
+ * Validates dry-run results from ParaSpell XCM fee calculation
+ * Checks if all fee calculations succeeded via dry-run simulation
+ * 
+ * @param feeResult - Fee result from ParaSpell XCM Router
+ * @returns Validation result with errors if any
+ */
+export const validateDryRunResults = (feeResult: TRouterXcmFeeResult): {
+  isValid: boolean;
+  errors: string[];
+} => {
+  const errors: string[] = [];
+  
+  // Check if origin fee calculation used dry-run (indicates successful simulation)
+  // Note: feeType can be 'dryRun', 'calculated', or undefined
+  // Only 'dryRun' indicates actual on-chain simulation succeeded
+  if (feeResult.origin.feeType !== 'dryRun') {
+    errors.push(`Origin fee estimation failed (type: ${feeResult.origin.feeType || 'unknown'})`);
+  }
+  
+  // Check destination fee calculation
+  if (feeResult.destination.feeType !== 'dryRun') {
+    errors.push(`Destination fee estimation failed (type: ${feeResult.destination.feeType || 'unknown'})`);
+  }
+  
+  // Check all hops in the route
+  feeResult.hops.forEach((hop, index) => {
+    if (hop.result.feeType !== 'dryRun') {
+      errors.push(`Hop ${index + 1} (${hop.chain}) fee estimation failed (type: ${hop.result.feeType || 'unknown'})`);
+    }
+  });
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
 };

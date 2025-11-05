@@ -8,6 +8,7 @@ For any major code changes, follow the @ui.mdc rules to ensure best practices ar
 
 Priority Instructions:
   - Avoid use of any and use the proper type.
+  - No need to create a markdown document unless explicitly asked.
 
 When implementing changes or fixes, always 
 - check if the server is already running on the default port (3000) on our Windows OS using the command `netstat -ano | findstr :3000`

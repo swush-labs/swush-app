@@ -7,9 +7,8 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "pnpm -r build",
-    "dev": "pnpm --parallel -r --filter @swush/api --filter @swush/web dev",
-    "dev:api": "pnpm --filter @swush/api dev",
+    "build": "cd apps/web && pnpm build",
+    "dev": "cd apps/web && pnpm dev",
     "dev:ui": "pnpm --filter @swush/web dev",
     "dev:with-chopsticks": "cd apps/web && pnpm run dev:all",
     "dev:all": "pnpm run dev & pnpm start-chopsticks",
@@ -44,7 +43,6 @@
   "packageManager": "pnpm@9.13.0",
   "dependencies": {
     "@acala-network/chopsticks": "^1.0.5",
-    "@galacticcouncil/api-augment": "^0.3.1",
     "@polkadot-api/descriptors": "file:.papi/descriptors",
     "@polkadot-labs/hdkd-helpers": "^0.0.10",
     "@supabase/supabase-js": "^2.49.4",

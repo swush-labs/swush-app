@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import { AlertCircle, ArrowDown, CheckCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBalance } from "../utils";
-import { FeeBreakdown } from "../hooks/types";
-import { SwapToasts, TOAST_IDS } from "../utils/toastUtils";
+import type { FeeSummary } from "@/services/xcm-router/feeCalculator";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -53,7 +52,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
 export interface SimulationResult {
   success: boolean;
   estimatedFee: string;
-  feeBreakdown?: FeeBreakdown;
+  feeBreakdown?: FeeSummary;
   willSucceed: boolean;
   error?: string;
 }
@@ -104,33 +103,26 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
     isConfirming || 
     Boolean(simulationResult && (!simulationResult.success || simulationResult.willSucceed === false));
 
-  // Handle close with toast cleanup
-  const handleClose = () => {
-    // Dismiss any preparation toasts when cancelling
-    SwapToasts.dismiss(TOAST_IDS.SWAP_STATUS);
-    onClose();
-  };
-
   return (
     <Dialog open={isOpen || true}>
-      <DialogContent className="w-[90%] sm:w-full max-w-md px-4 py-4 sm:pb-8 bg-blackPearl border-darkSlateGray rounded-xl sm:rounded-2xl" isCloseIconVisible={false}  >
+      <DialogContent className="w-[90%] sm:w-full max-w-md px-4 py-4 sm:pb-8 bg-blackPearl border-dark-slate-gray rounded-xl sm:rounded-2xl" isCloseIconVisible={false}  >
         <div>
           <div className="relative flex items-center justify-center" >
-            <DialogClose onClick={handleClose} className="absolute right-0 self-center" >
+            <DialogClose onClick={onClose} className="absolute right-0 self-center" >
               <X className="text-white" />
             </DialogClose>
             <p className="text-lg font-medium text-white h-fit" >Confirm Swap</p>
           </div>
           <div className="flex flex-col items-stretch justify-start mt-6" >
-            <div className="bg-midnight border border-darkSlateGray rounded-2xl pt-4 pb-4 shadow-[4px_4px_12px_0_rgba(0,0,0,0.25)]" >
+            <div className="bg-midnight border border-dark-slate-gray rounded-2xl pt-4 pb-4 shadow-[4px_4px_12px_0_rgba(0,0,0,0.25)]" >
               <SwapCard 
                 label="You Pay"
                 token={inputToken}
                 amount={inputAmount}
                 className="pl-4 sm:pl-8 pr-6"
               />
-              <div className="flex items-center justify-center relative mt-[18px] h-[1px] bg-darkSlateGray" >
-                <div className="absolute size-[30px] rounded-full bg-burningOrange flex items-center justify-center self-center" >
+              <div className="flex items-center justify-center relative mt-[18px] h-[1px] bg-dark-slate-gray" >
+                <div className="absolute size-[30px] rounded-full bg-burning-orange flex items-center justify-center self-center" >
                   <ArrowDown className="text-white size-5" />
                 </div>
               </div>
@@ -142,11 +134,26 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
               />
             </div>
 
+            {/* Show warning if simulation indicates potential failure */}
+            {simulationResult && !simulationResult.willSucceed && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mt-4">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="text-red-400 w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-red-400 font-medium text-sm">Transaction may fail</p>
+                    <p className="text-red-300/70 text-xs mt-1">
+                      {simulationResult.error || 'Dry-run simulation indicates this swap might not succeed'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-y-4 mt-8" >
               <SubText>Network Fee</SubText>
               <SubText className="justify-self-end" >
               {simulationResult?.estimatedFee && simulationResult.estimatedFee !== '0' 
-                ? `${simulationResult.estimatedFee} ${inputToken}` 
+                ? `${simulationResult.estimatedFee}` 
                 : '—'}
               </SubText>
               <SubText>Slippage Tolerance</SubText>
@@ -169,7 +176,7 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
 
               <button
                 className="text-sm sm:text-base font-medium hover:bg-midnight/80 text-white mt-5 w-full rounded-full bg-midnight h-[60px]"
-                onClick={handleClose}
+                onClick={onClose}
               >Close</button>
             </div>
 

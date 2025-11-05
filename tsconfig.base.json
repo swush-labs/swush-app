@@ -12,10 +12,7 @@
     "sourceMap": true,
     "resolveJsonModule": true,
     "jsx": "preserve",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./packages/api/services/*"]
-    }
+    "baseUrl": "."
   },
   "exclude": ["node_modules"]
 } 

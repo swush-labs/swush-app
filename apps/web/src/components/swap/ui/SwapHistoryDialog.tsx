@@ -18,7 +18,7 @@ export const SwapHistoryDialog = ({
 }: SwapHistoryDialogProps) => {
   return (
     <Dialog open={showHistory} onOpenChange={setShowHistory}>
-      <DialogContent className="bg-blackPearl border-darkSlateGray sm:max-w-md max-sm:w-[90%]">
+      <DialogContent className="bg-blackPearl border-dark-slate-gray sm:max-w-md max-sm:w-[90%]">
         <DialogHeader className="flex items-center justify-center" >
           <DialogTitle className="text-lg font-medium text-white">Swap History</DialogTitle>
         </DialogHeader>

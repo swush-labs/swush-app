@@ -8,23 +8,10 @@ import {
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog";
-import { WalletButton, WalletMenu } from '@/components/swap';
-
 interface SwapHeaderProps {
   slippageTolerance: number;
   setSlippageTolerance: (value: number) => void;
   onHistoryClick: () => void;
-}
-
-interface HeaderActionsProps {
-  isConnected: boolean;
-  setIsConnected: (value: boolean) => void;
-  setWalletAddress: (value: string) => void;
-  walletAddress: string;
-  onDisconnect: () => void;
-  onHistoryClick: () => void;
-  isSwapping: boolean;
-  setIsSwapping: (value: boolean) => void;
 }
 
 export const SwapHeader = ({
@@ -41,7 +28,7 @@ export const SwapHeader = ({
               <Settings className="w-5 h-5" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-blackPearl border-darkSlateGray">
+          <DialogContent className="bg-blackPearl border-dark-slate-gray">
             <DialogHeader className="flex items-center justify-center" >
               <DialogTitle className="text-white">Settings</DialogTitle>
             </DialogHeader>
@@ -72,48 +59,3 @@ export const SwapHeader = ({
     </div>
   );
 };
-
-export const HeaderActions = ({
-  isConnected,
-  setIsConnected,
-  setWalletAddress,
-  walletAddress,
-  onDisconnect,
-  onHistoryClick,
-  isSwapping,
-  setIsSwapping
-}: HeaderActionsProps) => {
-  return (
-    <div className="fixed top-4 right-4 hidden sm:flex items-center gap-4 z-50">
-      <Button
-        onClick={onHistoryClick}
-        variant="outline"
-        size="icon"
-        className="bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-slate-300 transition-all duration-200"
-      >
-        <History className="w-4 h-4" />
-      </Button>
-      {!isConnected ? (
-        <WalletButton
-          isConnected={isConnected}
-          setIsConnected={setIsConnected}
-          setWalletAddress={setWalletAddress}
-          variant="outline"
-          className="flex items-center gap-2 bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-slate-300 transition-all duration-200"
-          onWalletModalClose={() => {
-            // Reset swapping state if wallet modal is closed without connecting
-            if (isSwapping) {
-              setIsSwapping(false);
-            }
-          }}
-        />
-      ) : (
-        <WalletMenu
-          address={walletAddress}
-          onDisconnect={onDisconnect}
-          className="bg-slate-800/90 border-slate-700/50 hover:bg-slate-700 text-slate-300 transition-all duration-200"
-        />
-      )}
-    </div>
-  );
-}; 

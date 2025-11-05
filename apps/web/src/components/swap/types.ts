@@ -93,6 +93,8 @@ export interface SwapFieldProps {
   isConnected?: boolean;
   isProcessing?: boolean;
   error?: string | null;
+  onConnectWalletClick?: () => void
+  onSelectRecipientClick?: () => void
 }
 
 export interface XcmSwapPreviewData {

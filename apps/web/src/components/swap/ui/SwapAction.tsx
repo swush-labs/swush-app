@@ -4,8 +4,6 @@ import { AnimatedGlowBorder } from './AnimatedGlowBorder';
 
 interface SubmitButtonProps {
   isConnected: boolean;
-  setIsConnected: (value: boolean) => void;
-  setWalletAddress: (value: string) => void;
   onSwap: () => void;
   isSwapping: boolean;
   insufficientBalance: boolean;
@@ -15,8 +13,6 @@ interface SubmitButtonProps {
 
 export const SubmitButtonAction = ({
   isConnected,
-  setIsConnected,
-  setWalletAddress,
   onSwap,
   isSwapping,
   insufficientBalance,
@@ -40,7 +36,7 @@ export const SubmitButtonAction = ({
                 ? 'bg-blackPearl/90 text-forest-200 border border-flame-400/30'
                 : disabled || !isConnected
                 ? 'bg-forest-700/50 text-forest-400 border border-forest-600/30'
-                : 'bg-burningOrange hover:from-flame-400 hover:to-flame-300 text-white border border-flame-400/30'
+                : 'bg-burning-orange hover:from-flame-400 hover:to-flame-300 text-white border border-flame-400/30'
               }
             `}
             onClick={onSwap}

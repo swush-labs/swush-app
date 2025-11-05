@@ -1,5 +1,3 @@
-import { Asset } from '@/services/assets/types';
-import { api } from '@/lib/api';
 
 // Format amount from raw blockchain format to readable decimal format
 export function formatAmount(
@@ -67,22 +65,3 @@ export function formatAmount(
   }
 }
 
-// Fetch asset information from API
-export async function fetchAssetInfo(assetId: string | number): Promise<Asset | null> {
-  try {
-    // Use the existing API client to fetch assets
-    const assets = await api.assets.getAll();
-    // Find the asset by ID
-    const asset = assets.find(a => a.id === assetId.toString());
-    
-    if (!asset) {
-      console.warn(`Asset not found: ${assetId}`);
-      return null;
-    }
-    
-    return asset;
-  } catch (error) {
-    console.error('Error fetching asset:', error);
-    return null;
-  }
-} 
