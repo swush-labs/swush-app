@@ -28,8 +28,8 @@ const nextConfig = {
     if (!isServer) {
       config.output.webassemblyModuleFilename = 'static/wasm/[modulehash].wasm';
       
-      // 🔥 NEW: Increase memory limit for WASM in development
-      if (dev) {
+      // Apply heavy optimizations in PRODUCTION only for faster dev builds
+      if (!dev) {
         config.optimization = {
           ...config.optimization,
           // Prevent creating duplicate WASM instances
@@ -68,7 +68,7 @@ const nextConfig = {
       fs: false,
       net: false,
       tls: false,
-      // 🔥 NEW: Prevent crypto polyfill issues
+      // Prevent crypto polyfill issues
       crypto: false,
       stream: false,
       path: false,
@@ -82,21 +82,12 @@ const nextConfig = {
     esmExternals: 'loose',
   },
 
-  // Transpile specific packages that use WASM
+  // Reduced transpile list - only transpile what's absolutely necessary
+  // The SDK packages already bundle their math dependencies
   transpilePackages: [
-    '@galacticcouncil/math-hsm',
-    '@galacticcouncil/math-xyk',
-    '@galacticcouncil/math-lbp',
-    '@galacticcouncil/math-liquidity-mining',
-    '@galacticcouncil/math-omnipool',
-    '@galacticcouncil/math-stableswap',
     '@galacticcouncil/sdk',
     '@paraspell/xcm-router',
     '@paraspell/sdk',
-    // 🔥 NEW: Add @polkadot packages
-    '@polkadot/wasm-crypto',
-    '@polkadot/wasm-crypto-init',
-    '@polkadot/wasm-crypto-wasm',
   ],
 };
 

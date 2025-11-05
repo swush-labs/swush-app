@@ -9,7 +9,7 @@
     ".papi/**/*",
     "packages/**/*",
     "apps/**/*"
-  ],
+, "scripts/test-xcm-tracking.ts"  ],
   "exclude": [
     "node_modules",
     "dist",

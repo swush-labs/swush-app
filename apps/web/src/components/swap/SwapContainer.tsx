@@ -151,13 +151,18 @@ export function SwapContainer() {
     },
     onError: (error) => {
       failSwap(error);
+      // Refresh balances after failed transaction
+      resetBalances(true);
       // Auto-reset after showing error state
       setTimeout(() => {
         setInputAmount('');
         resetRoute();
         resetSwapFlow();
       }, 5000);
-    }
+    },
+    // XCM Tracking (optional - disable for Chopsticks testing)
+    enableXcmTracking: process.env.NEXT_PUBLIC_USE_LOCAL_ENDPOINTS === 'false',
+    ocelloidsApiKey: process.env.NEXT_PUBLIC_OCELLOIDS_API_KEY,
   });
 
   // Handle swap button click - show confirmation sheet
@@ -373,6 +378,8 @@ export function SwapContainer() {
         currentStep={flowState.execution?.currentStep}
         totalSteps={flowState.execution?.totalSteps}
         currentTransactionType={flowState.execution?.transactionType}
+        xcmDeliveryStatus={flowState.execution?.xcmDeliveryStatus}
+        xcmStatusMessage={flowState.execution?.xcmStatusMessage}
       />
 
       <ConnectWalletDialog isOpen={isConnectWalletOpen} onOpenChange={setIsConnectWalletOpen} />

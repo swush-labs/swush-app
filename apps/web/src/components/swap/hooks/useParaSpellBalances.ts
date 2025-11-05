@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAssetBalance } from '@paraspell/sdk';
 import type { TokenInfo } from '@/components/swap/types';
 import { formatAmount } from '@/services/balances/utils';
-import { BALANCE_REFRESH_TIMEOUT } from '@/lib/const';
 
 interface UseParaSpellBalancesProps {
   isConnected: boolean;
@@ -229,17 +228,13 @@ export function useParaSpellBalances({
       setBalancesLoaded(false);
     }
 
-    // Set up regular refresh interval if connected
-    let intervalId: NodeJS.Timeout | null = null;
-    if (isConnected && walletAddress && (inputToken || outputToken)) {
-      intervalId = setInterval(fetchIfMounted, BALANCE_REFRESH_TIMEOUT);
-    }
+    // ❌ REMOVED: Periodic refresh interval
+    // Only fetch initially when connected or when tokens/wallet change
+    // Explicit refreshes will be triggered by resetBalances(true) after transactions
 
     return () => {
       isMountedRef.current = false;
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
+      // No interval to clean up anymore
     };
   }, [isConnected, walletAddress, inputToken, outputToken, fetchBalances]);
 

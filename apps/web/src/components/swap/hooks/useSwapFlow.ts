@@ -28,6 +28,8 @@ export interface SwapFlowState {
     totalSteps: number;
     transactionType: TRouterEventType | null;
     statusMessage: string;
+    xcmDeliveryStatus?: 'idle' | 'pending' | 'in-flight' | 'delivered' | 'failed';
+    xcmStatusMessage?: string;
   };
   
   // Success details (only when stage = 'success')

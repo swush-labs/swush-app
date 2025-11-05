@@ -82,6 +82,8 @@ interface SwapCompleteDialogProps {
     currentStep?: number
     totalSteps?: number
     currentTransactionType?: string | null
+    xcmDeliveryStatus?: 'idle' | 'pending' | 'in-flight' | 'delivered' | 'failed'
+    xcmStatusMessage?: string
 }
 
 export function SwapCompleteDialog({
@@ -97,6 +99,8 @@ export function SwapCompleteDialog({
     currentStep,
     totalSteps,
     currentTransactionType,
+    xcmDeliveryStatus,
+    xcmStatusMessage,
 }:SwapCompleteDialogProps) {
     const [swapProgress, setSwapProgress] = useState<number>(10)
     const [isGiftRevealed, setIsGiftRevealed] = useState<boolean>(false)
@@ -147,6 +151,27 @@ export function SwapCompleteDialog({
                                     <p className="text-xs text-white/50 mt-1">
                                         {formatTransactionType(currentTransactionType)}
                                     </p>
+                                </div>
+                            )}
+
+                            {/* Show XCM delivery status if tracking is enabled */}
+                            {xcmDeliveryStatus && xcmDeliveryStatus !== 'idle' && (
+                                <div className="text-center mt-2">
+                                    {xcmDeliveryStatus === 'in-flight' && (
+                                        <p className="text-xs text-white/50">
+                                            ⏳ {xcmStatusMessage || 'Delivering assets cross-chain...'}
+                                        </p>
+                                    )}
+                                    {xcmDeliveryStatus === 'delivered' && (
+                                        <p className="text-xs text-tealish-green">
+                                            ✅ Assets delivered successfully!
+                                        </p>
+                                    )}
+                                    {xcmDeliveryStatus === 'failed' && (
+                                        <p className="text-xs text-red-400">
+                                            ❌ {xcmStatusMessage || 'XCM delivery failed'}
+                                        </p>
+                                    )}
                                 </div>
                             )}
 
