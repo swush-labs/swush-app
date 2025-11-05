@@ -34,3 +34,10 @@ export const TEST_RPC_ACALA = 'ws://localhost:3424'
 
 export const NUMBER_FORMAT_OPTIONS = { round: 3, trim: true, commify: false };
 export const ROUND_OPTION = 3;
+
+// XCM Balance Polling Configuration
+export const XCM_BALANCE_POLLING = {
+  INTERVAL: 6000,           // Poll every 7 seconds (typical XCM delivery: ~20s = 3-4 polls)
+  MAX_DURATION: 240000,     // Max 4 minutes (240 seconds)
+  MAX_POLLS: 35,            // 35 polls * 7s ≈ 4 minutes
+} as const;

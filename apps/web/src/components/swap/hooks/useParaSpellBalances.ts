@@ -8,7 +8,8 @@ import {
   TEST_RPC_BIFROST,
   TEST_RPC_ACALA,
   TEST_RPC_POLKADOT,
-  NUMBER_FORMAT_OPTIONS
+  NUMBER_FORMAT_OPTIONS,
+  XCM_BALANCE_POLLING
 } from '@/services/constants';
 
 interface UseParaSpellBalancesProps {
@@ -29,6 +30,8 @@ interface UseParaSpellBalancesReturn {
   balancesLoaded: boolean;
   resetBalances: (afterSwap?: boolean) => void;
   refreshBalances: (afterSwap?: boolean) => Promise<void>;
+  startBalancePolling: (onBalanceIncreased: (newBalance: string, oldBalance: string) => void) => void;
+  stopBalancePolling: () => void;
 }
 
 /**
@@ -58,6 +61,11 @@ export function useParaSpellBalances({
 
   // Track if component is mounted to prevent state updates after unmount
   const isMountedRef = useRef<boolean>(true);
+
+  // Balance polling for XCM completion tracking
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initialOutputBalanceRef = useRef<string>('0');
 
   /**
    * Get custom RPC URL for a chain when using local endpoints
@@ -115,14 +123,6 @@ export function useParaSpellBalances({
         ? getChainRpcUrl(token.networkChain) 
         : undefined;
 
-      console.log(`🔍 Fetching balance for ${token.symbol} on ${token.networkChain}`, {
-        address: walletAddress,
-        chain: token.networkChain,
-        currency,
-        usingCustomEndpoint: customApi ? 'Yes (Chopsticks)' : 'No (Public)',
-        customApi,
-      });
-
       // Fetch balance from ParaSpell SDK
       // - chain: Uses token.networkChain which already has correct ParaSpell format
       // - api: Optional custom RPC URL for chopsticks/local testing
@@ -132,8 +132,6 @@ export function useParaSpellBalances({
         currency: currency,
         ...(customApi && { api: customApi }), // Only add api field if custom URL exists
       });
-
-      console.log(`✅ Balance fetched for ${token.symbol}:`, balance?.toString());
 
       // Handle null/undefined balance
       if (balance === null || balance === undefined) {
@@ -253,6 +251,96 @@ export function useParaSpellBalances({
     }
   }, [refreshBalances, isConnected]);
 
+  /**
+   * Start polling output balance to detect XCM delivery
+   * This is a dev-friendly solution that works without Ocelloids
+   * 
+   * Polling Configuration:
+   * - Interval: 7 seconds (gentle on RPCs, catches delivery quickly)
+   * - Max Duration: 4 minutes (240 seconds)
+   * - Max Polls: 35 attempts
+   * - Typical XCM delivery: ~20 seconds (3-4 polls)
+   */
+  const startBalancePolling = useCallback((
+    onBalanceIncreased: (newBalance: string, oldBalance: string) => void
+  ) => {
+    // Stop any existing polling
+    stopBalancePolling();
+
+    if (!outputToken || !isConnected || !walletAddress) {
+      console.warn('⚠️ Cannot start balance polling: missing token or wallet');
+      return;
+    }
+
+    // Capture initial output balance
+    initialOutputBalanceRef.current = outputBalanceRaw;
+    console.log(`🔍 Starting balance polling for ${outputToken.symbol} (initial: ${outputBalanceRaw})`);
+
+    let pollCount = 0;
+    
+    // Poll at configured interval
+    pollingIntervalRef.current = setInterval(async () => {
+      pollCount++;
+
+      try {
+        // Fetch fresh output balance
+        const result = await fetchTokenBalance(outputToken, 'to');
+        
+        if (!result) {
+          console.warn('⚠️ Failed to fetch balance during polling');
+          return;
+        }
+
+        const newBalanceRaw = result.raw;
+        const newBalanceFormatted = result.formatted;
+
+        // Check if balance increased
+        if (parseFloat(newBalanceRaw) > parseFloat(initialOutputBalanceRef.current)) {
+          console.log(`✅ XCM delivered! Balance: ${initialOutputBalanceRef.current} → ${newBalanceRaw} ${outputToken.symbol}`);
+
+          // Update UI with new balance
+          setOutputBalance(newBalanceFormatted);
+          setOutputBalanceRaw(newBalanceRaw);
+
+          // Stop polling
+          stopBalancePolling();
+
+          // Notify callback
+          onBalanceIncreased(newBalanceFormatted, outputBalance);
+        }
+
+        // Check if max polls reached
+        if (pollCount >= XCM_BALANCE_POLLING.MAX_POLLS) {
+          console.warn(`⏱️ Balance polling timeout after ${XCM_BALANCE_POLLING.MAX_POLLS} attempts`);
+          stopBalancePolling();
+        }
+      } catch (error) {
+        console.error('❌ Error during balance polling:', error);
+      }
+    }, XCM_BALANCE_POLLING.INTERVAL); // Poll at configured interval
+
+    // Set overall timeout
+    pollingTimeoutRef.current = setTimeout(() => {
+      console.warn(`⏱️ Balance polling timeout after ${XCM_BALANCE_POLLING.MAX_DURATION / 1000}s`);
+      stopBalancePolling();
+    }, XCM_BALANCE_POLLING.MAX_DURATION);
+
+  }, [outputToken, isConnected, walletAddress, outputBalanceRaw, fetchTokenBalance, outputBalance]);
+
+  /**
+   * Stop balance polling
+   */
+  const stopBalancePolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    if (pollingTimeoutRef.current) {
+      clearTimeout(pollingTimeoutRef.current);
+      pollingTimeoutRef.current = null;
+    }
+  }, []);
+
   // Effect to fetch balances when wallet or tokens change
   useEffect(() => {
     isMountedRef.current = true;
@@ -281,9 +369,10 @@ export function useParaSpellBalances({
 
     return () => {
       isMountedRef.current = false;
-      // No interval to clean up anymore
+      // Clean up balance polling on unmount
+      stopBalancePolling();
     };
-  }, [isConnected, walletAddress, inputToken, outputToken, fetchBalances]);
+  }, [isConnected, walletAddress, inputToken, outputToken, fetchBalances, stopBalancePolling]);
 
   return {
     inputBalance,
@@ -294,6 +383,8 @@ export function useParaSpellBalances({
     balancesLoaded,
     resetBalances,
     refreshBalances,
+    startBalancePolling,
+    stopBalancePolling,
   };
 }
 
