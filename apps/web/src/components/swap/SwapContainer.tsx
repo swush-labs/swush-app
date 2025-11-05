@@ -71,6 +71,8 @@ export function SwapContainer() {
     balancesLoaded,
     resetBalances,
     refreshBalances,
+    startBalancePolling,
+    stopBalancePolling,
   } = useParaSpellBalances({
     isConnected,
     walletAddress,
@@ -141,16 +143,35 @@ export function SwapContainer() {
     onExecutionStart: startExecution,
     onExecutionUpdate: updateExecution,
     onSuccess: (success) => {
-      completeSwap(success);
-      // Don't auto-reset - let SwapCompleteDialog control its own lifecycle
-      // Dialog will call resetSwapFlow (via onClose) when user dismisses it
-      // This allows user to interact with gift animation without being rushed
-      setInputAmount('');
-      resetRoute();
-      resetBalances(true);
+      // Wait for destination balance to update before marking as successful
+      console.log('🎯 Origin transaction complete, waiting for XCM delivery...');
+      
+      // Start polling destination balance to confirm XCM delivery
+      startBalancePolling((newBalance, oldBalance) => {
+        // Mark swap as successful when balance increases
+        completeSwap(success);
+        
+        // Don't auto-reset - let SwapCompleteDialog control its own lifecycle
+        // Dialog will call resetSwapFlow (via onClose) when user dismisses it
+        // This allows user to interact with gift animation without being rushed
+        
+        // Clear input and route immediately (but don't close dialog)
+        setInputAmount('');
+        resetRoute();
+        
+        // Refresh input balance to show deduction (balances already updated by polling)
+        refreshBalances(false);
+      });
+      
+      // Update UI to show "waiting for delivery" state
+      updateExecution({
+        statusMessage: 'Waiting for cross-chain delivery...',
+      });
     },
     onError: (error) => {
       failSwap(error);
+      // Stop any ongoing balance polling
+      stopBalancePolling();
       // Refresh balances after failed transaction
       resetBalances(true);
       // Auto-reset after showing error state
@@ -374,7 +395,10 @@ export function SwapContainer() {
         outputAmount={outputAmount}
         outputToken={outputToken?.name || ''}
         duration={flowState.success?.duration || 4000}
-        onClose={resetSwapFlow}
+        onClose={() => {
+          stopBalancePolling(); // Clean up polling on dialog close
+          resetSwapFlow();
+        }}
         currentStep={flowState.execution?.currentStep}
         totalSteps={flowState.execution?.totalSteps}
         currentTransactionType={flowState.execution?.transactionType}

@@ -318,7 +318,7 @@ export function useXcmSwapExecution({
       }
 
       // Configure RouterBuilder with local chopsticks endpoints for development
-      const USE_LOCAL_ENDPOINTS = process.env.NEXT_PUBLIC_USE_LOCAL_ENDPOINTS;
+      const USE_LOCAL_ENDPOINTS = process.env.NEXT_PUBLIC_USE_LOCAL_ENDPOINTS === 'true';
 
       const routerConfig = USE_LOCAL_ENDPOINTS ? {
         development: true, // Enforce overrides for all chains used

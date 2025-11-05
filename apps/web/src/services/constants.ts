@@ -35,66 +35,9 @@ export const TEST_RPC_ACALA = 'ws://localhost:3424'
 export const NUMBER_FORMAT_OPTIONS = { round: 3, trim: true, commify: false };
 export const ROUND_OPTION = 3;
 
-// Time constants in milliseconds
-export const HEALTH_CHECK = {
-  INTERVAL: 2 * 60 * 1000,    // Check every 2 minutes if RPC endpoint is healthy
-  TIMEOUT: 15000,             // 15 seconds timeout for health checks
-  REACTIVATION: 5 * 60 * 1000 // Reactivate after 5 minutes, longer recovery time for stability
+// XCM Balance Polling Configuration
+export const XCM_BALANCE_POLLING = {
+  INTERVAL: 6000,           // Poll every 7 seconds (typical XCM delivery: ~20s = 3-4 polls)
+  MAX_DURATION: 240000,     // Max 4 minutes (240 seconds)
+  MAX_POLLS: 35,            // 35 polls * 7s ≈ 4 minutes
 } as const;
-
-// Connection management constants
-export const CONNECTION_CONFIG = {
-  MAX_RECONNECT_ATTEMPTS: 10,    // Increased max attempts
-  BASE_RECONNECT_DELAY: 2000,    // 2 seconds base delay
-  MAX_RECONNECT_DELAY: 60000,    // Maximum delay of 1 minute
-  ATTEMPT_RESET_TIMEOUT: 60000,  // Reset attempts after 1 minute
-  CONNECTION_TIMEOUT: 30000      // 30 seconds timeout for initial connections
-} as const;
-
-export const RPC_ENDPOINTS = {
-  [NETWORKS_SUPPORTED.ASSET_HUB]: {
-    endpoints: [
-      // Dynamic chopsticks endpoint for both dev and production
-      { url: TEST_RPC_ASSET_HUB, priority: 1, isActive: true },
-
-      // Primary endpoints (major providers)
-      /*         { url: 'wss://polkadot-asset-hub-rpc.polkadot.io', priority: 3, isActive: true }, // Parity (Official)
-              
-              // Secondary endpoints (reliable providers)
-              { url: 'wss://asset-hub-polkadot.dotters.network', priority: 2, isActive: true }, // IBP2
-              { url: 'wss://sys.ibp.network/asset-hub-polkadot', priority: 1, isActive: true }, // IBP1
-              { url: 'wss://rpc-asset-hub-polkadot.luckyfriday.io', priority: 4, isActive: true }, // LuckyFriday
-         */
-      // Tertiary endpoints (additional providers)
-      //      { url: 'wss://asset-hub-polkadot-rpc.dwellir.com', priority: 5, isActive: true }, // Dwellir (Main)
-      //   { url: 'wss://statemint-rpc-tn.dwellir.com', priority: 6, isActive: true },       // Dwellir Tunisia
-      //   { url: 'wss://statemint.public.curie.radiumblock.co/ws', priority: 7, isActive: true } // RadiumBlock
-    ],
-    currentIndex: 0,
-    healthCheck: {
-      interval: HEALTH_CHECK.INTERVAL,
-      timeout: HEALTH_CHECK.TIMEOUT,
-    },
-  },
-  [NETWORKS_SUPPORTED.HYDRA_DX]: {
-    endpoints: [
-      // Dynamic chopsticks endpoint for both dev and production
-       { url: TEST_RPC_HYDRATION, priority: 1, isActive: true },
-
-      //     { url: 'wss://rpc.hydradx.cloud', priority: 1, isActive: true },          // Galactic Council (Official)
-      //     { url: 'wss://hydradx-rpc.dwellir.com', priority: 1, isActive: true },    // Dwellir
-
-      // Secondary endpoints (reliable providers)
-      //   { url: 'wss://hydradx.paras.ibp.network', priority: 2, isActive: true },  // IBP1
-      //    { url: 'wss://hydration.dotters.network', priority: 3, isActive: true },   // IBP2
-
-      // Tertiary endpoint
-      //     { url: 'wss://rpc.helikon.io/hydradx', priority: 4, isActive: true }      // Helikon
-    ],
-    currentIndex: 0,
-    healthCheck: {
-      interval: HEALTH_CHECK.INTERVAL,
-      timeout: HEALTH_CHECK.TIMEOUT,
-    },
-  },
-}; 
