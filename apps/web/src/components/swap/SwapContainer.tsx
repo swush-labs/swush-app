@@ -151,6 +151,8 @@ export function SwapContainer() {
     },
     onError: (error) => {
       failSwap(error);
+      // Refresh balances after failed transaction
+      resetBalances(true);
       // Auto-reset after showing error state
       setTimeout(() => {
         setInputAmount('');
@@ -159,7 +161,7 @@ export function SwapContainer() {
       }, 5000);
     },
     // XCM Tracking (optional - disable for Chopsticks testing)
-    enableXcmTracking: process.env.NEXT_PUBLIC_ENABLE_XCM_TRACKING === 'true',
+    enableXcmTracking: process.env.NEXT_PUBLIC_USE_LOCAL_ENDPOINTS === 'false',
     ocelloidsApiKey: process.env.NEXT_PUBLIC_OCELLOIDS_API_KEY,
   });
 

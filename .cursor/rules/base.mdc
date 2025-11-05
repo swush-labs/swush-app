@@ -10,6 +10,6 @@ This is a Next.js project with Polkadot API (PAPI) with web package at apps\web.
 
 When implementing changes or fixes, always 
 - check if the server is already running on the default port (3000) on our Windows OS using the command `netstat -ano | findstr :3000`
-- If the development server is not running on 3000, run `pnpm dev:ui` to start the Next.js development server and wait for 5-10 seconds to ensure the server is running.
+- If the development server is not running on 3000, run `pnpm dev` to start the Next.js development server and wait for 5-10 seconds to ensure the server is running.
 
 `pnpm build` -> check apps/web 

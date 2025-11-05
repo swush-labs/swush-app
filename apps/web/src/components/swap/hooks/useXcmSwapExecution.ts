@@ -16,7 +16,8 @@ import {
   TEST_RPC_POLKADOT,
   TEST_RPC_ASSET_HUB,
   TEST_RPC_HYDRATION,
-  TEST_RPC_BIFROST
+  TEST_RPC_BIFROST,
+  TEST_RPC_ACALA
 } from '@/services/constants';
 
 // XCM Tracking
@@ -325,7 +326,8 @@ export function useXcmSwapExecution({
         apiOverrides: {
           AssetHubPolkadot: TEST_RPC_ASSET_HUB,  // ws://localhost:3421
           Hydration: TEST_RPC_HYDRATION,         // ws://localhost:3422
-          BifrostPolkadot: TEST_RPC_BIFROST     // ws://localhost:3423
+          BifrostPolkadot: TEST_RPC_BIFROST,     // ws://localhost:3423
+          Acala: TEST_RPC_ACALA,
         }
       } : {
         abstractDecimals: true,
