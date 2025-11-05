@@ -2,6 +2,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAssetBalance } from '@paraspell/sdk';
 import type { TokenInfo } from '@/components/swap/types';
 import { formatAmount } from '@/services/balances/utils';
+import { 
+  TEST_RPC_ASSET_HUB,
+  TEST_RPC_HYDRATION,
+  TEST_RPC_BIFROST,
+  TEST_RPC_ACALA,
+  TEST_RPC_POLKADOT,
+  NUMBER_FORMAT_OPTIONS
+} from '@/services/constants';
 
 interface UseParaSpellBalancesProps {
   isConnected: boolean;
@@ -28,8 +36,8 @@ interface UseParaSpellBalancesReturn {
  * 
  * Features:
  * - Fetches balances directly from chain using ParaSpell SDK
+ * - Supports custom RPC endpoints via NEXT_PUBLIC_USE_LOCAL_ENDPOINTS flag
  * - Formats balances using formatAmount utility
- * - Supports automatic refresh on interval
  * - Handles post-swap balance updates
  * - Type-safe with proper error handling
  */
@@ -52,6 +60,38 @@ export function useParaSpellBalances({
   const isMountedRef = useRef<boolean>(true);
 
   /**
+   * Get custom RPC URL for a chain when using local endpoints
+   * Maps ParaSpell chain names to chopsticks RPC URLs
+   */
+  const getChainRpcUrl = useCallback((chainName: string): string | undefined => {
+    // Check if using local chopsticks endpoints
+    const USE_LOCAL_ENDPOINTS = process.env.NEXT_PUBLIC_USE_LOCAL_ENDPOINTS === 'true';
+    
+    if (!USE_LOCAL_ENDPOINTS) {
+      return undefined; // Use default ParaSpell public endpoints
+    }
+
+    // Map ParaSpell chain names to chopsticks RPC URLs
+    // These names match exactly what comes from token.networkChain
+    const chainUrlMap: Record<string, string> = {
+      'AssetHubPolkadot': TEST_RPC_ASSET_HUB,  // ws://localhost:3421
+      'Hydration': TEST_RPC_HYDRATION,         // ws://localhost:3422
+      'HydrationDx': TEST_RPC_HYDRATION,       // Alternative name support
+      'BifrostPolkadot': TEST_RPC_BIFROST,     // ws://localhost:3423
+      'Acala': TEST_RPC_ACALA,                 // ws://localhost:3424
+      'Polkadot': TEST_RPC_POLKADOT,           // ws://localhost:3420
+    };
+
+    const url = chainUrlMap[chainName];
+    
+    if (!url) {
+      console.warn(`⚠️ No chopsticks endpoint configured for chain: ${chainName}`);
+    }
+    
+    return url;
+  }, []);
+
+  /**
    * Fetch balance for a single token using ParaSpell SDK
    */
   const fetchTokenBalance = useCallback(async (
@@ -70,17 +110,27 @@ export function useParaSpellBalances({
       // Construct currency using determineCurrency helper
       const currency = determineCurrency(tAsset);
 
+      // Get custom RPC URL if using local endpoints
+      const customApi: string | undefined = token.networkChain 
+        ? getChainRpcUrl(token.networkChain) 
+        : undefined;
+
       console.log(`🔍 Fetching balance for ${token.symbol} on ${token.networkChain}`, {
         address: walletAddress,
         chain: token.networkChain,
         currency,
+        usingCustomEndpoint: customApi ? 'Yes (Chopsticks)' : 'No (Public)',
+        customApi,
       });
 
       // Fetch balance from ParaSpell SDK
+      // - chain: Uses token.networkChain which already has correct ParaSpell format
+      // - api: Optional custom RPC URL for chopsticks/local testing
       const balance = await getAssetBalance({
         address: walletAddress,
         chain: token.networkChain as any, // Type assertion for chain compatibility
         currency: currency,
+        ...(customApi && { api: customApi }), // Only add api field if custom URL exists
       });
 
       console.log(`✅ Balance fetched for ${token.symbol}:`, balance?.toString());
@@ -90,11 +140,8 @@ export function useParaSpellBalances({
         return { raw: '0', formatted: '0' };
       }
 
-      // Format the balance using our utility
-      const formatted = formatAmount(balance.toString(), token.decimals, {
-        round: 6,
-        trim: true,
-      });
+      // Format the balance using our utility with standard constants
+      const formatted = formatAmount(balance.toString(), token.decimals, NUMBER_FORMAT_OPTIONS);
 
       return {
         raw: formatted.raw,
@@ -104,7 +151,7 @@ export function useParaSpellBalances({
       console.error(`Error fetching balance for ${token.symbol}:`, error);
       return { raw: '0', formatted: '0' };
     }
-  }, [walletAddress, getTAssetFromKey, determineCurrency]);
+  }, [walletAddress, getTAssetFromKey, determineCurrency, getChainRpcUrl]);
 
   /**
    * Fetch balances for both input and output tokens
