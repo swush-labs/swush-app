@@ -252,6 +252,20 @@ export function useParaSpellBalances({
   }, [refreshBalances, isConnected]);
 
   /**
+   * Stop balance polling
+   */
+  const stopBalancePolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    if (pollingTimeoutRef.current) {
+      clearTimeout(pollingTimeoutRef.current);
+      pollingTimeoutRef.current = null;
+    }
+  }, []);
+
+  /**
    * Start polling output balance to detect XCM delivery
    * This is a dev-friendly solution that works without Ocelloids
    * 
@@ -325,21 +339,7 @@ export function useParaSpellBalances({
       stopBalancePolling();
     }, XCM_BALANCE_POLLING.MAX_DURATION);
 
-  }, [outputToken, isConnected, walletAddress, outputBalanceRaw, fetchTokenBalance, outputBalance]);
-
-  /**
-   * Stop balance polling
-   */
-  const stopBalancePolling = useCallback(() => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
-    }
-    if (pollingTimeoutRef.current) {
-      clearTimeout(pollingTimeoutRef.current);
-      pollingTimeoutRef.current = null;
-    }
-  }, []);
+  }, [outputToken, isConnected, walletAddress, outputBalanceRaw, fetchTokenBalance, outputBalance, stopBalancePolling]);
 
   // Effect to fetch balances when wallet or tokens change
   useEffect(() => {

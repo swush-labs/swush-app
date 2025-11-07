@@ -484,6 +484,9 @@ export function useXcmSwapExecution({
     onExecutionUpdate,
     onSuccess,
     onError,
+    enableXcmTracking,
+    resetXcmTracking,
+    trackRoute,
   ]);
 
   return {

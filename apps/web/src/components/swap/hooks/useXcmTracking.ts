@@ -187,7 +187,7 @@ export function useXcmTracking({
       setDeliveryStatus('pending');
       setStatusMessage('Waiting for XCM messages...');
     },
-    [initialize]
+    [initialize, useWildcards]
   );
 
   /**
