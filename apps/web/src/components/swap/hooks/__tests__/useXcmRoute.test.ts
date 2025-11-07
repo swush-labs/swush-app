@@ -28,12 +28,12 @@ const mockOutputToken: TokenInfo = {
   networkChain: 'AssetHubPolkadot',
 };
 
-const mockGetOptimalExchanges = jest.fn(() => ['HydrationDex']);
-const mockDetermineCurrency = jest.fn((asset) => ({ symbol: asset.symbol }));
-const mockGetTAssetFromKey = jest.fn(() => ({ 
+const mockGetOptimalExchanges = jest.fn((_fromKey: string, _toKey: string, _fromChain: string, _toChain: string) => ['HydrationDex' as const]);
+const mockDetermineCurrency = jest.fn((asset: any) => ({ symbol: asset.symbol }));
+const mockGetTAssetFromKey = jest.fn((_key: string, _direction: 'from' | 'to') => ({ 
   symbol: 'DOT', 
   decimals: 10 
-}));
+} as any));
 
 describe('useXcmRoute - Phase 2: Routing', () => {
   beforeEach(() => {

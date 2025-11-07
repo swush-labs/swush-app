@@ -14,13 +14,13 @@ import type { TRouterXcmFeeResult } from '@paraspell/xcm-router';
 
 const mockFeeResult: TRouterXcmFeeResult = {
   origin: {
-    fee: '1000000000',
+    fee: BigInt('1000000000'),
     currency: 'DOT',
     feeType: 'dryRun',
     asset: { decimals: 10 } as any,
   },
   destination: {
-    fee: '500000',
+    fee: BigInt('500000'),
     currency: 'USDC',
     feeType: 'dryRun',
     asset: { decimals: 6 } as any,
@@ -48,7 +48,7 @@ describe('feeCalculator - Phase 2: Fee Calculation', () => {
           {
             chain: 'Hydration',
             result: {
-              fee: '2000000000',
+              fee: BigInt('2000000000'),
               currency: 'DOT',
               feeType: 'dryRun',
               asset: { decimals: 10 } as any,
@@ -100,13 +100,13 @@ describe('feeCalculator - Phase 2: Fee Calculation', () => {
     it('should handle single currency', () => {
       const singleCurrencyResult: TRouterXcmFeeResult = {
         origin: {
-          fee: '1000000000',
+          fee: BigInt('1000000000'),
           currency: 'DOT',
           feeType: 'dryRun',
           asset: { decimals: 10 } as any,
         },
         destination: {
-          fee: '2000000000',
+          fee: BigInt('2000000000'),
           currency: 'DOT',
           feeType: 'dryRun',
           asset: { decimals: 10 } as any,
@@ -131,9 +131,9 @@ describe('feeCalculator - Phase 2: Fee Calculation', () => {
     });
 
     it('should detect failed origin dry-run', () => {
-      const failedFeeResult = {
+      const failedFeeResult: TRouterXcmFeeResult = {
         ...mockFeeResult,
-        origin: { ...mockFeeResult.origin, feeType: 'calculated' as const },
+        origin: { ...mockFeeResult.origin, feeType: 'calculated' as any },
       };
 
       const validation = validateDryRunResults(failedFeeResult);
@@ -162,9 +162,9 @@ describe('feeCalculator - Phase 2: Fee Calculation', () => {
           {
             chain: 'Hydration',
             result: {
-              fee: '1000000',
+              fee: BigInt('1000000'),
               currency: 'HDX',
-              feeType: 'calculated' as const,
+              feeType: 'calculated' as any,
               asset: { decimals: 12 } as any,
             },
           },

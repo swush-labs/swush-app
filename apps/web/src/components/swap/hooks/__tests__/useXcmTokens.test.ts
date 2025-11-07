@@ -15,10 +15,17 @@ const mockFromAssets: UnifiedAsset[] = [
   {
     symbol: 'DOT',
     name: 'Polkadot',
+    category: 'native',
+    isValid: true,
+    totalNetworks: 1,
+    validNetworks: 1,
     supportedNetworks: [
       {
         network: 'Polkadot',
         assetKey: 'DOT-native-Polkadot',
+        displayName: 'DOT (Polkadot)',
+        assetType: 'Native',
+        verified: true,
         actualAsset: { 
           symbol: 'DOT',
           decimals: 10 
@@ -29,10 +36,17 @@ const mockFromAssets: UnifiedAsset[] = [
   {
     symbol: 'USDC',
     name: 'USD Coin',
+    category: 'stablecoin',
+    isValid: true,
+    totalNetworks: 1,
+    validNetworks: 1,
     supportedNetworks: [
       {
         network: 'AssetHubPolkadot',
         assetKey: 'USDC-1337-AssetHubPolkadot',
+        displayName: 'USDC (AssetHub)',
+        assetType: 'Asset ID',
+        verified: true,
         actualAsset: { 
           symbol: 'USDC',
           assetId: '1337',
@@ -47,10 +61,17 @@ const mockToAssets: UnifiedAsset[] = [
   {
     symbol: 'USDC',
     name: 'USD Coin',
+    category: 'stablecoin',
+    isValid: true,
+    totalNetworks: 1,
+    validNetworks: 1,
     supportedNetworks: [
       {
         network: 'AssetHubPolkadot',
         assetKey: 'USDC-1337-AssetHubPolkadot',
+        displayName: 'USDC (AssetHub)',
+        assetType: 'Asset ID',
+        verified: true,
         actualAsset: { 
           symbol: 'USDC',
           assetId: '1337',
