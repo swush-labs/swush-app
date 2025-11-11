@@ -1,0 +1,23 @@
+endpoint: 
+  - wss://polkadot-asset-hub-rpc.polkadot.io
+  - wss://asset-hub-polkadot.dotters.network
+  - wss://sys.ibp.network/asset-hub-polkadot
+mock-signature-host: true
+port: 3421
+runtime-log-level: 4
+
+import-storage:
+  System:
+    Account:
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+        - providers: 1
+          data:
+            free: 1000000000000000
+  Assets:
+    Account:
+      - [[1984, 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK], { balance: 900000000 }]
+      - [[21, 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK], { balance: 900000000 }]
+      - [[1337, 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK], { balance: 900000000 }]
+#    Asset: [[[21], { supply: 1000000000 }]]

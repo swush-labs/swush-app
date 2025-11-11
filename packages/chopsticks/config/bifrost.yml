@@ -1,0 +1,74 @@
+endpoint: wss://bifrost-polkadot.ibp.network
+mock-signature-host: true
+block: ${env.BIFROST_BLOCK_NUMBER}
+db: ./db.sqlite
+runtime-log-level: 5
+port: 3423
+
+import-storage:
+  System:
+    Account:
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+        - providers: 1
+          data:
+            free: 1000000000000000
+
+  Tokens:
+    Accounts:
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Native: ASG
+        - free: '100000000000000000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Native: BNC
+        - free: '100000000000000000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Native: KUSD
+        - free: '100000000000000000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Native: DOT
+        - free: '100000000000000000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Native: KSM
+        - free: '100000000000000000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Native: ETH
+        - free: '100000000000000000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Native: KAR
+        - free: '100000000000000000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Native: ZLK
+        - free: '100000000000000000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Native: PHA
+        - free: '100000000000000000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Native: RMRK
+        - free: '100000000000000000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Native: MOVR
+        - free: '100000000000000000000000000000'
