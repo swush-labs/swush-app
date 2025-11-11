@@ -1,7 +1,7 @@
 endpoint: 
-  - wss://polkadot-asset-hub-rpc.polkadot.io
-  - wss://asset-hub-polkadot.dotters.network
   - wss://sys.ibp.network/asset-hub-polkadot
+  - wss://asset-hub-polkadot.dotters.network
+  - wss://asset-hub-polkadot-rpc.n.dwellir.com
 mock-signature-host: true
 port: 3421
 runtime-log-level: 4

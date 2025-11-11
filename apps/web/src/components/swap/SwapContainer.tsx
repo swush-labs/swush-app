@@ -104,7 +104,6 @@ export function SwapContainer() {
     outputToken,
     walletAddress,
     slippageTolerance,
-    skipPriceFetch: true, // 🔥 TEMPORARY: Skip price fetch for testing swap signing
     // Pass helpers from useXcmTokens
     getOptimalExchanges,
     determineCurrency,
@@ -390,10 +389,10 @@ export function SwapContainer() {
         isOpen={isExecuting || isSuccess}
         isSwappingInProgress={isExecuting}
         isSwapComplete={isSuccess}
-        inputAmount={inputAmount}
-        inputToken={inputToken?.symbol || ''}
-        outputAmount={outputAmount}
-        outputToken={outputToken?.name || ''}
+        inputAmount={flowState.success?.inputAmount || inputAmount}
+        inputToken={flowState.success?.inputToken || inputToken?.symbol || ''}
+        outputAmount={flowState.success?.outputAmount || outputAmount}
+        outputToken={flowState.success?.outputToken || outputToken?.name || ''}
         duration={flowState.success?.duration || 4000}
         onClose={() => {
           stopBalancePolling(); // Clean up polling on dialog close
