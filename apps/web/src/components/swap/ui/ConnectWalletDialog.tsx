@@ -1,4 +1,4 @@
-import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { cn, shortenAddress } from "@/lib/utils";
 import { X, ArrowLeft, Check } from "lucide-react"
 import Image from 'next/image';
@@ -237,9 +237,9 @@ export default function ConnectWalletDialog({
                   <ArrowLeft className="w-5 h-5 text-white" />
                 </button>
               )}
-              <p className="text-white text-2xl font-medium" >
+              <DialogTitle className="text-white text-2xl font-medium" >
                 {currentView === "accounts" ? "Select Account" : "Connect Wallet"}
-              </p>
+              </DialogTitle>
               <DialogClose className="absolute self-center right-0" >
                 <X className="w-5 h-5 stroke-2 text-white" />
               </DialogClose>

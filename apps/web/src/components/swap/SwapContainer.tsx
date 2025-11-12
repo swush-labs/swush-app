@@ -16,6 +16,7 @@ import { useParaSpellBalances } from '@/components/swap/hooks/useParaSpellBalanc
 import { LoadState } from '@/components/swap/ui/LoadState'
 import { ArrowSymbolDown } from '@/components/swap/ui/ArrowSymbolDown'
 import { calculateMinimumReceived } from '@/components/swap/utils'
+import { loadSlippageFromStorage, saveSlippageToStorage } from '@/components/swap/utils/slippageStorage'
 import { SwapCompleteDialog } from './ui/SwapCompleteDialog'
 import ConnectWalletDialog from './ui/ConnectWalletDialog'
 import SelectRecipientDialog from './ui/SelectRecipientDialog'
@@ -24,13 +25,20 @@ import { useSelectedAccount } from '@/components/wallet/use-selected-account'
 export function SwapContainer() {
   // UI state
   const [inputAmount, setInputAmount] = useState('')
-  const [slippageTolerance, setSlippageTolerance] = useState(1) // Default 1% slippage
+  // Initialize slippage from localStorage or use default
+  const [slippageTolerance, setSlippageTolerance] = useState(() => loadSlippageFromStorage())
   const [insufficientBalance, setInsufficientBalance] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [openInputDialog, setOpenInputDialog] = useState(false)
   const [openOutputDialog, setOpenOutputDialog] = useState(false)
   const [isConnectWalletOpen, setIsConnectWalletOpen] = useState(false)
   const [isSelectRecipientOpen, setIsSelectRecipientOpen] = useState(false)
+
+  // Wrapper function to update slippage and persist to localStorage
+  const handleSlippageChange = useCallback((value: number) => {
+    setSlippageTolerance(value);
+    saveSlippageToStorage(value);
+  }, []);
 
   // Get selected account from global hook
   const { selectedAccount } = useSelectedAccount()
@@ -285,7 +293,7 @@ export function SwapContainer() {
         <div className="w-full max-w-md space-y-5 md:space-y-4">
           <SwapHeader
             slippageTolerance={slippageTolerance}
-            setSlippageTolerance={setSlippageTolerance}
+            setSlippageTolerance={handleSlippageChange}
             onHistoryClick={() => setShowHistory(true)}
           />
 

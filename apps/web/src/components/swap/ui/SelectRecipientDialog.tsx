@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ArrowRight, CircleAlert, X, Check } from "lucide-react";
 import { useSelectedAccount } from "@/components/wallet/use-selected-account";
@@ -22,7 +22,7 @@ export default function SelectRecipientDialog({
         <Dialog open={isOpen} onOpenChange={onOpenChange} >
             <DialogContent className="w-11/12 sm:w-full max-w-lg p-6 rounded-xl sm:rounded-xl bg-midnight border border-dark-slate-gray" isCloseIconVisible={false} >
                 <div className="flex items-center justify-center relative" >
-                    <p className="text-white text-2xl font-medium" >Select Recipient</p>
+                    <DialogTitle className="text-white text-2xl font-medium" >Select Recipient</DialogTitle>
                     <DialogClose className="absolute self-center right-0" ><X className="w-5 h-5 stroke-2 text-white" /></DialogClose>
                 </div>
                 <div className="bg-blackPearl border-dark-slate-gray rounded-2xl flex flex-col items-stretch p-6 overflow-hidden relative mt-4" >
