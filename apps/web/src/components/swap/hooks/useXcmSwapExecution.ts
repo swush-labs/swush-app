@@ -89,6 +89,9 @@ interface UseXcmSwapExecutionProps {
   walletAddress: string;
   polkadotSigner: PolkadotSigner | undefined;
 
+  // Exchange selection from quote (optional - will recalculate if not provided)
+  selectedExchange?: string | string[];
+
   // Helpers from useXcmTokens
   getOptimalExchanges: (
     fromKey: string,
@@ -162,6 +165,7 @@ export function useXcmSwapExecution({
   slippageTolerance,
   walletAddress,
   polkadotSigner,
+  selectedExchange,
   getOptimalExchanges,
   determineCurrency,
   getTAssetFromKey,
@@ -290,22 +294,27 @@ export function useXcmSwapExecution({
         walletAddress,
       });
 
-      // Step 1: Get optimal DEX selection
-      const exchangesToUse = getOptimalExchanges(
-        inputToken.assetKey,
-        outputToken.assetKey,
-        inputToken.networkChain,
-        outputToken.networkChain
-      );
-
-      // Use optimal exchanges or fallback to HydrationDex
-      // const exchanges: TExchangeChain[] = exchangesToUse.length > 0
-      //   ? exchangesToUse
-      //   : ['HydrationDex'];
-
+      // Step 1: Use exchange from quote if available, otherwise recalculate
+      let exchanges: TExchangeChain | TExchangeChain[];
       //TODO: hardcode HydrationDex for now
-      const exchanges: TExchangeChain = 'HydrationDex';
-      console.log('📊 Selected exchanges:', exchanges);
+      //  let  exchanges: TExchangeChain = 'HydrationDex';
+      if (selectedExchange) {
+        // Use the exchange that was selected during quote fetching
+        // This ensures we use the same exchange that gave us the quote
+        exchanges = selectedExchange as TExchangeChain;
+        console.log('📊 Using exchange from quote:', exchanges);
+      } else {
+        // Fallback: recalculate optimal exchanges (shouldn't happen in normal flow)
+        console.warn('⚠️ No exchange provided from quote, recalculating...');
+        const optimalExchanges = getOptimalExchanges(
+          inputToken.assetKey,
+          outputToken.assetKey,
+          inputToken.networkChain,
+          outputToken.networkChain
+        );
+        exchanges = optimalExchanges.length > 0 ? optimalExchanges[0] : 'HydrationDex';
+        console.log('📊 Recalculated exchange:', exchanges);
+      }
 
       // Step 2: Get TAssetInfo for both tokens
       const fromAsset = getTAssetFromKey(inputToken.assetKey, 'from');
@@ -338,6 +347,9 @@ export function useXcmSwapExecution({
         config: routerConfig
       });
 
+      // Round to 2 decimal places to avoid floating-point precision issues
+      const safeSlippage = Math.round(slippageTolerance * 100) / 100;
+
       //print RouterBuilder input data
       console.log('🔧 RouterBuilder input data:', {
         from: inputToken.networkChain,
@@ -346,7 +358,7 @@ export function useXcmSwapExecution({
         currencyFrom: determineCurrency(fromAsset),
         currencyTo: determineCurrency(toAsset),
         amount: inputAmount, // Pass as string, not BigInt
-        slippagePct: slippageTolerance.toString(),
+        slippagePct: safeSlippage.toString(),
         senderAddress: walletAddress,
         recipientAddress: walletAddress,
       });
@@ -358,7 +370,7 @@ export function useXcmSwapExecution({
         .currencyFrom(determineCurrency(fromAsset))
         .currencyTo(determineCurrency(toAsset))
         .amount(inputAmount) // Pass string amount, let ParaSpell handle conversion
-        .slippagePct(slippageTolerance.toString())
+        .slippagePct(safeSlippage.toString())
         .senderAddress(walletAddress)
         .recipientAddress(walletAddress) // Same as sender for now
         .signer(polkadotSigner)
@@ -477,6 +489,7 @@ export function useXcmSwapExecution({
     slippageTolerance,
     walletAddress,
     polkadotSigner,
+    selectedExchange,
     getOptimalExchanges,
     determineCurrency,
     getTAssetFromKey,

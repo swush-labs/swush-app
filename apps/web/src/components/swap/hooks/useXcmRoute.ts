@@ -286,6 +286,9 @@ export function useXcmRoute({
 
       // Only fetch fees if wallet is connected
       // Pass config to explicitly enable abstractDecimals for string amounts
+      // Round to 2 decimal places to avoid floating-point precision issues
+      const safeSlippage = Math.round(slippageTolerance * 100) / 100;
+      
       const feesPromise = walletAddress
         ? RouterBuilder({ abstractDecimals: true })
           .from(inputToken.networkChain as any) // Type assertion for chain compatibility
@@ -296,7 +299,7 @@ export function useXcmRoute({
           .amount(currentInputAmount) // Use string amount
           .senderAddress(walletAddress)
           .recipientAddress(walletAddress)
-          .slippagePct(slippageTolerance.toString())
+          .slippagePct(safeSlippage.toString())
           .getXcmFees()
         : Promise.reject(new Error('No wallet connected'));
 

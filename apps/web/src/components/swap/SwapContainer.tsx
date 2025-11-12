@@ -24,7 +24,7 @@ import { useSelectedAccount } from '@/components/wallet/use-selected-account'
 export function SwapContainer() {
   // UI state
   const [inputAmount, setInputAmount] = useState('')
-  const [slippageTolerance, setSlippageTolerance] = useState(10)
+  const [slippageTolerance, setSlippageTolerance] = useState(1) // Default 1% slippage
   const [insufficientBalance, setInsufficientBalance] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [openInputDialog, setOpenInputDialog] = useState(false)
@@ -136,6 +136,7 @@ export function SwapContainer() {
     slippageTolerance,
     walletAddress,
     polkadotSigner,
+    selectedExchange: routeState.data?.exchange, // Pass the exchange from quote
     getOptimalExchanges,
     determineCurrency,
     getTAssetFromKey,

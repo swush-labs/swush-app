@@ -20,55 +20,145 @@ import-storage:
       -
         -
           - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
-          - Native: ASG
-        - free: '100000000000000000000000000000'
+          - Token: ASG
+        - free: '1000000000000000'
       -
         -
           - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
-          - Native: BNC
-        - free: '100000000000000000000000000000'
+          - Token: BNC
+        - free: '1000000000000000'
       -
         -
           - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
-          - Native: KUSD
-        - free: '100000000000000000000000000000'
+          - Token: KUSD
+        - free: '1000000000000000'
       -
         -
           - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
-          - Native: DOT
-        - free: '100000000000000000000000000000'
+          - Token: DOT
+        - free: '1000000000000000'
       -
         -
           - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
-          - Native: KSM
-        - free: '100000000000000000000000000000'
+          - Token: KSM
+        - free: '1000000000000000'
       -
         -
           - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
-          - Native: ETH
-        - free: '100000000000000000000000000000'
+          - Token: ETH
+        - free: '1000000000000000'
       -
         -
           - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
-          - Native: KAR
-        - free: '100000000000000000000000000000'
+          - Token: KAR
+        - free: '1000000000000000'
       -
         -
           - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
-          - Native: ZLK
-        - free: '100000000000000000000000000000'
+          - Token: ZLK
+        - free: '1000000000000000'
       -
         -
           - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
-          - Native: PHA
-        - free: '100000000000000000000000000000'
+          - Token: PHA
+        - free: '1000000000000000'
       -
         -
           - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
-          - Native: RMRK
-        - free: '100000000000000000000000000000'
+          - Token: RMRK
+        - free: '1000000000000000'
       -
         -
           - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
-          - Native: MOVR
-        - free: '100000000000000000000000000000'
+          - Token: MOVR
+        - free: '1000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Token2: 0 # DOT
+        - free: '1000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Token2: 1 # GLMR
+        - free: '1000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Token2: 2 # USDT
+        - free: '100000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Token2: 3 # ASTR
+        - free: '1000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Token2: 4 # FIL  (Filecoin)
+        - free: '1000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Token2: 5 # USDC
+        - free: '100000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Token2: 6 # interBTC (iBTC) from Interlay
+        - free: '2100000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Token2: 7 # INTR
+        - free: '1000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Token2: 8 # MANTA
+        - free: '1000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Token2: 9 # BNCs (inscriptions on BNC)
+        - free: '1000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Token2: 10 # PINK
+        - free: '1000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - Token2: 11 # DED
+        - free: '1000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - VToken2: 0 # vDOT
+        - free: '1000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - VToken2: 1 # vGLMR
+        - free: '1000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - VToken2: 3 # vASTR
+        - free: '1000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - VToken2: 4 # vFIL
+        - free: '1000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - VToken2: 8 # vMANTA
+        - free: '1000000000000000'
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - VSToken2: 0 # vsDOT
+        - free: '1000000000000000'
