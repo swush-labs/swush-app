@@ -36,11 +36,25 @@ const mockGetTAssetFromKey = jest.fn((_key: string, _direction: 'from' | 'to') =
 } as any));
 
 describe('useXcmRoute - Phase 2: Routing', () => {
+  const originalEnv = process.env.NEXT_PUBLIC_SKIP_PRICE_FETCH;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset env variable before each test
+    delete process.env.NEXT_PUBLIC_SKIP_PRICE_FETCH;
+  });
+
+  afterEach(() => {
+    // Restore original env variable
+    if (originalEnv !== undefined) {
+      process.env.NEXT_PUBLIC_SKIP_PRICE_FETCH = originalEnv;
+    } else {
+      delete process.env.NEXT_PUBLIC_SKIP_PRICE_FETCH;
+    }
   });
 
   it('should initialize with empty state', () => {
+    process.env.NEXT_PUBLIC_SKIP_PRICE_FETCH = 'true';
     const { result } = renderHook(() =>
       useXcmRoute({
         inputToken: null,
@@ -48,7 +62,6 @@ describe('useXcmRoute - Phase 2: Routing', () => {
         getOptimalExchanges: mockGetOptimalExchanges,
         determineCurrency: mockDetermineCurrency,
         getTAssetFromKey: mockGetTAssetFromKey,
-        skipPriceFetch: true,
       })
     );
 
@@ -59,6 +72,7 @@ describe('useXcmRoute - Phase 2: Routing', () => {
   });
 
   it('should skip price fetch when skipPriceFetch is true', async () => {
+    process.env.NEXT_PUBLIC_SKIP_PRICE_FETCH = 'true';
     const { result } = renderHook(() =>
       useXcmRoute({
         inputToken: mockInputToken,
@@ -66,7 +80,6 @@ describe('useXcmRoute - Phase 2: Routing', () => {
         getOptimalExchanges: mockGetOptimalExchanges,
         determineCurrency: mockDetermineCurrency,
         getTAssetFromKey: mockGetTAssetFromKey,
-        skipPriceFetch: true,
       })
     );
 
@@ -81,6 +94,7 @@ describe('useXcmRoute - Phase 2: Routing', () => {
   });
 
   it('should validate token configuration', async () => {
+    process.env.NEXT_PUBLIC_SKIP_PRICE_FETCH = 'false';
     const invalidToken = { ...mockInputToken, assetKey: undefined };
     
     const { result } = renderHook(() =>
@@ -90,7 +104,6 @@ describe('useXcmRoute - Phase 2: Routing', () => {
         getOptimalExchanges: mockGetOptimalExchanges,
         determineCurrency: mockDetermineCurrency,
         getTAssetFromKey: mockGetTAssetFromKey,
-        skipPriceFetch: false,
       })
     );
 
@@ -104,6 +117,7 @@ describe('useXcmRoute - Phase 2: Routing', () => {
   });
 
   it('should reset route state correctly', () => {
+    process.env.NEXT_PUBLIC_SKIP_PRICE_FETCH = 'true';
     const { result } = renderHook(() =>
       useXcmRoute({
         inputToken: mockInputToken,
@@ -111,7 +125,6 @@ describe('useXcmRoute - Phase 2: Routing', () => {
         getOptimalExchanges: mockGetOptimalExchanges,
         determineCurrency: mockDetermineCurrency,
         getTAssetFromKey: mockGetTAssetFromKey,
-        skipPriceFetch: true,
       })
     );
 
@@ -126,6 +139,7 @@ describe('useXcmRoute - Phase 2: Routing', () => {
   });
 
   it('should handle separate loading states for quote and fees', () => {
+    process.env.NEXT_PUBLIC_SKIP_PRICE_FETCH = 'true';
     const { result } = renderHook(() =>
       useXcmRoute({
         inputToken: mockInputToken,
@@ -133,7 +147,6 @@ describe('useXcmRoute - Phase 2: Routing', () => {
         getOptimalExchanges: mockGetOptimalExchanges,
         determineCurrency: mockDetermineCurrency,
         getTAssetFromKey: mockGetTAssetFromKey,
-        skipPriceFetch: true,
       })
     );
 
@@ -142,6 +155,7 @@ describe('useXcmRoute - Phase 2: Routing', () => {
   });
 
   it('should clear state for invalid amounts', async () => {
+    process.env.NEXT_PUBLIC_SKIP_PRICE_FETCH = 'true';
     const { result } = renderHook(() =>
       useXcmRoute({
         inputToken: mockInputToken,
@@ -149,7 +163,6 @@ describe('useXcmRoute - Phase 2: Routing', () => {
         getOptimalExchanges: mockGetOptimalExchanges,
         determineCurrency: mockDetermineCurrency,
         getTAssetFromKey: mockGetTAssetFromKey,
-        skipPriceFetch: true,
       })
     );
 

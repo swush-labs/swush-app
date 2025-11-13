@@ -18,6 +18,14 @@ import { NUMBER_FORMAT_OPTIONS } from '@/services/constants';
 import { ROUTE_FETCH_TIMEOUT } from '@/lib/const';
 
 /**
+ * Check if price fetching should be skipped (from environment variable)
+ * This allows for easy testing by setting the env var in tests
+ */
+const shouldSkipPriceFetch = (): boolean => {
+  return process.env.NEXT_PUBLIC_SKIP_PRICE_FETCH === 'true';
+};
+
+/**
  * Convert user input (decimal string) to smallest unit (bigint)
  * 
  * Uses string manipulation to preserve precision for large decimals
@@ -66,7 +74,6 @@ interface UseXcmRouteProps {
   outputToken: TokenInfo | null;
   walletAddress?: string;
   slippageTolerance?: number; // Percentage (e.g., 1 for 1%)
-  skipPriceFetch?: boolean; // Skip price/fee fetching for testing
 
   // Helper functions from useXcmTokens
   getOptimalExchanges: (
@@ -121,7 +128,6 @@ export function useXcmRoute({
   outputToken,
   walletAddress,
   slippageTolerance = 1,
-  skipPriceFetch = false, // Default: false (normal behavior)
   getOptimalExchanges,
   determineCurrency,
   getTAssetFromKey,
@@ -163,7 +169,7 @@ export function useXcmRoute({
    */
   const fetchRoute = useCallback(async (currentInputAmount: string) => {
     // Skip fetching if flag is set (for testing)
-    if (skipPriceFetch) {
+    if (shouldSkipPriceFetch()) {
       console.log('⏭️ Skipping price fetch (skipPriceFetch=true)');
       setOutputAmount(currentInputAmount); // Mock output = input
       setRouteDex('HydrationDex (mock)');
@@ -256,14 +262,6 @@ export function useXcmRoute({
         );
       }
 
-      console.log('🔄 Fetching XCM quote and fees in parallel:', {
-        from: `${inputToken.symbol} (${inputToken.networkChain})`,
-        to: `${outputToken.symbol} (${outputToken.networkChain})`,
-        amountDecimal: currentInputAmount,
-        amountToUse: currentInputAmount,
-        exchanges: exchangesToUse,
-      });
-
       // Step 4: Fetch quote (always) and fees (only if wallet connected)
       //TODO: fix chain type compatibility
 
@@ -280,6 +278,9 @@ export function useXcmRoute({
 
       // Only fetch fees if wallet is connected
       // Pass config to explicitly enable abstractDecimals for string amounts
+      // Round to 2 decimal places to avoid floating-point precision issues
+      const safeSlippage = Math.round(slippageTolerance * 100) / 100;
+
       const feesPromise = walletAddress
         ? RouterBuilder({ abstractDecimals: true })
           .from(inputToken.networkChain as any) // Type assertion for chain compatibility
@@ -290,9 +291,18 @@ export function useXcmRoute({
           .amount(currentInputAmount) // Use string amount
           .senderAddress(walletAddress)
           .recipientAddress(walletAddress)
-          .slippagePct(slippageTolerance.toString())
+          .slippagePct(safeSlippage.toString())
           .getXcmFees()
         : Promise.reject(new Error('No wallet connected'));
+
+      console.log('🔄 Fetching XCM quote and fees in parallel:', {
+        from: `${inputToken.symbol} (${inputToken.networkChain})`,
+        to: `${outputToken.symbol} (${outputToken.networkChain})`,
+        amountDecimal: currentInputAmount,
+        amountToUse: currentInputAmount,
+        exchanges: exchangesToUse,
+        slippageTolerance: safeSlippage.toString(),
+      });
 
       const [quoteSettled, feesSettled] = await Promise.allSettled([
         quotePromise,
@@ -413,7 +423,6 @@ export function useXcmRoute({
     getTAssetFromKey,
     walletAddress,
     slippageTolerance,
-    skipPriceFetch,
   ]);
 
   /**

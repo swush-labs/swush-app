@@ -1,1 +1,1 @@
-npx @acala-network/chopsticks xcm -p $HOME/chopsticks/configs/polkadot_asset_hub.yml -p $HOME/chopsticks/configs/hydration.yml -p $HOME/chopsticks/configs/bifrost.yml -p $HOME/chopsticks/configs/acala.yml
+npx @acala-network/chopsticks@latest xcm -p config/polkadot_asset_hub.yml -p config/hydration.yml -p config/bifrost.yml -p config/acala.yml

@@ -58,6 +58,10 @@ packages/api/public
 .turbo
 output.log
 
+# SQLite database files
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
 *.db.sqlite*
 
 #ignore .git

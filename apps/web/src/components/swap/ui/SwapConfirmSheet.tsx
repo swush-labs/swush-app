@@ -3,7 +3,7 @@ import { AlertCircle, ArrowDown, CheckCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBalance } from "../utils";
 import type { FeeSummary } from "@/services/xcm-router/feeCalculator";
-import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -111,7 +111,7 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
             <DialogClose onClick={onClose} className="absolute right-0 self-center" >
               <X className="text-white" />
             </DialogClose>
-            <p className="text-lg font-medium text-white h-fit" >Confirm Swap</p>
+            <DialogTitle className="text-lg font-medium text-white h-fit" >Confirm Swap</DialogTitle>
           </div>
           <div className="flex flex-col items-stretch justify-start mt-6" >
             <div className="bg-midnight border border-dark-slate-gray rounded-2xl pt-4 pb-4 shadow-[4px_4px_12px_0_rgba(0,0,0,0.25)]" >
