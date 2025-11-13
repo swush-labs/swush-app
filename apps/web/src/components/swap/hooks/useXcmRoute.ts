@@ -262,14 +262,6 @@ export function useXcmRoute({
         );
       }
 
-      console.log('🔄 Fetching XCM quote and fees in parallel:', {
-        from: `${inputToken.symbol} (${inputToken.networkChain})`,
-        to: `${outputToken.symbol} (${outputToken.networkChain})`,
-        amountDecimal: currentInputAmount,
-        amountToUse: currentInputAmount,
-        exchanges: exchangesToUse,
-      });
-
       // Step 4: Fetch quote (always) and fees (only if wallet connected)
       //TODO: fix chain type compatibility
 
@@ -288,7 +280,7 @@ export function useXcmRoute({
       // Pass config to explicitly enable abstractDecimals for string amounts
       // Round to 2 decimal places to avoid floating-point precision issues
       const safeSlippage = Math.round(slippageTolerance * 100) / 100;
-      
+
       const feesPromise = walletAddress
         ? RouterBuilder({ abstractDecimals: true })
           .from(inputToken.networkChain as any) // Type assertion for chain compatibility
@@ -302,6 +294,15 @@ export function useXcmRoute({
           .slippagePct(safeSlippage.toString())
           .getXcmFees()
         : Promise.reject(new Error('No wallet connected'));
+
+      console.log('🔄 Fetching XCM quote and fees in parallel:', {
+        from: `${inputToken.symbol} (${inputToken.networkChain})`,
+        to: `${outputToken.symbol} (${outputToken.networkChain})`,
+        amountDecimal: currentInputAmount,
+        amountToUse: currentInputAmount,
+        exchanges: exchangesToUse,
+        slippageTolerance: safeSlippage.toString(),
+      });
 
       const [quoteSettled, feesSettled] = await Promise.allSettled([
         quotePromise,
