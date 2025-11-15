@@ -131,12 +131,12 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
       //   displayName: "xcDOT (Moonbeam)",
       //   verified: false
       // },
-      "DOT-native-Acala": {
-        network: "Acala",
-        assetType: "Native",
-        displayName: "DOT (Acala)",
-        verified: true
-      },
+      // "DOT-native-Acala": {
+      //   network: "Acala",
+      //   assetType: "Multi-Location",
+      //   displayName: "DOT (Acala)",
+      //   verified: true
+      // },
       "DOT-0-BifrostPolkadot": {
         network: "BifrostPolkadot",
         assetType: "Asset ID",
@@ -275,7 +275,7 @@ export const DEX_CHAIN_COMPATIBILITY: Record<string, string[]> = {
   "HydrationDex": ["AssetHubPolkadot", "Hydration", "Moonbeam", "Acala", "BifrostPolkadot"],
   "AssetHubPolkadotDex": ["AssetHubPolkadot", "Hydration", "Acala", "BifrostPolkadot"],
 
-  "AcalaDex": ["Acala", "Hydration", "AssetHubPolkadot"],
+  "AcalaDex": ["Acala", "Hydration"],
   "BifrostKusamaDex": ["BifrostKusama"],
   "BifrostPolkadotDex": ["BifrostPolkadot", "Hydration", "AssetHubPolkadot"],
 };

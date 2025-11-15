@@ -140,6 +140,9 @@ export function useParaSpellBalances({
 
       // Format the balance using our utility with standard constants
       const formatted = formatAmount(balance.toString(), token.decimals, NUMBER_FORMAT_OPTIONS);
+   
+      console.log(`Token id: ${token.id}, TAsset: ${JSON.stringify(currency)}`);
+      console.log(`Balance for ${token.symbol}: ${balance.toString()} using api: ${customApi}`);
 
       return {
         raw: formatted.raw,
