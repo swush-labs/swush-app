@@ -26,7 +26,10 @@ export const SubmitButtonAction = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.4 }}
       >
-        <AnimatedGlowBorder isActive={isLoadingQuote}>
+        <AnimatedGlowBorder 
+          isActive={isLoadingQuote || isSwapping}
+          variant={isSwapping ? 'validation' : 'default'}
+        >
           <motion.button
             className={`
               relative w-full h-14 text-lg font-semibold rounded-full transition-all duration-300 overflow-hidden backdrop-blur-sm
@@ -72,6 +75,22 @@ export const SubmitButtonAction = ({
                 }}
               />
             )}
+
+            {/* Shimmer effect when validating swap */}
+            {isSwapping && !isLoadingQuote && (
+              <motion.div 
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/15 to-transparent"
+                animate={{ 
+                  x: ['-200%', '200%']
+                }}
+                transition={{ 
+                  duration: 1.8, 
+                  repeat: Infinity, 
+                  ease: "easeInOut",
+                  repeatDelay: 0.2
+                }}
+              />
+            )}
             
             <span className="relative z-10 flex items-center justify-center gap-2">
               {(isSwapping || isLoadingQuote) && (
@@ -87,7 +106,7 @@ export const SubmitButtonAction = ({
                 : isLoadingQuote 
                 ? 'Finding the best price' 
                 : isSwapping 
-                ? 'Swapping...' 
+                ? 'Validating swap...' 
                 : 'Swap'}
             </span>
           </motion.button>

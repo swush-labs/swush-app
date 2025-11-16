@@ -79,10 +79,10 @@ export const SwapToasts = {
 
   // Processing states
   confirmAndSign: () => {
-    return toast.loading('Please confirm and sign the transaction...', {
+    return toast.loading('Validating swap...', {
       id: TOAST_IDS.SWAP_STATUS,
       style: getLoadingToastStyle(),
-      icon: '🔄'
+      icon: '🧪'
     });
   },
 

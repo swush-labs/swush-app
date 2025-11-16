@@ -4,7 +4,7 @@ endpoint:
   - wss://asset-hub-polkadot-rpc.n.dwellir.com
 mock-signature-host: true
 port: 3421
-runtime-log-level: 4
+runtime-log-level: 5
 
 import-storage:
   System:

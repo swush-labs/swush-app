@@ -5,6 +5,8 @@ endpoint:
   # - wss://rpc.helikon.io/hydradx
 mock-signature-host: true
 port: 3422
+runtime-log-level: 5
+
 # wasm-override: hydradx_runtime.compact.compressed.wasm
 
 import-storage:

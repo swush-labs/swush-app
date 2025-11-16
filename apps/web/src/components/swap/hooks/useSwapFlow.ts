@@ -130,7 +130,7 @@ export function useSwapFlow() {
       case 'awaiting_signature':
         // Show wallet signature prompt
         dismissPrevious();
-        SwapToasts.confirmAndSign();
+        // SwapToasts.confirmAndSign();
         break;
 
       case 'executing':
