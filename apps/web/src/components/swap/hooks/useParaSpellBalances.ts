@@ -15,6 +15,7 @@ import {
 interface UseParaSpellBalancesProps {
   isConnected: boolean;
   walletAddress: string;
+  recipientAddress?: string; // Optional recipient address (defaults to walletAddress)
   inputToken: TokenInfo | null;
   outputToken: TokenInfo | null;
   determineCurrency: (asset: any) => any;
@@ -47,6 +48,7 @@ interface UseParaSpellBalancesReturn {
 export function useParaSpellBalances({
   isConnected,
   walletAddress,
+  recipientAddress,
   inputToken,
   outputToken,
   determineCurrency,
@@ -107,6 +109,13 @@ export function useParaSpellBalances({
     context: 'from' | 'to'
   ): Promise<{ raw: string; formatted: string } | null> => {
     try {
+      // Determine which address to use based on context
+      // Input (from) always uses sender's wallet address
+      // Output (to) uses recipient address if different, otherwise sender's address
+      const addressToUse = context === 'to' && recipientAddress 
+        ? recipientAddress 
+        : walletAddress;
+
       // Get TAsset info for proper currency construction
       const tAsset = getTAssetFromKey(token.assetKey || token.id, context);
       
@@ -124,10 +133,11 @@ export function useParaSpellBalances({
         : undefined;
 
       // Fetch balance from ParaSpell SDK
+      // - address: Uses sender address for input, recipient address for output
       // - chain: Uses token.networkChain which already has correct ParaSpell format
       // - api: Optional custom RPC URL for chopsticks/local testing
       const balance = await getAssetBalance({
-        address: walletAddress,
+        address: addressToUse,
         chain: token.networkChain as any, // Type assertion for chain compatibility
         currency: currency,
         ...(customApi && { api: customApi }), // Only add api field if custom URL exists
@@ -152,7 +162,7 @@ export function useParaSpellBalances({
       console.error(`Error fetching balance for ${token.symbol}:`, error);
       return { raw: '0', formatted: '0' };
     }
-  }, [walletAddress, getTAssetFromKey, determineCurrency, getChainRpcUrl]);
+  }, [walletAddress, recipientAddress, getTAssetFromKey, determineCurrency, getChainRpcUrl]);
 
   /**
    * Fetch balances for both input and output tokens
@@ -375,7 +385,7 @@ export function useParaSpellBalances({
       // Clean up balance polling on unmount
       stopBalancePolling();
     };
-  }, [isConnected, walletAddress, inputToken, outputToken, fetchBalances, stopBalancePolling]);
+  }, [isConnected, walletAddress, recipientAddress, inputToken, outputToken, fetchBalances, stopBalancePolling]);
 
   return {
     inputBalance,

@@ -51,6 +51,23 @@ export function SwapContainer() {
   const polkadotSigner = selectedAccount && 'polkadotSigner' in selectedAccount 
     ? selectedAccount.polkadotSigner 
     : undefined
+  
+  // Get EVM signer (client) - only available for Ethereum accounts
+  const evmSigner = selectedAccount && 'client' in selectedAccount 
+    ? selectedAccount.client 
+    : undefined
+
+  // Log account platform and available signers for debugging
+  useEffect(() => {
+    if (selectedAccount) {
+      console.log('📝 Selected Account Info:', {
+        platform: selectedAccount.platform,
+        address: selectedAccount.address,
+        hasPolkadotSigner: !!polkadotSigner,
+        hasEvmSigner: !!evmSigner,
+      });
+    }
+  }, [selectedAccount, polkadotSigner, evmSigner]);
 
   // Get recipient account from hook (with localStorage persistence)
   const {
@@ -99,6 +116,7 @@ export function SwapContainer() {
   } = useParaSpellBalances({
     isConnected,
     walletAddress,
+    recipientAddress, // Pass recipient address for output balance
     inputToken,
     outputToken,
     determineCurrency,
@@ -161,6 +179,7 @@ export function SwapContainer() {
     walletAddress,
     recipientAddress, // Use computed recipient address
     polkadotSigner,
+    evmSigner, // EVM signer for EVM-based chains (Moonbeam, Astar, etc.)
     selectedExchange: routeState.data?.exchange, // Pass the exchange from quote
     getOptimalExchanges,
     determineCurrency,

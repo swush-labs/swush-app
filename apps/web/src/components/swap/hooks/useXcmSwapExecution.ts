@@ -25,6 +25,9 @@ import {
 import { useXcmTracking } from './useXcmTracking';
 import type { XcmDeliveryStatus, TrackedXcmMessage } from '@/services/xcm-tracker';
 
+// EVM Chain Utilities
+import { isEvmChain } from '@/services/xcm-router/evmChains';
+
 /**
  * Convert user input (decimal string) to smallest unit (bigint)
  * Uses string manipulation to preserve precision for large decimals
@@ -90,6 +93,7 @@ interface UseXcmSwapExecutionProps {
   walletAddress: string;
   recipientAddress: string; // Recipient address (can be same as sender or different)
   polkadotSigner: PolkadotSigner | undefined;
+  evmSigner?: any; // EVM signer (from account.client) for EVM-based chains
 
   // Exchange selection from quote (optional - will recalculate if not provided)
   selectedExchange?: string | string[];
@@ -168,6 +172,7 @@ export function useXcmSwapExecution({
   walletAddress,
   recipientAddress,
   polkadotSigner,
+  evmSigner,
   selectedExchange,
   getOptimalExchanges,
   determineCurrency,
@@ -243,9 +248,9 @@ export function useXcmSwapExecution({
    */
   const executeSwap = useCallback(async () => {
     // Validation
-    if (!inputToken || !outputToken || !walletAddress || !polkadotSigner) {
+    if (!inputToken || !outputToken || !walletAddress) {
       const errorDetails: ErrorDetails = {
-        message: 'Missing required parameters: token, wallet, or signer',
+        message: 'Missing required parameters: token or wallet',
         code: 'MISSING_PARAMS'
       };
       onError?.(errorDetails);
@@ -282,6 +287,37 @@ export function useXcmSwapExecution({
       return;
     }
 
+    // Check if origin chain is EVM-based and validate appropriate signer
+    const isOriginEvm = isEvmChain(inputToken.networkChain);
+    
+    if (isOriginEvm && !evmSigner) {
+      console.error('❌ EVM chain requires EVM signer:', {
+        chain: inputToken.networkChain,
+        hasEvmSigner: !!evmSigner,
+      });
+      
+      const errorDetails: ErrorDetails = {
+        message: `${inputToken.networkChain} is an EVM chain. Please connect an Ethereum wallet (e.g., MetaMask)`,
+        code: 'MISSING_EVM_SIGNER'
+      };
+      onError?.(errorDetails);
+      return;
+    }
+
+    if (!isOriginEvm && !polkadotSigner) {
+      console.error('❌ Polkadot chain requires Polkadot signer:', {
+        chain: inputToken.networkChain,
+        hasPolkadotSigner: !!polkadotSigner,
+      });
+      
+      const errorDetails: ErrorDetails = {
+        message: `${inputToken.networkChain} requires a Polkadot wallet (e.g., Talisman, SubWallet)`,
+        code: 'MISSING_POLKADOT_SIGNER'
+      };
+      onError?.(errorDetails);
+      return;
+    }
+
     try {
       // Reset execution flag and start timer
       hasExecutionStartedRef.current = false;
@@ -295,6 +331,14 @@ export function useXcmSwapExecution({
         to: `${outputToken.symbol} (${outputToken.networkChain})`,
         amount: inputAmount,
         walletAddress,
+      });
+
+      // Log which signer will be used
+      console.log('🔐 Signer info:', {
+        originChain: inputToken.networkChain,
+        isEvmChain: isOriginEvm,
+        willUseEvmSigner: isOriginEvm && !!evmSigner,
+        willUsePolkadotSigner: !isOriginEvm && !!polkadotSigner,
       });
 
       // Step 1: Use exchange from quote if available, otherwise recalculate
@@ -364,87 +408,113 @@ export function useXcmSwapExecution({
         amount: inputAmount, // Pass as string, not BigInt
         slippagePct: safeSlippage.toString(),
         senderAddress: walletAddress,
-        recipientAddress: walletAddress,
+        recipientAddress: recipientAddress,
+        isOriginEvm: isOriginEvm,
+        signerType: isOriginEvm ? 'EVM' : 'Polkadot',
       });
 
-      await RouterBuilder(routerConfig)
-        .from(inputToken.networkChain as any)
-        .to(outputToken.networkChain as any)
-        .exchange(exchanges as any)
-        .currencyFrom(determineCurrency(fromAsset))
-        .currencyTo(determineCurrency(toAsset))
-        .amount(inputAmount) // Pass string amount, let ParaSpell handle conversion
-        .slippagePct(safeSlippage.toString())
-        .senderAddress(walletAddress)
-        .recipientAddress(recipientAddress) // Use provided recipient address
-        .signer(polkadotSigner)
-        .onStatusChange((status: TRouterEvent) => {
-          // Log transaction status update
-          console.log(`📡 Transaction status update:`, {
-            type: status.type,
-            step: status.currentStep !== undefined ? status.currentStep + 1 : '?',
-            totalSteps: status.routerPlan?.length || '?',
-            chain: status.chain,
-            destinationChain: status.destinationChain,
-          });
+      // Build RouterBuilder with conditional signer configuration
+      // Status change handler - shared between both EVM and Polkadot paths
+      const onStatusChange = (status: TRouterEvent) => {
+        // Log transaction status update
+        console.log(`📡 Transaction status update:`, {
+          type: status.type,
+          step: status.currentStep !== undefined ? status.currentStep + 1 : '?',
+          totalSteps: status.routerPlan?.length || '?',
+          chain: status.chain,
+          destinationChain: status.destinationChain,
+        });
 
-          // Handle COMPLETED status
-          if (status.type === 'COMPLETED') {
-            console.log(`✅ Router execution completed!`);
+        // Handle COMPLETED status
+        if (status.type === 'COMPLETED') {
+          console.log(`✅ Router execution completed!`);
 
-            // If XCM tracking is enabled, start tracking the route
-            if (enableXcmTracking && inputToken.networkChain && outputToken.networkChain) {
-              console.log('🔭 Starting XCM delivery tracking...');
-              trackRoute(
-                inputToken.networkChain,
-                outputToken.networkChain,
-                walletAddress
-              );
-              
-              // Update status to show XCM delivery pending
-              onExecutionUpdate?.({
-                xcmDeliveryStatus: 'in-flight',
-                xcmStatusMessage: 'Delivering assets cross-chain...',
-              });
-            } else {
-              // No XCM tracking, trigger success immediately
-              const duration = Date.now() - startTimeRef.current;
-              console.log(`✅ Swap completed successfully in ${duration}ms!`);
-
-              onSuccess?.({
-                duration,
-                inputAmount,
-                inputToken: inputToken.symbol,
-                outputAmount: outputAmount || '?',
-                outputToken: outputToken.symbol
-              });
-            }
-            return; // Exit early, no need to process further
-          }
-
-          // Notify execution start on first transaction event
-          if (!hasExecutionStartedRef.current) {
-            console.log('✅ Transaction execution started:', status.type);
-            hasExecutionStartedRef.current = true;
-
-            // Notify parent that execution has started
-            onExecutionStart?.({
-              currentStep: status.currentStep || 0,
-              totalSteps: status.routerPlan?.length || 0,
-              transactionType: status.type,
-              statusMessage: formatStatusMessage(status.type)
+          // If XCM tracking is enabled, start tracking the route
+          if (enableXcmTracking && inputToken.networkChain && outputToken.networkChain) {
+            console.log('🔭 Starting XCM delivery tracking...');
+            trackRoute(
+              inputToken.networkChain,
+              outputToken.networkChain,
+              walletAddress
+            );
+            
+            // Update status to show XCM delivery pending
+            onExecutionUpdate?.({
+              xcmDeliveryStatus: 'in-flight',
+              xcmStatusMessage: 'Delivering assets cross-chain...',
             });
           } else {
-            // Update execution progress
-            onExecutionUpdate?.({
-              currentStep: status.currentStep,
-              totalSteps: status.routerPlan?.length,
-              transactionType: status.type,
-              statusMessage: formatStatusMessage(status.type)
+            // No XCM tracking, trigger success immediately
+            const duration = Date.now() - startTimeRef.current;
+            console.log(`✅ Swap completed successfully in ${duration}ms!`);
+
+            onSuccess?.({
+              duration,
+              inputAmount,
+              inputToken: inputToken.symbol,
+              outputAmount: outputAmount || '?',
+              outputToken: outputToken.symbol
             });
           }
-        })
-        .build();
+          return; // Exit early, no need to process further
+        }
+
+        // Notify execution start on first transaction event
+        if (!hasExecutionStartedRef.current) {
+          console.log('✅ Transaction execution started:', status.type);
+          hasExecutionStartedRef.current = true;
+
+          // Notify parent that execution has started
+          onExecutionStart?.({
+            currentStep: status.currentStep || 0,
+            totalSteps: status.routerPlan?.length || 0,
+            transactionType: status.type,
+            statusMessage: formatStatusMessage(status.type)
+          });
+        } else {
+          // Update execution progress
+          onExecutionUpdate?.({
+            currentStep: status.currentStep,
+            totalSteps: status.routerPlan?.length,
+            transactionType: status.type,
+            statusMessage: formatStatusMessage(status.type)
+          });
+        }
+      };
+      
+      if (isOriginEvm) {
+        console.log('🔐 Using EVM signer for chain:', inputToken.networkChain);
+        // For EVM chains, use evmSigner instead of polkadotSigner
+        // Type assertion needed due to ParaSpell's type system requiring signer in the type
+        await (RouterBuilder(routerConfig)
+          .from(inputToken.networkChain as any)
+          .to(outputToken.networkChain as any)
+          .exchange(exchanges as any)
+          .currencyFrom(determineCurrency(fromAsset))
+          .currencyTo(determineCurrency(toAsset))
+          .amount(inputAmount)
+          .slippagePct(safeSlippage.toString())
+          .recipientAddress(recipientAddress)
+          .evmSenderAddress(walletAddress) // Required for EVM chains
+          .evmSigner(evmSigner!) as any) // Required for EVM chains
+          .onStatusChange(onStatusChange)
+          .build();
+      } else {
+        console.log('🔐 Using Polkadot signer for chain:', inputToken.networkChain);
+        await RouterBuilder(routerConfig)
+          .from(inputToken.networkChain as any)
+          .to(outputToken.networkChain as any)
+          .exchange(exchanges as any)
+          .currencyFrom(determineCurrency(fromAsset))
+          .currencyTo(determineCurrency(toAsset))
+          .amount(inputAmount)
+          .slippagePct(safeSlippage.toString())
+          .senderAddress(walletAddress)
+          .recipientAddress(recipientAddress)
+          .signer(polkadotSigner!) // Required for Polkadot chains
+          .onStatusChange(onStatusChange)
+          .build();
+      }
 
 
     } catch (error: unknown) {
@@ -490,7 +560,9 @@ export function useXcmSwapExecution({
     outputAmount,
     slippageTolerance,
     walletAddress,
+    recipientAddress,
     polkadotSigner,
+    evmSigner,
     selectedExchange,
     getOptimalExchanges,
     determineCurrency,
