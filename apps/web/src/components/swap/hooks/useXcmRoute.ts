@@ -73,6 +73,7 @@ interface UseXcmRouteProps {
   inputToken: TokenInfo | null;
   outputToken: TokenInfo | null;
   walletAddress?: string;
+  recipientAddress?: string; // Recipient address for fee calculation (defaults to walletAddress)
   slippageTolerance?: number; // Percentage (e.g., 1 for 1%)
 
   // Helper functions from useXcmTokens
@@ -127,6 +128,7 @@ export function useXcmRoute({
   inputToken,
   outputToken,
   walletAddress,
+  recipientAddress,
   slippageTolerance = 1,
   getOptimalExchanges,
   determineCurrency,
@@ -290,7 +292,7 @@ export function useXcmRoute({
           .currencyTo(determineCurrency(toAsset))
           .amount(currentInputAmount) // Use string amount
           .senderAddress(walletAddress)
-          .recipientAddress(walletAddress)
+          .recipientAddress(recipientAddress || walletAddress) // Use recipient or default to sender
           .slippagePct(safeSlippage.toString())
           .getXcmFees()
         : Promise.reject(new Error('No wallet connected'));

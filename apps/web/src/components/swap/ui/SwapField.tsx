@@ -43,6 +43,8 @@ export function SwapField({
   error,
   onConnectWalletClick,
   onSelectRecipientClick,
+  recipientAddress,
+  isCustomRecipient = false,
 }: SwapFieldProps) {
   const isInput = type === 'input';
 
@@ -123,7 +125,7 @@ export function SwapField({
             </div>
           */}
 
-          {/* Wallet connection status / Select recipient button */}
+          {/* Wallet connection status / Send to button */}
           {
             isInput ? (
               isConnected && selectedAccount ? (
@@ -140,8 +142,21 @@ export function SwapField({
                 <WalletButton onClick={onConnectWalletClick}>Connect Wallet</WalletButton>
               )
             ) : (
-              // Output field - keep select recipient button
-              <WalletButton onClick={onSelectRecipientClick}>Select recipient</WalletButton>
+              // Output field - show recipient or send to button
+              recipientAddress ? (
+                <button
+                  onClick={onSelectRecipientClick}
+                  className={cn(
+                    "rounded-full py-1 px-3 flex items-center text-white transition-all cursor-pointer",
+                    "bg-blue-whale/50 border border-burning-orange/30 hover:bg-blue-whale/70 hover:border-burning-orange/50"
+                  )}
+                >
+                  <Check className="w-3 h-3 text-burning-orange" />
+                  <p className="text-xs font-normal ml-1">{shortenAddress(recipientAddress)}</p>
+                </button>
+              ) : (
+                <WalletButton onClick={onSelectRecipientClick}>Send to</WalletButton>
+              )
             )
           }
         </div>

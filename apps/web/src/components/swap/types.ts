@@ -95,6 +95,8 @@ export interface SwapFieldProps {
   error?: string | null;
   onConnectWalletClick?: () => void
   onSelectRecipientClick?: () => void
+  recipientAddress?: string // Address of the recipient (for output field)
+  isCustomRecipient?: boolean // Whether recipient is different from sender
 }
 
 export interface XcmSwapPreviewData {

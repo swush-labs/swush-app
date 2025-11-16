@@ -17,7 +17,8 @@ import {
   TEST_RPC_ASSET_HUB,
   TEST_RPC_HYDRATION,
   TEST_RPC_BIFROST,
-  TEST_RPC_ACALA
+  TEST_RPC_ACALA,
+  TEST_RPC_MOONBEAM
 } from '@/services/constants';
 
 // XCM Tracking
@@ -87,6 +88,7 @@ interface UseXcmSwapExecutionProps {
   outputAmount?: string; // For success callback
   slippageTolerance: number;
   walletAddress: string;
+  recipientAddress: string; // Recipient address (can be same as sender or different)
   polkadotSigner: PolkadotSigner | undefined;
 
   // Exchange selection from quote (optional - will recalculate if not provided)
@@ -164,6 +166,7 @@ export function useXcmSwapExecution({
   outputAmount,
   slippageTolerance,
   walletAddress,
+  recipientAddress,
   polkadotSigner,
   selectedExchange,
   getOptimalExchanges,
@@ -337,6 +340,7 @@ export function useXcmSwapExecution({
           Hydration: TEST_RPC_HYDRATION,         // ws://localhost:3422
           BifrostPolkadot: TEST_RPC_BIFROST,     // ws://localhost:3423
           Acala: TEST_RPC_ACALA,
+          Moonbeam: TEST_RPC_MOONBEAM,
         }
       } : {
         abstractDecimals: true,
@@ -372,7 +376,7 @@ export function useXcmSwapExecution({
         .amount(inputAmount) // Pass string amount, let ParaSpell handle conversion
         .slippagePct(safeSlippage.toString())
         .senderAddress(walletAddress)
-        .recipientAddress(walletAddress) // Same as sender for now
+        .recipientAddress(recipientAddress) // Use provided recipient address
         .signer(polkadotSigner)
         .onStatusChange((status: TRouterEvent) => {
           // Log transaction status update
@@ -418,11 +422,9 @@ export function useXcmSwapExecution({
             return; // Exit early, no need to process further
           }
 
-          // CRITICAL: Only notify execution start after user has signed
-          // SELECTING_EXCHANGE happens BEFORE wallet prompt, actual transaction types (TRANSFER, SWAP, etc.) happen AFTER signing
-          // So we use the first non-SELECTING_EXCHANGE event as our signal
-          if (!hasExecutionStartedRef.current && status.type !== 'SELECTING_EXCHANGE') {
-            console.log('✅ Transaction signed by user! Execution started...');
+          // Notify execution start on first transaction event
+          if (!hasExecutionStartedRef.current) {
+            console.log('✅ Transaction execution started:', status.type);
             hasExecutionStartedRef.current = true;
 
             // Notify parent that execution has started
@@ -432,7 +434,7 @@ export function useXcmSwapExecution({
               transactionType: status.type,
               statusMessage: formatStatusMessage(status.type)
             });
-          } else if (hasExecutionStartedRef.current) {
+          } else {
             // Update execution progress
             onExecutionUpdate?.({
               currentStep: status.currentStep,

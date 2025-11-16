@@ -12,7 +12,7 @@
     "dev:all": "pnpm dev & pnpm start-chopsticks",
     "clean": "pnpm -r clean",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "start-chopsticks": "npx @acala-network/chopsticks@latest xcm -p packages/chopsticks/config/polkadot_asset_hub.yml -p packages/chopsticks/config/hydration.yml -p packages/chopsticks/config/bifrost.yml -p packages/chopsticks/config/acala.yml",
+    "start-chopsticks": "npx @acala-network/chopsticks@latest xcm -p packages/chopsticks/config/polkadot_asset_hub.yml -p packages/chopsticks/config/hydration.yml -p packages/chopsticks/config/bifrost.yml -p packages/chopsticks/config/acala.yml -p packages/chopsticks/config/moonbeam.yml",
     "postinstall": ""
   },
   "devDependencies": {

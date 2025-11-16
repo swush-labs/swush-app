@@ -20,7 +20,9 @@ import { loadSlippageFromStorage, saveSlippageToStorage } from '@/components/swa
 import { SwapCompleteDialog } from './ui/SwapCompleteDialog'
 import ConnectWalletDialog from './ui/ConnectWalletDialog'
 import SelectRecipientDialog from './ui/SelectRecipientDialog'
+import SelectRecipientWalletDialog from './ui/SelectRecipientWalletDialog'
 import { useSelectedAccount } from '@/components/wallet/use-selected-account'
+import { useRecipientAccount } from '@/components/wallet/use-recipient-account'
 
 export function SwapContainer() {
   // UI state
@@ -33,6 +35,7 @@ export function SwapContainer() {
   const [openOutputDialog, setOpenOutputDialog] = useState(false)
   const [isConnectWalletOpen, setIsConnectWalletOpen] = useState(false)
   const [isSelectRecipientOpen, setIsSelectRecipientOpen] = useState(false)
+  const [isRecipientWalletDialogOpen, setIsRecipientWalletDialogOpen] = useState(false)
 
   // Wrapper function to update slippage and persist to localStorage
   const handleSlippageChange = useCallback((value: number) => {
@@ -48,6 +51,18 @@ export function SwapContainer() {
   const polkadotSigner = selectedAccount && 'polkadotSigner' in selectedAccount 
     ? selectedAccount.polkadotSigner 
     : undefined
+
+  // Get recipient account from hook (with localStorage persistence)
+  const {
+    recipientAccount,
+    recipientAddress,
+    setRecipientAccount,
+    setCustomRecipient,
+    resetToSender,
+    isDifferentFromSender,
+    isCustomAddress,
+    hasSavedRecipient,
+  } = useRecipientAccount()
 
   // Custom hooks - Token and Balance handling (nuqs handles URL params automatically)
   const { 
@@ -111,6 +126,7 @@ export function SwapContainer() {
     inputToken,
     outputToken,
     walletAddress,
+    recipientAddress, // Pass recipient address for fee calculation
     slippageTolerance,
     // Pass helpers from useXcmTokens
     getOptimalExchanges,
@@ -143,6 +159,7 @@ export function SwapContainer() {
     outputAmount,
     slippageTolerance,
     walletAddress,
+    recipientAddress, // Use computed recipient address
     polkadotSigner,
     selectedExchange: routeState.data?.exchange, // Pass the exchange from quote
     getOptimalExchanges,
@@ -166,6 +183,9 @@ export function SwapContainer() {
         // Clear input and route immediately (but don't close dialog)
         setInputAmount('');
         resetRoute();
+        
+        // Reset recipient to sender after successful swap (for safety)
+        resetToSender();
         
         // Refresh input balance to show deduction (balances already updated by polling)
         refreshBalances(false);
@@ -229,6 +249,21 @@ export function SwapContainer() {
     // Reset input amount
     setInputAmount('');
   }, [handleDisconnect, isActive, resetSwapFlow, resetRoute]);
+
+  // Recipient management handlers (simplified with hook)
+  const handleSelectDifferentWallet = useCallback(() => {
+    setIsSelectRecipientOpen(false);
+    setIsRecipientWalletDialogOpen(true);
+  }, []);
+
+  const handleRecipientWalletSelect = useCallback((account: any) => {
+    setRecipientAccount(account);
+    setIsRecipientWalletDialogOpen(false);
+  }, [setRecipientAccount]);
+
+  const handleCustomAddressSubmit = useCallback((address: string) => {
+    setCustomRecipient(address);
+  }, [setCustomRecipient]);
 
   // Effect to reset states when tokens change
   useEffect(() => {
@@ -343,7 +378,8 @@ export function SwapContainer() {
                 error={routeState.error}
                 onConnectWalletClick={() => setIsConnectWalletOpen(true)}
                 onSelectRecipientClick={() => setIsSelectRecipientOpen(true)}
-
+                recipientAddress={isDifferentFromSender ? recipientAddress : undefined}
+                isCustomRecipient={isCustomAddress || isDifferentFromSender}
               />
             </div>
 
@@ -414,11 +450,29 @@ export function SwapContainer() {
         xcmStatusMessage={flowState.execution?.xcmStatusMessage}
       />
 
-      <ConnectWalletDialog isOpen={isConnectWalletOpen} onOpenChange={setIsConnectWalletOpen} />
+      {/* Sender Wallet Dialog */}
+      <ConnectWalletDialog 
+        isOpen={isConnectWalletOpen} 
+        onOpenChange={setIsConnectWalletOpen}
+      />
+
+      {/* Recipient Wallet Selection Dialog - Dedicated component */}
+      <SelectRecipientWalletDialog 
+        isOpen={isRecipientWalletDialogOpen}
+        onOpenChange={setIsRecipientWalletDialogOpen}
+        onAccountSelect={handleRecipientWalletSelect}
+        currentRecipient={recipientAccount}
+      />
+
+      {/* Recipient Selection Dialog */}
       <SelectRecipientDialog 
         isOpen={isSelectRecipientOpen} 
-        onConnectWalletClick={() => setIsConnectWalletOpen(true)}
-        onOpenChange={setIsSelectRecipientOpen} 
+        onOpenChange={setIsSelectRecipientOpen}
+        onSelectDifferentWallet={handleSelectDifferentWallet}
+        selectedRecipient={isDifferentFromSender && !isCustomAddress ? recipientAccount : null}
+        customAddress={isCustomAddress ? recipientAddress : ''}
+        onCustomAddressSubmit={handleCustomAddressSubmit}
+        onResetToSender={resetToSender}
       />
     </>
   )

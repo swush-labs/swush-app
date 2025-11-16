@@ -146,97 +146,6 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     }
   },
 
- /*  "ASTR": {
-    symbol: "ASTR",
-    name: "Astar",
-    description: "Astar native token",
-    category: "native",
-    networkInstances: {
-      "ASTR-native-Astar": {
-        network: "Astar",
-        assetType: "Native",
-        displayName: "ASTR (Native)",
-        verified: true
-      },
-    }
-  },
-
-  "KSM": {
-    symbol: "KSM",
-    name: "Kusama",
-    description: "Kusama native token",
-    category: "native",
-    networkInstances: {
-      "KSM-native-Kusama": {
-        network: "Kusama",
-        assetType: "Native",
-        displayName: "KSM (Native)",
-        verified: true
-      },
-    }
-  },
-
-  "BNC": {
-    symbol: "BNC",
-    name: "Bifrost",
-    description: "Bifrost native token",
-    category: "native",
-    networkInstances: {
-      "BNC-native-BifrostPolkadot": {
-        network: "BifrostPolkadot",
-        assetType: "Native",
-        displayName: "BNC (Native)",
-        verified: true
-      },
-    }
-  },
-
-  "HDX": {
-    symbol: "HDX",
-    name: "HydraDX",
-    description: "HydraDX native token",
-    category: "native",
-    networkInstances: {
-      "HDX-native-Hydration": {
-        network: "Hydration",
-        assetType: "Native",
-        displayName: "HDX (HydraDx)",
-        verified: true
-      },
-    }
-  },
-
-  // Additional common assets
-  "WETH": {
-    symbol: "WETH",
-    name: "Wrapped Ethereum",
-    description: "Wrapped Ethereum token",
-    category: "wrapped",
-    networkInstances: {
-      "WETH-native-Various": {
-        network: "Various",
-        assetType: "Multi-Location",
-        displayName: "WETH (Cross-Chain)",
-        verified: true
-      },
-    }
-  },
-
-  "WBTC": {
-    symbol: "WBTC",
-    name: "Wrapped Bitcoin",
-    description: "Wrapped Bitcoin token",
-    category: "wrapped",
-    networkInstances: {
-      "WBTC-native-Various": {
-        network: "Various",
-        assetType: "Multi-Location",
-        displayName: "WBTC (Cross-Chain)",
-        verified: true
-      },
-    }
-  },
-
   "GLMR": {
     symbol: "GLMR",
     name: "Moonbeam",
@@ -266,14 +175,106 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
       },
     }
   },
- */
+
+  /*  "ASTR": {
+     symbol: "ASTR",
+     name: "Astar",
+     description: "Astar native token",
+     category: "native",
+     networkInstances: {
+       "ASTR-native-Astar": {
+         network: "Astar",
+         assetType: "Native",
+         displayName: "ASTR (Native)",
+         verified: true
+       },
+     }
+   },
+ 
+   "KSM": {
+     symbol: "KSM",
+     name: "Kusama",
+     description: "Kusama native token",
+     category: "native",
+     networkInstances: {
+       "KSM-native-Kusama": {
+         network: "Kusama",
+         assetType: "Native",
+         displayName: "KSM (Native)",
+         verified: true
+       },
+     }
+   },
+ 
+   "BNC": {
+     symbol: "BNC",
+     name: "Bifrost",
+     description: "Bifrost native token",
+     category: "native",
+     networkInstances: {
+       "BNC-native-BifrostPolkadot": {
+         network: "BifrostPolkadot",
+         assetType: "Native",
+         displayName: "BNC (Native)",
+         verified: true
+       },
+     }
+   },
+ 
+   "HDX": {
+     symbol: "HDX",
+     name: "HydraDX",
+     description: "HydraDX native token",
+     category: "native",
+     networkInstances: {
+       "HDX-native-Hydration": {
+         network: "Hydration",
+         assetType: "Native",
+         displayName: "HDX (HydraDx)",
+         verified: true
+       },
+     }
+   },
+ 
+   // Additional common assets
+   "WETH": {
+     symbol: "WETH",
+     name: "Wrapped Ethereum",
+     description: "Wrapped Ethereum token",
+     category: "wrapped",
+     networkInstances: {
+       "WETH-native-Various": {
+         network: "Various",
+         assetType: "Multi-Location",
+         displayName: "WETH (Cross-Chain)",
+         verified: true
+       },
+     }
+   },
+ 
+   "WBTC": {
+     symbol: "WBTC",
+     name: "Wrapped Bitcoin",
+     description: "Wrapped Bitcoin token",
+     category: "wrapped",
+     networkInstances: {
+       "WBTC-native-Various": {
+         network: "Various",
+         assetType: "Multi-Location",
+         displayName: "WBTC (Cross-Chain)",
+         verified: true
+       },
+     }
+   },
+  
+  */
 };
 
 
 // DEX compatibility matrix based on your asset registry
 export const DEX_CHAIN_COMPATIBILITY: Record<string, string[]> = {
-  "HydrationDex": ["AssetHubPolkadot", "Hydration", "Moonbeam", "Acala", "BifrostPolkadot"],
-  "AssetHubPolkadotDex": ["AssetHubPolkadot", "Hydration", "Acala", "BifrostPolkadot"],
+  "HydrationDex": ["AssetHubPolkadot", "Hydration", "Moonbeam", "Acala", "BifrostPolkadot", "Moonbeam"],
+  "AssetHubPolkadotDex": ["AssetHubPolkadot", "Hydration", "Acala", "BifrostPolkadot", "Moonbeam"],
 
   "AcalaDex": ["Acala", "Hydration"],
   "BifrostKusamaDex": ["BifrostKusama"],
