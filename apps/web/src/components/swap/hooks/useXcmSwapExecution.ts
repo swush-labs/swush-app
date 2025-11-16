@@ -418,11 +418,9 @@ export function useXcmSwapExecution({
             return; // Exit early, no need to process further
           }
 
-          // CRITICAL: Only notify execution start after user has signed
-          // SELECTING_EXCHANGE happens BEFORE wallet prompt, actual transaction types (TRANSFER, SWAP, etc.) happen AFTER signing
-          // So we use the first non-SELECTING_EXCHANGE event as our signal
-          if (!hasExecutionStartedRef.current && status.type !== 'SELECTING_EXCHANGE') {
-            console.log('✅ Transaction signed by user! Execution started...');
+          // Notify execution start on first transaction event
+          if (!hasExecutionStartedRef.current) {
+            console.log('✅ Transaction execution started:', status.type);
             hasExecutionStartedRef.current = true;
 
             // Notify parent that execution has started
@@ -432,7 +430,7 @@ export function useXcmSwapExecution({
               transactionType: status.type,
               statusMessage: formatStatusMessage(status.type)
             });
-          } else if (hasExecutionStartedRef.current) {
+          } else {
             // Update execution progress
             onExecutionUpdate?.({
               currentStep: status.currentStep,
