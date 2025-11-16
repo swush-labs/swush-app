@@ -9,33 +9,54 @@ const config: Config = {
   ],
   theme: {
   	extend: {
-  		colors: {
-  			background: 'hsl(var(--background))',
-  			foreground: 'hsl(var(--foreground))',
-  			flame: {
-  				'50': '#FFF8E7',
-  				'100': '#FFEFCC',
-  				'200': '#FFD89A',
-  				'300': '#FFB627',
-  				'400': '#FF9500',
-  				'500': '#FF6B35',
-  				'600': '#E55A2B',
-  				'700': '#CC4A21',
-  				'800': '#B33A17',
-  				'900': '#992A0D'
-  			},
-  			forest: {
-  				'50': '#F0FFFE',
-  				'100': '#CCFFFE',
-  				'200': '#99FFFB',
-  				'300': '#4ECDC4',
-  				'400': '#45B7D1',
-  				'500': '#3BA99C',
-  				'600': '#2C8F85',
-  				'700': '#2C5F5D',
-  				'800': '#1A3A37',
-  				'900': '#0F2922'
-  			},
+		colors: {
+ 			background: 'hsl(var(--background))',
+ 			foreground: 'hsl(var(--foreground))',
+ 			flame: {
+ 				'50': '#FFF8E7',
+ 				'100': '#FFEFCC',
+ 				'200': '#FFD89A',
+ 				'300': '#FFB627',
+ 				'400': '#FF9500',
+ 				'500': '#FF6B35',
+ 				'600': '#E55A2B',
+ 				'700': '#CC4A21',
+ 				'800': '#B33A17',
+ 				'900': '#992A0D'
+ 			},
+ 			forest: {
+ 				'50': '#F0FFFE',
+ 				'100': '#CCFFFE',
+ 				'200': '#99FFFB',
+ 				'300': '#4ECDC4',
+ 				'400': '#45B7D1',
+ 				'500': '#3BA99C',
+ 				'600': '#2C8F85',
+ 				'700': '#2C5F5D',
+ 				'800': '#1A3A37',
+ 				'900': '#0F2922'
+ 			},
+			// Toast notification colors - warm, friendly tones for user feedback
+			toast: {
+				// Success - emerald green gradient (confident, positive)
+				success: {
+					from: '#10b981',    // emerald-500
+					to: '#059669',      // emerald-600
+					border: '#047857', // emerald-700
+				},
+				// Error/Warning - warm orange gradient (attention without alarm)
+				error: {
+					from: '#fb923c',    // orange-400
+					to: '#f97316',      // orange-500
+					border: '#ea580c', // orange-600
+				},
+				// Loading - neutral dark gray (unobtrusive)
+				loading: {
+					bg: '#1f2937',      // gray-800
+					text: '#f9fafb',    // gray-50
+					border: '#374151', // gray-700
+				},
+			},
 			"baltic-sea": "#242C32",
 			"black-eel": "#434343",
   			blackPearl: '#01151D',

@@ -1,4 +1,45 @@
 import { toast } from 'react-hot-toast';
+import resolveConfig from 'tailwindcss/resolveConfig';
+import tailwindConfig from '../../../../tailwind.config';
+
+// Resolve Tailwind config to access theme colors
+const fullConfig = resolveConfig(tailwindConfig);
+const colors = fullConfig.theme?.colors as any;
+
+/**
+ * Toast Color Palette
+ * 
+ * Centralized color definitions for toast notifications.
+ * Colors are defined in tailwind.config.ts under `theme.extend.colors.toast`
+ * 
+ * Design Philosophy:
+ * - Success: Emerald green gradient - conveys confidence and positive completion
+ * - Error: Warm orange gradient - draws attention without being alarming or harsh
+ * - Loading: Neutral dark gray - unobtrusive, doesn't compete with content
+ * 
+ * Why orange for errors instead of red?
+ * - Red is too aggressive and creates anxiety
+ * - Orange is warm, friendly, and still indicates "pay attention"
+ * - Matches the overall warm, approachable tone of the app
+ * - Pairs perfectly with the ⚠️ warning emoji
+ */
+const TOAST_COLORS = {
+  success: {
+    from: colors.toast.success.from,      // #10b981 (emerald-500)
+    to: colors.toast.success.to,          // #059669 (emerald-600)
+    border: colors.toast.success.border,  // #047857 (emerald-700)
+  },
+  error: {
+    from: colors.toast.error.from,        // #fb923c (orange-400)
+    to: colors.toast.error.to,            // #f97316 (orange-500)
+    border: colors.toast.error.border,    // #ea580c (orange-600)
+  },
+  loading: {
+    bg: colors.toast.loading.bg,          // #1f2937 (gray-800)
+    text: colors.toast.loading.text,      // #f9fafb (gray-50)
+    border: colors.toast.loading.border,  // #374151 (gray-700)
+  },
+};
 
 // Responsive toast styling that adapts to screen size
 const getResponsiveToastStyle = () => {
@@ -27,18 +68,18 @@ const getResponsiveToastStyle = () => {
 
 const getLoadingToastStyle = () => ({
   ...getResponsiveToastStyle(),
-  background: '#1f2937',
-  color: '#f9fafb',
-  border: '1px solid #374151'
+  background: TOAST_COLORS.loading.bg,
+  color: TOAST_COLORS.loading.text,
+  border: `1px solid ${TOAST_COLORS.loading.border}`
 });
 
 const getSuccessToastStyle = () => {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
   return {
     ...getResponsiveToastStyle(),
-    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    background: `linear-gradient(135deg, ${TOAST_COLORS.success.from} 0%, ${TOAST_COLORS.success.to} 100%)`,
     color: '#ffffff',
-    border: '1px solid #047857',
+    border: `1px solid ${TOAST_COLORS.success.border}`,
     fontWeight: '600',
     boxShadow: isMobile 
       ? '0 4px 12px -2px rgba(16, 185, 129, 0.15), 0 2px 4px -1px rgba(16, 185, 129, 0.05)'
@@ -50,13 +91,13 @@ const getErrorToastStyle = () => {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
   return {
     ...getResponsiveToastStyle(),
-    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+    background: `linear-gradient(135deg, ${TOAST_COLORS.error.from} 0%, ${TOAST_COLORS.error.to} 100%)`,
     color: '#ffffff',
-    border: '1px solid #b91c1c',
+    border: `1px solid ${TOAST_COLORS.error.border}`,
     fontWeight: '600',
     boxShadow: isMobile 
-      ? '0 4px 12px -2px rgba(239, 68, 68, 0.15), 0 2px 4px -1px rgba(239, 68, 68, 0.05)'
-      : '0 10px 25px -5px rgba(239, 68, 68, 0.25), 0 4px 6px -2px rgba(239, 68, 68, 0.05)'
+      ? '0 4px 12px -2px rgba(251, 146, 60, 0.15), 0 2px 4px -1px rgba(251, 146, 60, 0.05)'
+      : '0 10px 25px -5px rgba(251, 146, 60, 0.25), 0 4px 6px -2px rgba(251, 146, 60, 0.05)'
   };
 };
 
@@ -134,7 +175,7 @@ export const SwapToasts = {
     return toast.error('Transaction failed. Please try again.', {
       id: TOAST_IDS.SWAP_STATUS,
       duration: 5000,
-      icon: '❌',
+      icon: '⚠️',
       style: getErrorToastStyle()
     });
   },
@@ -143,7 +184,7 @@ export const SwapToasts = {
     return toast.error('Cross-chain transfer failed. Please try again.', {
       id: TOAST_IDS.SWAP_STATUS,
       duration: 5000,
-      icon: '❌',
+      icon: '⚠️',
       style: getErrorToastStyle()
     });
   },
@@ -153,7 +194,7 @@ export const SwapToasts = {
     return toast.error(message, {
       id: toastId,
       duration,
-      icon: '❌',
+      icon: '⚠️',
       style: getErrorToastStyle()
     });
   },
