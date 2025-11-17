@@ -289,6 +289,8 @@ export function useXcmSwapExecution({
 
     // Check if origin chain is EVM-based and validate appropriate signer
     const isOriginEvm = isEvmChain(inputToken.networkChain);
+    const isDestinationEvm = isEvmChain(outputToken.networkChain);
+    const isCrossPlatformSwap = isOriginEvm !== isDestinationEvm;
     
     if (isOriginEvm && !evmSigner) {
       console.error('❌ EVM chain requires EVM signer:', {
@@ -313,6 +315,25 @@ export function useXcmSwapExecution({
       const errorDetails: ErrorDetails = {
         message: `${inputToken.networkChain} requires a Polkadot wallet (e.g., Talisman, SubWallet)`,
         code: 'MISSING_POLKADOT_SIGNER'
+      };
+      onError?.(errorDetails);
+      return;
+    }
+
+    // Cross-platform swap validation (EVM → Substrate or Substrate → EVM)
+    // ParaSpell requires a Polkadot signer even for EVM origins to construct XCM messages
+    if (isCrossPlatformSwap && !polkadotSigner) {
+      console.error('❌ Cross-platform swap requires Polkadot signer:', {
+        originChain: inputToken.networkChain,
+        destinationChain: outputToken.networkChain,
+        isOriginEvm,
+        isDestinationEvm,
+        hasPolkadotSigner: !!polkadotSigner,
+      });
+      
+      const errorDetails: ErrorDetails = {
+        message: `Cross-chain swap from ${inputToken.networkChain} to ${outputToken.networkChain} requires a Polkadot wallet. Please connect a Polkadot wallet (Talisman/SubWallet) as the recipient.`,
+        code: 'MISSING_POLKADOT_SIGNER_CROSS_PLATFORM'
       };
       onError?.(errorDetails);
       return;

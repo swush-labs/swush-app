@@ -47,8 +47,9 @@ export function SwapContainer() {
   const { selectedAccount } = useSelectedAccount()
   const isConnected = !!selectedAccount
   const walletAddress = selectedAccount?.address || ''
-  // Get polkadotSigner - only available for Polkadot accounts
-  const polkadotSigner = selectedAccount && 'polkadotSigner' in selectedAccount 
+  
+  // Get polkadotSigner from sender - only available for Polkadot accounts
+  const senderPolkadotSigner = selectedAccount && 'polkadotSigner' in selectedAccount 
     ? selectedAccount.polkadotSigner 
     : undefined
   
@@ -56,18 +57,6 @@ export function SwapContainer() {
   const evmSigner = selectedAccount && 'client' in selectedAccount 
     ? selectedAccount.client 
     : undefined
-
-  // Log account platform and available signers for debugging
-  useEffect(() => {
-    if (selectedAccount) {
-      console.log('📝 Selected Account Info:', {
-        platform: selectedAccount.platform,
-        address: selectedAccount.address,
-        hasPolkadotSigner: !!polkadotSigner,
-        hasEvmSigner: !!evmSigner,
-      });
-    }
-  }, [selectedAccount, polkadotSigner, evmSigner]);
 
   // Get recipient account from hook (with localStorage persistence)
   const {
@@ -100,6 +89,48 @@ export function SwapContainer() {
     unifiedFromAssets,
     unifiedToAssets,
   } = useXcmTokens()
+
+  // Get polkadotSigner from recipient - used for cross-platform swaps (EVM → Substrate)
+  const recipientPolkadotSigner = recipientAccount && 'polkadotSigner' in recipientAccount
+    ? recipientAccount.polkadotSigner
+    : undefined
+
+  // Determine which Polkadot signer to use based on chain types
+  // For EVM → Substrate swaps, use recipient's signer (if available)
+  // Otherwise, use sender's signer
+  const polkadotSigner = useMemo(() => {
+    // Check if this is a cross-platform swap (EVM origin → Substrate destination)
+    const isEVMOrigin = inputToken?.networkChain && 
+      ['Moonbeam', 'Moonriver', 'Astar', 'Shiden'].includes(inputToken.networkChain);
+    const isSubstrateDestination = outputToken?.networkChain && 
+      !['Moonbeam', 'Moonriver', 'Astar', 'Shiden'].includes(outputToken.networkChain);
+    
+    const isCrossPlatformSwap = isEVMOrigin && isSubstrateDestination;
+
+    if (isCrossPlatformSwap && recipientPolkadotSigner) {
+      // Use recipient's Polkadot signer for cross-platform swaps
+      console.log('🔄 Using recipient Polkadot signer for cross-platform swap');
+      return recipientPolkadotSigner;
+    }
+
+    // Default: use sender's Polkadot signer
+    return senderPolkadotSigner;
+  }, [inputToken?.networkChain, outputToken?.networkChain, recipientPolkadotSigner, senderPolkadotSigner]);
+
+  // Log signer info for debugging
+  useEffect(() => {
+    if (selectedAccount) {
+      console.log('📝 Signer Info:', {
+        senderPlatform: selectedAccount.platform,
+        senderAddress: selectedAccount.address,
+        hasSenderPolkadotSigner: !!senderPolkadotSigner,
+        hasEvmSigner: !!evmSigner,
+        recipientPlatform: recipientAccount?.platform,
+        hasRecipientPolkadotSigner: !!recipientPolkadotSigner,
+        activePolkadotSigner: polkadotSigner ? 'available' : 'missing',
+      });
+    }
+  }, [selectedAccount, senderPolkadotSigner, evmSigner, recipientAccount, recipientPolkadotSigner, polkadotSigner]);
 
   // Balance fetching using ParaSpell SDK
   const {
@@ -401,6 +432,42 @@ export function SwapContainer() {
                 isCustomRecipient={isCustomAddress || isDifferentFromSender}
               />
             </div>
+
+            {/* Cross-platform swap warning */}
+            {inputToken?.networkChain && outputToken?.networkChain && (
+              (() => {
+                const isEVMOrigin = ['Moonbeam', 'Moonriver', 'Astar', 'Shiden'].includes(inputToken.networkChain);
+                const isSubstrateDestination = !['Moonbeam', 'Moonriver', 'Astar', 'Shiden'].includes(outputToken.networkChain);
+                const isCrossPlatformSwap = isEVMOrigin && isSubstrateDestination;
+
+                if (!isCrossPlatformSwap) return null;
+
+                const hasRecipientPolkadotWallet = recipientAccount?.platform === 'polkadot';
+                const isUsingCustomAddress = isCustomAddress;
+
+                return (
+                  <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm">
+                    <div className="flex items-start gap-2">
+                      <svg className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <div className="flex-1">
+                        <p className="font-medium text-amber-500 mb-1">Cross-chain Swap</p>
+                        <p className="text-muted-foreground text-xs leading-relaxed">
+                          {!hasRecipientPolkadotWallet && !isUsingCustomAddress ? (
+                            <>Swapping from {inputToken.networkChain} to {outputToken.networkChain} requires a Polkadot wallet. Please select a Polkadot wallet as the recipient.</>
+                          ) : isUsingCustomAddress ? (
+                            <>Custom addresses are not supported for cross-chain swaps. Please select a connected Polkadot wallet as the recipient.</>
+                          ) : (
+                            <>This swap will use your recipient's Polkadot wallet to construct the cross-chain message.</>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()
+            )}
 
             <SwapDetails
               minimumReceived={calculateMinimumReceived(outputAmount, slippageTolerance)}
