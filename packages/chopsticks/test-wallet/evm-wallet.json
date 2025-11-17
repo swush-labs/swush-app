@@ -1,0 +1,18 @@
+{
+  "encoded": "aPVL6CkKJtwzEosJPXknh3mpNVU97WW++pCsfPZpn3IAAAIAAQAAAAgAAABvWDD+DPm6MRLOcAdbUwaNSGEvp+q1BAX4qd3RnmefzMzLMS5VR9c7vLNJcyFEunS1JP8js1Pq658EWKR6XMakOlGbXql0T71f6UehzpeIcoHcwQrydkmU3lInaikp4Ef9nr60+D8ogHk1okAJnCL7EBLLEFCxyxfpUn5tg2AM4XK8AIGR78ZSupf3oAYlcMxwPRk70ATgszSkbD9l8Q==",
+  "encoding": {
+    "content": [
+      "pkcs8",
+      "ethereum"
+    ],
+    "type": [
+      "scrypt",
+      "xsalsa20-poly1305"
+    ],
+    "version": "3"
+  },
+  "address": "0x030a9eb3e4050dcc70e34d7c90bdff90258eedffdc3e981520126e03d683499477",
+  "meta": {
+    "name": "test"
+  }
+}
