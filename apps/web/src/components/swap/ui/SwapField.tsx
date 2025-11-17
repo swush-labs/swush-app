@@ -123,9 +123,9 @@ export function SwapField({
             </div>
           */}
 
-          {/* Wallet connection status / Select recipient button */}
+          {/* Wallet connection status - only show in input field */}
           {
-            isInput ? (
+            isInput && (
               isConnected && selectedAccount ? (
                 // Show connected status with shortened address - clickable to change account
                 <button
@@ -139,9 +139,6 @@ export function SwapField({
                 // Show connect wallet button
                 <WalletButton onClick={onConnectWalletClick}>Connect Wallet</WalletButton>
               )
-            ) : (
-              // Output field - keep select recipient button
-              <WalletButton onClick={onSelectRecipientClick}>Select recipient</WalletButton>
             )
           }
         </div>
