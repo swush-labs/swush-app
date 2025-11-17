@@ -495,6 +495,7 @@ export function useXcmSwapExecution({
           .amount(inputAmount)
           .slippagePct(safeSlippage.toString())
           .recipientAddress(recipientAddress)
+          .signer(polkadotSigner!)
           .evmSenderAddress(walletAddress) // Required for EVM chains
           .evmSigner(evmSigner!) as any) // Required for EVM chains
           .onStatusChange(onStatusChange)
