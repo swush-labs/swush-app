@@ -45,12 +45,12 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         displayName: "USDC (Hydration)",
         verified: true
       },
-      "USDC-14-Acala": {
-        network: "Acala",
-        assetType: "Asset ID",
-        displayName: "USDC (Acala)",
-        verified: true
-      },
+      // "USDC-14-Acala": {
+      //   network: "Acala",
+      //   assetType: "Asset ID",
+      //   displayName: "USDC (Acala)",
+      //   verified: true
+      // },
       "USDC-5-BifrostPolkadot": {
         network: "BifrostPolkadot",
         assetType: "Asset ID",
@@ -97,12 +97,12 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         displayName: "USDT (BifrostPolkadot)",
         verified: true
       },
-      "USDT-12-Acala": {
-        network: "Acala",
-        assetType: "Asset ID",
-        displayName: "USDT (Acala)",
-        verified: true
-      },
+      // "USDT-12-Acala": {
+      //   network: "Acala",
+      //   assetType: "Asset ID",
+      //   displayName: "USDT (Acala)",
+      //   verified: true
+      // },
     }
   },
 
@@ -143,6 +143,21 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         displayName: "DOT (BifrostPolkadot)",
         verified: true
       }
+    }
+  },
+
+  "ACA": {
+    symbol: "ACA",
+    name: "Acala",
+    description: "Acala native token",
+    category: "native",
+    networkInstances: {
+      "ACA-native-Acala": {
+        network: "Acala",
+        assetType: "Native",
+        displayName: "ACA (Native)",
+        verified: true
+      },
     }
   },
 
@@ -251,21 +266,6 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
       },
     }
   },
-
-  "ACA": {
-    symbol: "ACA",
-    name: "Acala",
-    description: "Acala native token",
-    category: "native",
-    networkInstances: {
-      "ACA-native-Acala": {
-        network: "Acala",
-        assetType: "Native",
-        displayName: "ACA (Native)",
-        verified: true
-      },
-    }
-  },
  */
 };
 
@@ -275,7 +275,7 @@ export const DEX_CHAIN_COMPATIBILITY: Record<string, string[]> = {
   "HydrationDex": ["AssetHubPolkadot", "Hydration", "Moonbeam", "Acala", "BifrostPolkadot"],
   "AssetHubPolkadotDex": ["AssetHubPolkadot", "Hydration", "Acala", "BifrostPolkadot"],
 
-  "AcalaDex": ["Acala", "Hydration"],
+  "AcalaDex": ["Acala", "Hydration", "AssetHubPolkadot"],
   "BifrostKusamaDex": ["BifrostKusama"],
   "BifrostPolkadotDex": ["BifrostPolkadot", "Hydration", "AssetHubPolkadot"],
 };

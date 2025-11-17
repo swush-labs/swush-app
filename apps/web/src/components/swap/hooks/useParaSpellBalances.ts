@@ -11,6 +11,7 @@ import {
   NUMBER_FORMAT_OPTIONS,
   XCM_BALANCE_POLLING
 } from '@/services/constants';
+import { BALANCE_REFRESH_TIMEOUT } from '@/lib/const';
 
 interface UseParaSpellBalancesProps {
   isConnected: boolean;
@@ -230,7 +231,7 @@ export function useParaSpellBalances({
 
     // For post-swap, add a delay to allow blockchain to update
     if (afterSwap) {
-      await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay for blockchain confirmation
+      await new Promise(resolve => setTimeout(resolve, BALANCE_REFRESH_TIMEOUT)); // 3 second delay for blockchain confirmation
     }
 
     // Always fetch fresh balances

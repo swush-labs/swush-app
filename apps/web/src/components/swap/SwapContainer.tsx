@@ -167,8 +167,10 @@ export function SwapContainer() {
         setInputAmount('');
         resetRoute();
         
-        // Refresh input balance to show deduction (balances already updated by polling)
-        refreshBalances(false);
+        // Refresh both balances with delay to ensure source deduction is visible
+        // Output balance already updated by polling, but source needs time to propagate
+        console.log('💰 XCM delivery confirmed, refreshing source balance...');
+        refreshBalances(true); // true = add 3 second delay for blockchain confirmation
       });
       
       // Update UI to show "waiting for delivery" state

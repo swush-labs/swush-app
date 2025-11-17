@@ -14,7 +14,7 @@ import type { TokenInfo } from '@/components/swap/types';
 import type { FeeSummary } from '@/services/xcm-router/feeCalculator';
 import { calculateTotalFees, formatFeeSummary, safeStringify } from '@/services/xcm-router/feeCalculator';
 import { formatAmount } from '@/services/balances/utils';
-import { NUMBER_FORMAT_OPTIONS } from '@/services/constants';
+import { NUMBER_FORMAT_OPTIONS, TEST_RPC_ACALA, TEST_RPC_ASSET_HUB, TEST_RPC_HYDRATION, TEST_RPC_BIFROST } from '@/services/constants';
 import { ROUTE_FETCH_TIMEOUT } from '@/lib/const';
 
 /**
@@ -262,11 +262,18 @@ export function useXcmRoute({
         );
       }
 
-      // Step 4: Fetch quote (always) and fees (only if wallet connected)
+      // Step 4: Fetch quote first to get the best exchange
       //TODO: fix chain type compatibility
 
       // Always fetch quote
       // Pass config to explicitly enable abstractDecimals for string amounts
+      console.log('🔄 Fetching XCM quote:', {
+        from: `${inputToken.symbol} (${inputToken.networkChain})`,
+        to: `${outputToken.symbol} (${outputToken.networkChain})`,
+        amountDecimal: currentInputAmount,
+        exchanges: exchangesToUse,
+      });
+
       const quotePromise = RouterBuilder({ abstractDecimals: true })
         .from(inputToken.networkChain as any) // Type assertion for chain compatibility
         .to(outputToken.networkChain as any) // Type assertion for chain compatibility
@@ -276,16 +283,58 @@ export function useXcmRoute({
         .amount(currentInputAmount) // Use string amount
         .getBestAmountOut();
 
+      const quoteSettled = await Promise.allSettled([quotePromise]);
+
+      // Check for stale response after quote
+      if (latestInputAmountRef.current !== currentInputAmount) {
+        console.log('⚠️ Stale quote response, ignoring');
+        return;
+      }
+
+      // Step 5: Use the exchange selected by the quote to fetch fees
+      let selectedExchangeForFees: TExchangeChain | TExchangeChain[] = exchangesToUse;
+      
+      if (quoteSettled[0].status === 'fulfilled') {
+        const quoteResult = quoteSettled[0].value;
+        // Use the exchange that was actually selected by the quote
+        selectedExchangeForFees = quoteResult.exchange as any;
+        console.log('✅ Quote selected exchange:', selectedExchangeForFees);
+      }
+
       // Only fetch fees if wallet is connected
       // Pass config to explicitly enable abstractDecimals for string amounts
       // Round to 2 decimal places to avoid floating-point precision issues
       const safeSlippage = Math.round(slippageTolerance * 100) / 100;
 
+      // Check if Acala is involved in the route and if local endpoints should be used
+      const USE_LOCAL_ENDPOINTS = process.env.NEXT_PUBLIC_USE_LOCAL_ENDPOINTS === 'true';
+      const isAcalaInvolved = inputToken.networkChain === 'Acala' || outputToken.networkChain === 'Acala';
+      
+      // Configure RouterBuilder with local Acala endpoint for development when needed
+      const feeRouterConfig = (USE_LOCAL_ENDPOINTS && isAcalaInvolved) ? {
+        development: true, // Enforce overrides for all chains
+        abstractDecimals: true,
+        apiOverrides: {
+          AssetHubPolkadot: TEST_RPC_ASSET_HUB,  // ws://localhost:3421
+          Hydration: TEST_RPC_HYDRATION,         // ws://localhost:3422
+          BifrostPolkadot: TEST_RPC_BIFROST,     // ws://localhost:3423
+          Acala: TEST_RPC_ACALA,                 // ws://localhost:3424
+        }
+      } : {
+        abstractDecimals: true,
+      };
+
+      console.log('🔧 Fee Router Config:', feeRouterConfig);
+      console.log('💰 Fetching XCM fees with selected exchange:', {
+        exchange: selectedExchangeForFees,
+        slippageTolerance: safeSlippage.toString(),
+      });
+
       const feesPromise = walletAddress
-        ? RouterBuilder({ abstractDecimals: true })
+        ? RouterBuilder(feeRouterConfig)
           .from(inputToken.networkChain as any) // Type assertion for chain compatibility
           .to(outputToken.networkChain as any) // Type assertion for chain compatibility
-          .exchange(exchangesToUse as any) // Type assertion needed due to ParaSpell's strict tuple type
+          .exchange(selectedExchangeForFees as any) // Use the exchange from quote
           .currencyFrom(determineCurrency(fromAsset))
           .currencyTo(determineCurrency(toAsset))
           .amount(currentInputAmount) // Use string amount
@@ -295,29 +344,17 @@ export function useXcmRoute({
           .getXcmFees()
         : Promise.reject(new Error('No wallet connected'));
 
-      console.log('🔄 Fetching XCM quote and fees in parallel:', {
-        from: `${inputToken.symbol} (${inputToken.networkChain})`,
-        to: `${outputToken.symbol} (${outputToken.networkChain})`,
-        amountDecimal: currentInputAmount,
-        amountToUse: currentInputAmount,
-        exchanges: exchangesToUse,
-        slippageTolerance: safeSlippage.toString(),
-      });
+      const feesSettled = await Promise.allSettled([feesPromise]);
 
-      const [quoteSettled, feesSettled] = await Promise.allSettled([
-        quotePromise,
-        feesPromise
-      ]);
-
-      // Check for stale response
+      // Check for stale response after fees
       if (latestInputAmountRef.current !== currentInputAmount) {
-        console.log('⚠️ Stale response, ignoring');
+        console.log('⚠️ Stale fees response, ignoring');
         return;
       }
 
-      // Step 5: Process quote result (display ASAP)
-      if (quoteSettled.status === 'fulfilled') {
-        const quoteResult = quoteSettled.value;
+      // Step 6: Process quote result (display ASAP)
+      if (quoteSettled[0].status === 'fulfilled') {
+        const quoteResult = quoteSettled[0].value;
 
         // Convert output amount to decimal for display using formatAmount
         const { decimal: outputDecimal } = formatAmount(
@@ -349,13 +386,13 @@ export function useXcmRoute({
 
         setIsLoadingQuote(false);
       } else {
-        console.error('❌ Quote fetch failed:', quoteSettled.reason);
-        throw quoteSettled.reason;
+        console.error('❌ Quote fetch failed:', quoteSettled[0].reason);
+        throw quoteSettled[0].reason;
       }
 
-      // Step 6: Process fees result (display when ready)
-      if (feesSettled.status === 'fulfilled') {
-        const feeResult: TRouterXcmFeeResult = feesSettled.value;
+      // Step 7: Process fees result (display when ready)
+      if (feesSettled[0].status === 'fulfilled') {
+        const feeResult: TRouterXcmFeeResult = feesSettled[0].value;
 
         try {
           // Calculate and format fees (decimals come from fee result's asset info)
@@ -379,7 +416,7 @@ export function useXcmRoute({
         }
       } else {
         // Fees fetch failed - check if it's because wallet not connected
-        const feeError = feesSettled.reason;
+        const feeError = feesSettled[0].status === 'rejected' ? feesSettled[0].reason : null;
         if (feeError?.message === 'No wallet connected') {
           console.warn('⚠️ No wallet connected, skipping fee calculation');
           setEstimatedFees('Connect wallet to see fees');
