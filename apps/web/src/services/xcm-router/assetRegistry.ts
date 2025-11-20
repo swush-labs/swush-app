@@ -131,12 +131,12 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
       //   displayName: "xcDOT (Moonbeam)",
       //   verified: false
       // },
-      // "DOT-native-Acala": {
-      //   network: "Acala",
-      //   assetType: "Multi-Location",
-      //   displayName: "DOT (Acala)",
-      //   verified: true
-      // },
+      "DOT-native-Acala": {
+        network: "Acala",
+        assetType: "Multi-Location",
+        displayName: "DOT (Acala)",
+        verified: true
+      },
       "DOT-0-BifrostPolkadot": {
         network: "BifrostPolkadot",
         assetType: "Asset ID",
