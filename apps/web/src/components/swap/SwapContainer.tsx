@@ -20,7 +20,9 @@ import { loadSlippageFromStorage, saveSlippageToStorage } from '@/components/swa
 import { SwapCompleteDialog } from './ui/SwapCompleteDialog'
 import ConnectWalletDialog from './ui/ConnectWalletDialog'
 import SelectRecipientDialog from './ui/SelectRecipientDialog'
+import SelectRecipientWalletDialog from './ui/SelectRecipientWalletDialog'
 import { useSelectedAccount } from '@/components/wallet/use-selected-account'
+import { useRecipientAccount } from '@/components/wallet/use-recipient-account'
 
 export function SwapContainer() {
   // UI state
@@ -33,6 +35,7 @@ export function SwapContainer() {
   const [openOutputDialog, setOpenOutputDialog] = useState(false)
   const [isConnectWalletOpen, setIsConnectWalletOpen] = useState(false)
   const [isSelectRecipientOpen, setIsSelectRecipientOpen] = useState(false)
+  const [isRecipientWalletDialogOpen, setIsRecipientWalletDialogOpen] = useState(false)
 
   // Wrapper function to update slippage and persist to localStorage
   const handleSlippageChange = useCallback((value: number) => {
@@ -44,10 +47,28 @@ export function SwapContainer() {
   const { selectedAccount } = useSelectedAccount()
   const isConnected = !!selectedAccount
   const walletAddress = selectedAccount?.address || ''
-  // Get polkadotSigner - only available for Polkadot accounts
-  const polkadotSigner = selectedAccount && 'polkadotSigner' in selectedAccount 
+  
+  // Get polkadotSigner from sender - only available for Polkadot accounts
+  const senderPolkadotSigner = selectedAccount && 'polkadotSigner' in selectedAccount 
     ? selectedAccount.polkadotSigner 
     : undefined
+  
+  // Get EVM signer (client) - only available for Ethereum accounts
+  const evmSigner = selectedAccount && 'client' in selectedAccount 
+    ? selectedAccount.client 
+    : undefined
+
+  // Get recipient account from hook (with localStorage persistence)
+  const {
+    recipientAccount,
+    recipientAddress,
+    setRecipientAccount,
+    setCustomRecipient,
+    resetToSender,
+    isDifferentFromSender,
+    isCustomAddress,
+    hasSavedRecipient,
+  } = useRecipientAccount()
 
   // Custom hooks - Token and Balance handling (nuqs handles URL params automatically)
   const { 
@@ -69,6 +90,48 @@ export function SwapContainer() {
     unifiedToAssets,
   } = useXcmTokens()
 
+  // Get polkadotSigner from recipient - used for cross-platform swaps (EVM → Substrate)
+  const recipientPolkadotSigner = recipientAccount && 'polkadotSigner' in recipientAccount
+    ? recipientAccount.polkadotSigner
+    : undefined
+
+  // Determine which Polkadot signer to use based on chain types
+  // For EVM → Substrate swaps, use recipient's signer (if available)
+  // Otherwise, use sender's signer
+  const polkadotSigner = useMemo(() => {
+    // Check if this is a cross-platform swap (EVM origin → Substrate destination)
+    const isEVMOrigin = inputToken?.networkChain && 
+      ['Moonbeam', 'Moonriver', 'Astar', 'Shiden'].includes(inputToken.networkChain);
+    const isSubstrateDestination = outputToken?.networkChain && 
+      !['Moonbeam', 'Moonriver', 'Astar', 'Shiden'].includes(outputToken.networkChain);
+    
+    const isCrossPlatformSwap = isEVMOrigin && isSubstrateDestination;
+
+    if (isCrossPlatformSwap && recipientPolkadotSigner) {
+      // Use recipient's Polkadot signer for cross-platform swaps
+      console.log('🔄 Using recipient Polkadot signer for cross-platform swap');
+      return recipientPolkadotSigner;
+    }
+
+    // Default: use sender's Polkadot signer
+    return senderPolkadotSigner;
+  }, [inputToken?.networkChain, outputToken?.networkChain, recipientPolkadotSigner, senderPolkadotSigner]);
+
+  // Log signer info for debugging
+  useEffect(() => {
+    if (selectedAccount) {
+      console.log('📝 Signer Info:', {
+        senderPlatform: selectedAccount.platform,
+        senderAddress: selectedAccount.address,
+        hasSenderPolkadotSigner: !!senderPolkadotSigner,
+        hasEvmSigner: !!evmSigner,
+        recipientPlatform: recipientAccount?.platform,
+        hasRecipientPolkadotSigner: !!recipientPolkadotSigner,
+        activePolkadotSigner: polkadotSigner ? 'available' : 'missing',
+      });
+    }
+  }, [selectedAccount, senderPolkadotSigner, evmSigner, recipientAccount, recipientPolkadotSigner, polkadotSigner]);
+
   // Balance fetching using ParaSpell SDK
   const {
     inputBalance,
@@ -84,6 +147,7 @@ export function SwapContainer() {
   } = useParaSpellBalances({
     isConnected,
     walletAddress,
+    recipientAddress, // Pass recipient address for output balance
     inputToken,
     outputToken,
     determineCurrency,
@@ -111,6 +175,7 @@ export function SwapContainer() {
     inputToken,
     outputToken,
     walletAddress,
+    recipientAddress, // Pass recipient address for fee calculation
     slippageTolerance,
     // Pass helpers from useXcmTokens
     getOptimalExchanges,
@@ -143,7 +208,9 @@ export function SwapContainer() {
     outputAmount,
     slippageTolerance,
     walletAddress,
+    recipientAddress, // Use computed recipient address
     polkadotSigner,
+    evmSigner, // EVM signer for EVM-based chains (Moonbeam, Astar, etc.)
     selectedExchange: routeState.data?.exchange, // Pass the exchange from quote
     getOptimalExchanges,
     determineCurrency,
@@ -167,10 +234,11 @@ export function SwapContainer() {
         setInputAmount('');
         resetRoute();
         
-        // Refresh both balances with delay to ensure source deduction is visible
-        // Output balance already updated by polling, but source needs time to propagate
-        console.log('💰 XCM delivery confirmed, refreshing source balance...');
-        refreshBalances(true); // true = add 3 second delay for blockchain confirmation
+        // Reset recipient to sender after successful swap (for safety)
+        resetToSender();
+        
+        // Refresh input balance to show deduction (balances already updated by polling)
+        refreshBalances(false);
       });
       
       // Update UI to show "waiting for delivery" state
@@ -231,6 +299,21 @@ export function SwapContainer() {
     // Reset input amount
     setInputAmount('');
   }, [handleDisconnect, isActive, resetSwapFlow, resetRoute]);
+
+  // Recipient management handlers (simplified with hook)
+  const handleSelectDifferentWallet = useCallback(() => {
+    setIsSelectRecipientOpen(false);
+    setIsRecipientWalletDialogOpen(true);
+  }, []);
+
+  const handleRecipientWalletSelect = useCallback((account: any) => {
+    setRecipientAccount(account);
+    setIsRecipientWalletDialogOpen(false);
+  }, [setRecipientAccount]);
+
+  const handleCustomAddressSubmit = useCallback((address: string) => {
+    setCustomRecipient(address);
+  }, [setCustomRecipient]);
 
   // Effect to reset states when tokens change
   useEffect(() => {
@@ -345,9 +428,46 @@ export function SwapContainer() {
                 error={routeState.error}
                 onConnectWalletClick={() => setIsConnectWalletOpen(true)}
                 onSelectRecipientClick={() => setIsSelectRecipientOpen(true)}
-
+                recipientAddress={isDifferentFromSender ? recipientAddress : undefined}
+                isCustomRecipient={isCustomAddress || isDifferentFromSender}
               />
             </div>
+
+            {/* Cross-platform swap warning */}
+            {inputToken?.networkChain && outputToken?.networkChain && (
+              (() => {
+                const isEVMOrigin = ['Moonbeam', 'Moonriver', 'Astar', 'Shiden'].includes(inputToken.networkChain);
+                const isSubstrateDestination = !['Moonbeam', 'Moonriver', 'Astar', 'Shiden'].includes(outputToken.networkChain);
+                const isCrossPlatformSwap = isEVMOrigin && isSubstrateDestination;
+
+                if (!isCrossPlatformSwap) return null;
+
+                const hasRecipientPolkadotWallet = recipientAccount?.platform === 'polkadot';
+                const isUsingCustomAddress = isCustomAddress;
+
+                return (
+                  <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm">
+                    <div className="flex items-start gap-2">
+                      <svg className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <div className="flex-1">
+                        <p className="font-medium text-amber-500 mb-1">Cross-chain Swap</p>
+                        <p className="text-muted-foreground text-xs leading-relaxed">
+                          {!hasRecipientPolkadotWallet && !isUsingCustomAddress ? (
+                            <>Swapping from {inputToken.networkChain} to {outputToken.networkChain} requires a Polkadot wallet. Please select a Polkadot wallet as the recipient.</>
+                          ) : isUsingCustomAddress ? (
+                            <>Custom addresses are not supported for cross-chain swaps. Please select a connected Polkadot wallet as the recipient.</>
+                          ) : (
+                            <>This swap will use your recipient's Polkadot wallet to construct the cross-chain message.</>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()
+            )}
 
             <SwapDetails
               minimumReceived={calculateMinimumReceived(outputAmount, slippageTolerance)}
@@ -416,11 +536,29 @@ export function SwapContainer() {
         xcmStatusMessage={flowState.execution?.xcmStatusMessage}
       />
 
-      <ConnectWalletDialog isOpen={isConnectWalletOpen} onOpenChange={setIsConnectWalletOpen} />
+      {/* Sender Wallet Dialog */}
+      <ConnectWalletDialog 
+        isOpen={isConnectWalletOpen} 
+        onOpenChange={setIsConnectWalletOpen}
+      />
+
+      {/* Recipient Wallet Selection Dialog - Dedicated component */}
+      <SelectRecipientWalletDialog 
+        isOpen={isRecipientWalletDialogOpen}
+        onOpenChange={setIsRecipientWalletDialogOpen}
+        onAccountSelect={handleRecipientWalletSelect}
+        currentRecipient={recipientAccount}
+      />
+
+      {/* Recipient Selection Dialog */}
       <SelectRecipientDialog 
         isOpen={isSelectRecipientOpen} 
-        onConnectWalletClick={() => setIsConnectWalletOpen(true)}
-        onOpenChange={setIsSelectRecipientOpen} 
+        onOpenChange={setIsSelectRecipientOpen}
+        onSelectDifferentWallet={handleSelectDifferentWallet}
+        selectedRecipient={isDifferentFromSender && !isCustomAddress ? recipientAccount : null}
+        customAddress={isCustomAddress ? recipientAddress : ''}
+        onCustomAddressSubmit={handleCustomAddressSubmit}
+        onResetToSender={resetToSender}
       />
     </>
   )

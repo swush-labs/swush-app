@@ -272,8 +272,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
 
 // DEX compatibility matrix based on your asset registry
 export const DEX_CHAIN_COMPATIBILITY: Record<string, string[]> = {
-  "HydrationDex": ["AssetHubPolkadot", "Hydration", "Moonbeam", "Acala", "BifrostPolkadot"],
-  "AssetHubPolkadotDex": ["AssetHubPolkadot", "Hydration", "Acala", "BifrostPolkadot"],
+  "HydrationDex": ["AssetHubPolkadot", "Hydration", "Moonbeam", "Acala", "BifrostPolkadot", "Moonbeam"],
+  "AssetHubPolkadotDex": ["AssetHubPolkadot", "Hydration", "Acala", "BifrostPolkadot", "Moonbeam"],
 
   "AcalaDex": ["Acala", "Hydration", "AssetHubPolkadot"],
   "BifrostKusamaDex": ["BifrostKusama"],
