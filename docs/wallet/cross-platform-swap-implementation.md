@@ -64,9 +64,9 @@ const polkadotSigner = useMemo(() => {
 
 **Added Cross-Platform Detection:**
 ```typescript
-const isOriginEvm = isEvmChain(inputToken.networkChain);
-const isDestinationEvm = isEvmChain(outputToken.networkChain);
-const isCrossPlatformSwap = isOriginEvm !== isDestinationEvm;
+const isOriginSubstrateEvm = isSubstrateEvmChain(inputToken.networkChain);
+const isDestinationSubstrateEvm = isSubstrateEvmChain(outputToken.networkChain);
+const isCrossPlatformSwap = isOriginSubstrateEvm !== isDestinationSubstrateEvm;
 ```
 
 **Added Cross-Platform Validation:**
@@ -124,12 +124,14 @@ A visual warning banner that:
 )}
 ```
 
-## EVM Chain Detection
+## Substrate EVM Chain Detection
 
-**File:** `apps/web/src/services/xcm-router/evmChains.ts`
+**File:** `apps/web/src/services/xcm-router/substrateEvmChains.ts`
+
+These are Substrate parachains with EVM compatibility (NOT pure EVM chains like Ethereum/Arbitrum).
 
 ```typescript
-export const EVM_CHAINS = [
+export const SUBSTRATE_EVM_CHAINS = [
   // Polkadot Parachains
   'Moonbeam',
   'Astar',
@@ -139,8 +141,8 @@ export const EVM_CHAINS = [
   'Shiden',
 ] as const;
 
-export function isEvmChain(chainName: string): boolean {
-  return EVM_CHAINS.includes(chainName as EvmChain);
+export function isSubstrateEvmChain(chainName: string): boolean {
+  return SUBSTRATE_EVM_CHAINS.includes(chainName as SubstrateEvmChain);
 }
 ```
 
@@ -205,7 +207,7 @@ export function isEvmChain(chainName: string): boolean {
 
 - `apps/web/src/components/swap/SwapContainer.tsx` - Main swap logic and signer selection
 - `apps/web/src/components/swap/hooks/useXcmSwapExecution.ts` - Transaction execution and validation
-- `apps/web/src/services/xcm-router/evmChains.ts` - EVM chain detection utility
+- `apps/web/src/services/xcm-router/substrateEvmChains.ts` - Substrate EVM chain detection utility
 - `apps/web/src/components/wallet/use-recipient-account.ts` - Recipient account management
 - `apps/web/src/components/swap/ui/SelectRecipientWalletDialog.tsx` - Recipient selection UI
 

@@ -17,12 +17,16 @@ import {
   TEST_RPC_ASSET_HUB,
   TEST_RPC_HYDRATION,
   TEST_RPC_BIFROST,
-  TEST_RPC_ACALA
+  TEST_RPC_ACALA,
+  TEST_RPC_MOONBEAM
 } from '@/services/constants';
 
 // XCM Tracking
 import { useXcmTracking } from './useXcmTracking';
 import type { XcmDeliveryStatus, TrackedXcmMessage } from '@/services/xcm-tracker';
+
+// Substrate EVM Chain Utilities
+import { isSubstrateEvmChain } from '@/services/xcm-router/substrateEvmChains';
 
 /**
  * Convert user input (decimal string) to smallest unit (bigint)
@@ -87,7 +91,11 @@ interface UseXcmSwapExecutionProps {
   outputAmount?: string; // For success callback
   slippageTolerance: number;
   walletAddress: string;
-  polkadotSigner: PolkadotSigner | undefined;
+  recipientAddress: string; // Recipient address (can be same as sender or different)
+  
+  // Segregated signers for proper routing
+  senderPolkadotSigner: PolkadotSigner | undefined;     // Sender's signer (signs transactions)
+  recipientPolkadotSigner: PolkadotSigner | undefined;  // Recipient's signer (XCM beneficiary construction)
 
   // Exchange selection from quote (optional - will recalculate if not provided)
   selectedExchange?: string | string[];
@@ -164,7 +172,9 @@ export function useXcmSwapExecution({
   outputAmount,
   slippageTolerance,
   walletAddress,
-  polkadotSigner,
+  recipientAddress,
+  senderPolkadotSigner,
+  recipientPolkadotSigner,
   selectedExchange,
   getOptimalExchanges,
   determineCurrency,
@@ -240,9 +250,9 @@ export function useXcmSwapExecution({
    */
   const executeSwap = useCallback(async () => {
     // Validation
-    if (!inputToken || !outputToken || !walletAddress || !polkadotSigner) {
+    if (!inputToken || !outputToken || !walletAddress) {
       const errorDetails: ErrorDetails = {
-        message: 'Missing required parameters: token, wallet, or signer',
+        message: 'Missing required parameters: token or wallet',
         code: 'MISSING_PARAMS'
       };
       onError?.(errorDetails);
@@ -279,6 +289,46 @@ export function useXcmSwapExecution({
       return;
     }
 
+    // Check if origin chain is Substrate EVM-based and validate appropriate signer
+    const isOriginSubstrateEvm = isSubstrateEvmChain(inputToken.networkChain);
+    const isDestinationSubstrateEvm = isSubstrateEvmChain(outputToken.networkChain);
+    const isCrossPlatformSwap = isOriginSubstrateEvm !== isDestinationSubstrateEvm;
+    
+    // Validate sender's signer (always required for transaction signing)
+    // if (!senderPolkadotSigner) {
+    //   console.error('❌ Sender Polkadot signer required:', {
+    //     chain: inputToken.networkChain,
+    //     hasSenderPolkadotSigner: !!senderPolkadotSigner,
+    //   });
+      
+    //   const errorDetails: ErrorDetails = {
+    //     message: `${inputToken.networkChain} requires a Polkadot wallet (e.g., Talisman, SubWallet, MetaMask with Polkadot support)`,
+    //     code: 'MISSING_SENDER_POLKADOT_SIGNER'
+    //   };
+    //   onError?.(errorDetails);
+    //   return;
+    // }
+
+    // Cross-platform swap validation (EVM → Substrate or Substrate → EVM)
+    // ParaSpell requires recipient's Polkadot signer to construct XCM beneficiary locations
+    if (isCrossPlatformSwap && !recipientPolkadotSigner) {
+      console.error('❌ Cross-platform swap requires recipient Polkadot signer:', {
+        originChain: inputToken.networkChain,
+        destinationChain: outputToken.networkChain,
+        isOriginSubstrateEvm,
+        isDestinationSubstrateEvm,
+        hasSenderPolkadotSigner: !!senderPolkadotSigner,
+        hasRecipientPolkadotSigner: !!recipientPolkadotSigner,
+      });
+      
+      const errorDetails: ErrorDetails = {
+        message: `Cross-chain swap from ${inputToken.networkChain} to ${outputToken.networkChain} requires a Polkadot wallet as recipient. Please connect a Polkadot wallet (Talisman/SubWallet) as the recipient.`,
+        code: 'MISSING_RECIPIENT_POLKADOT_SIGNER_CROSS_PLATFORM'
+      };
+      onError?.(errorDetails);
+      return;
+    }
+
     try {
       // Reset execution flag and start timer
       hasExecutionStartedRef.current = false;
@@ -292,6 +342,21 @@ export function useXcmSwapExecution({
         to: `${outputToken.symbol} (${outputToken.networkChain})`,
         amount: inputAmount,
         walletAddress,
+      });
+
+      // Log which signers will be used
+      console.log('🔐 Signer routing info:', {
+        originChain: inputToken.networkChain,
+        destinationChain: outputToken.networkChain,
+        isOriginSubstrateEvm,
+        isDestinationSubstrateEvm,
+        isCrossPlatformSwap,
+        senderPolkadotSigner: senderPolkadotSigner ? '✅ Available' : '❌ Missing',
+        recipientPolkadotSigner: recipientPolkadotSigner ? '✅ Available' : '❌ Missing',
+        signerRouting: {
+          transactionSigner: 'Sender\'s polkadotSigner',
+          xcmBeneficiarySigner: isCrossPlatformSwap ? 'Recipient\'s polkadotSigner' : 'Sender\'s polkadotSigner',
+        }
       });
 
       // Step 1: Use exchange from quote if available, otherwise recalculate
@@ -337,6 +402,7 @@ export function useXcmSwapExecution({
           Hydration: TEST_RPC_HYDRATION,         // ws://localhost:3422
           BifrostPolkadot: TEST_RPC_BIFROST,     // ws://localhost:3423
           Acala: TEST_RPC_ACALA,
+          Moonbeam: TEST_RPC_MOONBEAM,
         }
       } : {
         abstractDecimals: true,
@@ -360,87 +426,135 @@ export function useXcmSwapExecution({
         amount: inputAmount, // Pass as string, not BigInt
         slippagePct: safeSlippage.toString(),
         senderAddress: walletAddress,
-        recipientAddress: walletAddress,
+        recipientAddress: recipientAddress,
+        isOriginSubstrateEvm: isOriginSubstrateEvm,
+        signerType: isOriginSubstrateEvm ? 'Substrate EVM' : 'Substrate',
       });
 
-      await RouterBuilder(routerConfig)
-        .from(inputToken.networkChain as any)
-        .to(outputToken.networkChain as any)
-        .exchange(exchanges as any)
-        .currencyFrom(determineCurrency(fromAsset))
-        .currencyTo(determineCurrency(toAsset))
-        .amount(inputAmount) // Pass string amount, let ParaSpell handle conversion
-        .slippagePct(safeSlippage.toString())
-        .senderAddress(walletAddress)
-        .recipientAddress(walletAddress) // Same as sender for now
-        .signer(polkadotSigner)
-        .onStatusChange((status: TRouterEvent) => {
-          // Log transaction status update
-          console.log(`📡 Transaction status update:`, {
-            type: status.type,
-            step: status.currentStep !== undefined ? status.currentStep + 1 : '?',
-            totalSteps: status.routerPlan?.length || '?',
-            chain: status.chain,
-            destinationChain: status.destinationChain,
-          });
+      // Determine which signer to use for XCM beneficiary construction
+      // For cross-platform swaps, use recipient's signer; otherwise use sender's
+      const xcmBeneficiarySigner = isCrossPlatformSwap && recipientPolkadotSigner
+        ? recipientPolkadotSigner
+        : senderPolkadotSigner;
 
-          // Handle COMPLETED status
-          if (status.type === 'COMPLETED') {
-            console.log(`✅ Router execution completed!`);
+      // Build RouterBuilder with conditional signer configuration
+      // Status change handler - shared between both EVM and Polkadot paths
+      const onStatusChange = (status: TRouterEvent) => {
+        // Log transaction status update
+        console.log(`📡 Transaction status update:`, {
+          type: status.type,
+          step: status.currentStep !== undefined ? status.currentStep + 1 : '?',
+          totalSteps: status.routerPlan?.length || '?',
+          chain: status.chain,
+          destinationChain: status.destinationChain,
+        });
 
-            // If XCM tracking is enabled, start tracking the route
-            if (enableXcmTracking && inputToken.networkChain && outputToken.networkChain) {
-              console.log('🔭 Starting XCM delivery tracking...');
-              trackRoute(
-                inputToken.networkChain,
-                outputToken.networkChain,
-                walletAddress
-              );
-              
-              // Update status to show XCM delivery pending
-              onExecutionUpdate?.({
-                xcmDeliveryStatus: 'in-flight',
-                xcmStatusMessage: 'Delivering assets cross-chain...',
-              });
-            } else {
-              // No XCM tracking, trigger success immediately
-              const duration = Date.now() - startTimeRef.current;
-              console.log(`✅ Swap completed successfully in ${duration}ms!`);
+        // Handle COMPLETED status
+        if (status.type === 'COMPLETED') {
+          console.log(`✅ Router execution completed!`);
 
-              onSuccess?.({
-                duration,
-                inputAmount,
-                inputToken: inputToken.symbol,
-                outputAmount: outputAmount || '?',
-                outputToken: outputToken.symbol
-              });
-            }
-            return; // Exit early, no need to process further
-          }
-
-          // Notify execution start on first transaction event
-          if (!hasExecutionStartedRef.current) {
-            console.log('✅ Transaction execution started:', status.type);
-            hasExecutionStartedRef.current = true;
-
-            // Notify parent that execution has started
-            onExecutionStart?.({
-              currentStep: status.currentStep || 0,
-              totalSteps: status.routerPlan?.length || 0,
-              transactionType: status.type,
-              statusMessage: formatStatusMessage(status.type)
+          // If XCM tracking is enabled, start tracking the route
+          if (enableXcmTracking && inputToken.networkChain && outputToken.networkChain) {
+            console.log('🔭 Starting XCM delivery tracking...');
+            trackRoute(
+              inputToken.networkChain,
+              outputToken.networkChain,
+              walletAddress
+            );
+            
+            // Update status to show XCM delivery pending
+            onExecutionUpdate?.({
+              xcmDeliveryStatus: 'in-flight',
+              xcmStatusMessage: 'Delivering assets cross-chain...',
             });
           } else {
-            // Update execution progress
-            onExecutionUpdate?.({
-              currentStep: status.currentStep,
-              totalSteps: status.routerPlan?.length,
-              transactionType: status.type,
-              statusMessage: formatStatusMessage(status.type)
+            // No XCM tracking, trigger success immediately
+            const duration = Date.now() - startTimeRef.current;
+            console.log(`✅ Swap completed successfully in ${duration}ms!`);
+
+            onSuccess?.({
+              duration,
+              inputAmount,
+              inputToken: inputToken.symbol,
+              outputAmount: outputAmount || '?',
+              outputToken: outputToken.symbol
             });
           }
-        })
-        .build();
+          return; // Exit early, no need to process further
+        }
+
+        // Notify execution start on first transaction event
+        if (!hasExecutionStartedRef.current) {
+          console.log('✅ Transaction execution started:', status.type);
+          hasExecutionStartedRef.current = true;
+
+          // Notify parent that execution has started
+          onExecutionStart?.({
+            currentStep: status.currentStep || 0,
+            totalSteps: status.routerPlan?.length || 0,
+            transactionType: status.type,
+            statusMessage: formatStatusMessage(status.type)
+          });
+        } else {
+          // Update execution progress
+          onExecutionUpdate?.({
+            currentStep: status.currentStep,
+            totalSteps: status.routerPlan?.length,
+            transactionType: status.type,
+            statusMessage: formatStatusMessage(status.type)
+          });
+        }
+      };
+      
+      if (isOriginSubstrateEvm) {
+        console.log('🔐 Substrate EVM origin chain detected:', inputToken.networkChain);
+        console.log('🔐 Signer assignment:', {
+          evmSigner: 'Sender\'s polkadotSigner (signs EVM transaction)',
+          signer: isCrossPlatformSwap 
+            ? 'Recipient\'s polkadotSigner (constructs XCM beneficiary)'
+            : 'Sender\'s polkadotSigner (constructs XCM beneficiary)',
+        });
+        
+        // For Substrate EVM parachains (Moonbeam, Moonriver, Astar, Shiden)
+        // - evmSigner: Sender's polkadotSigner (signs the EVM transaction)
+        // - signer: Recipient's polkadotSigner for cross-platform OR Sender's for same-platform
+        await RouterBuilder(routerConfig)
+          .from(inputToken.networkChain as any)
+          .to(outputToken.networkChain as any)
+          .exchange(exchanges as any)
+          .currencyFrom(determineCurrency(fromAsset))
+          .currencyTo(determineCurrency(toAsset))
+          .amount(inputAmount)
+          .slippagePct(safeSlippage.toString())
+          .senderAddress(recipientAddress)
+          .recipientAddress(recipientAddress)
+          .evmSenderAddress(walletAddress)           // Sender's EVM address
+          .evmSigner(senderPolkadotSigner!)          // ✅ SENDER's polkadotSigner (signs EVM transaction)
+          .signer(xcmBeneficiarySigner!)             // ✅ Appropriate signer for XCM beneficiary
+          .onStatusChange(onStatusChange)
+          .build();
+      } else {
+        console.log('🔐 Substrate origin chain detected:', inputToken.networkChain);
+        console.log('🔐 Signer assignment:', {
+          signer: 'Sender\'s polkadotSigner (signs Substrate transaction)',
+        });
+        
+        // For Substrate chains
+        // - signer: Sender's polkadotSigner (signs the transaction)
+        await RouterBuilder(routerConfig)
+          .from(inputToken.networkChain as any)
+          .to(outputToken.networkChain as any)
+          .exchange(exchanges as any)
+          .currencyFrom(determineCurrency(fromAsset))
+          .currencyTo(determineCurrency(toAsset))
+          .amount(inputAmount)
+          .slippagePct(safeSlippage.toString())
+          .senderAddress(walletAddress)
+          .recipientAddress(recipientAddress)
+          .signer(senderPolkadotSigner!)             // ✅ SENDER's polkadotSigner (signs Substrate transaction)
+          .onStatusChange(onStatusChange)
+          .build();
+      }
 
 
     } catch (error: unknown) {
@@ -486,7 +600,9 @@ export function useXcmSwapExecution({
     outputAmount,
     slippageTolerance,
     walletAddress,
-    polkadotSigner,
+    recipientAddress,
+    senderPolkadotSigner,
+    recipientPolkadotSigner,
     selectedExchange,
     getOptimalExchanges,
     determineCurrency,
@@ -504,4 +620,3 @@ export function useXcmSwapExecution({
     executeSwap,
   };
 }
-

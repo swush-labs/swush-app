@@ -1,0 +1,149 @@
+{
+    "totalFees": {
+        "ACA": {
+            "rawAmount": "3440010287",
+            "adjustedAmount": "0.003",
+            "decimals": 12,
+            "currency": "ACA"
+        },
+        "USDC": {
+            "rawAmount": "14768",
+            "adjustedAmount": "0.015",
+            "decimals": 6,
+            "currency": "USDC"
+        },
+        "DOT": {
+            "rawAmount": "386415000",
+            "adjustedAmount": "0.039",
+            "decimals": 10,
+            "currency": "DOT"
+        },
+        "HDX": {
+            "rawAmount": "1030822661457",
+            "adjustedAmount": "1.031",
+            "decimals": 12,
+            "currency": "HDX"
+        }
+    },
+    "breakdown": {
+        "origin": {
+            "weight": {
+                "refTime": "2074168052",
+                "proofSize": "21022"
+            },
+            "fee": "3440010287",
+            "feeType": "dryRun",
+            "sufficient": false,
+            "currency": "ACA",
+            "asset": {
+                "symbol": "ACA",
+                "decimals": 12,
+                "existentialDeposit": "100000000000",
+                "location": {
+                    "parents": 1,
+                    "interior": {
+                        "X2": [
+                            {
+                                "Parachain": 2000
+                            },
+                            {
+                                "GeneralKey": {
+                                    "length": 2,
+                                    "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "isNative": true
+            }
+        },
+        "destination": {
+            "fee": "14768",
+            "feeType": "dryRun",
+            "currency": "USDC",
+            "asset": {
+                "assetId": "1337",
+                "symbol": "USDC",
+                "decimals": 6,
+                "location": {
+                    "parents": 1,
+                    "interior": {
+                        "X3": [
+                            {
+                                "Parachain": 1000
+                            },
+                            {
+                                "PalletInstance": 50
+                            },
+                            {
+                                "GeneralIndex": 1337
+                            }
+                        ]
+                    }
+                },
+                "existentialDeposit": "10000",
+                "isFeeAsset": true,
+                "alias": "USDC1"
+            }
+        },
+        "hops": [
+            {
+                "chain": "AssetHubPolkadot",
+                "result": {
+                    "fee": "386415000",
+                    "feeType": "dryRun",
+                    "currency": "DOT",
+                    "asset": {
+                        "symbol": "DOT",
+                        "isNative": true,
+                        "decimals": 10,
+                        "existentialDeposit": "100000000",
+                        "location": {
+                            "parents": 1,
+                            "interior": {
+                                "Here": null
+                            }
+                        },
+                        "isFeeAsset": true
+                    }
+                }
+            },
+            {
+                "chain": "Hydration",
+                "result": {
+                    "fee": "1030822661457",
+                    "feeType": "dryRun",
+                    "sufficient": false,
+                    "currency": "HDX",
+                    "asset": {
+                        "symbol": "HDX",
+                        "isNative": true,
+                        "decimals": 12,
+                        "existentialDeposit": "1000000000000",
+                        "location": {
+                            "parents": 1,
+                            "interior": {
+                                "X2": [
+                                    {
+                                        "Parachain": 2034
+                                    },
+                                    {
+                                        "GeneralIndex": 0
+                                    }
+                                ]
+                            }
+                        },
+                        "isFeeAsset": true
+                    },
+                    "forwardedXcms": [],
+                    "weight": {
+                        "refTime": "13540624362",
+                        "proofSize": "118656"
+                    }
+                },
+                "isExchange": true
+            }
+        ]
+    }
+}

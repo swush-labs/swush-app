@@ -23,6 +23,7 @@ import SelectRecipientDialog from './ui/SelectRecipientDialog'
 import SelectRecipientWalletDialog from './ui/SelectRecipientWalletDialog'
 import { useSelectedAccount } from '@/components/wallet/use-selected-account'
 import { useRecipientAccount } from '@/components/wallet/use-recipient-account'
+import { isSubstrateEvmChain } from '@/services/xcm-router/substrateEvmChains'
 
 export function SwapContainer() {
   // UI state
@@ -95,28 +96,6 @@ export function SwapContainer() {
     ? recipientAccount.polkadotSigner
     : undefined
 
-  // Determine which Polkadot signer to use based on chain types
-  // For EVM → Substrate swaps, use recipient's signer (if available)
-  // Otherwise, use sender's signer
-  const polkadotSigner = useMemo(() => {
-    // Check if this is a cross-platform swap (EVM origin → Substrate destination)
-    const isEVMOrigin = inputToken?.networkChain && 
-      ['Moonbeam', 'Moonriver', 'Astar', 'Shiden'].includes(inputToken.networkChain);
-    const isSubstrateDestination = outputToken?.networkChain && 
-      !['Moonbeam', 'Moonriver', 'Astar', 'Shiden'].includes(outputToken.networkChain);
-    
-    const isCrossPlatformSwap = isEVMOrigin && isSubstrateDestination;
-
-    if (isCrossPlatformSwap && recipientPolkadotSigner) {
-      // Use recipient's Polkadot signer for cross-platform swaps
-      console.log('🔄 Using recipient Polkadot signer for cross-platform swap');
-      return recipientPolkadotSigner;
-    }
-
-    // Default: use sender's Polkadot signer
-    return senderPolkadotSigner;
-  }, [inputToken?.networkChain, outputToken?.networkChain, recipientPolkadotSigner, senderPolkadotSigner]);
-
   // Log signer info for debugging
   useEffect(() => {
     if (selectedAccount) {
@@ -124,13 +103,11 @@ export function SwapContainer() {
         senderPlatform: selectedAccount.platform,
         senderAddress: selectedAccount.address,
         hasSenderPolkadotSigner: !!senderPolkadotSigner,
-        hasEvmSigner: !!evmSigner,
         recipientPlatform: recipientAccount?.platform,
         hasRecipientPolkadotSigner: !!recipientPolkadotSigner,
-        activePolkadotSigner: polkadotSigner ? 'available' : 'missing',
       });
     }
-  }, [selectedAccount, senderPolkadotSigner, evmSigner, recipientAccount, recipientPolkadotSigner, polkadotSigner]);
+  }, [selectedAccount, senderPolkadotSigner, recipientAccount, recipientPolkadotSigner]);
 
   // Balance fetching using ParaSpell SDK
   const {
@@ -209,8 +186,8 @@ export function SwapContainer() {
     slippageTolerance,
     walletAddress,
     recipientAddress, // Use computed recipient address
-    polkadotSigner,
-    evmSigner, // EVM signer for EVM-based chains (Moonbeam, Astar, etc.)
+    senderPolkadotSigner,     // Sender's polkadotSigner (signs transactions)
+    recipientPolkadotSigner,  // Recipient's polkadotSigner (XCM beneficiary construction)
     selectedExchange: routeState.data?.exchange, // Pass the exchange from quote
     getOptimalExchanges,
     determineCurrency,
@@ -238,7 +215,7 @@ export function SwapContainer() {
         resetToSender();
         
         // Refresh input balance to show deduction (balances already updated by polling)
-        refreshBalances(false);
+        refreshBalances(true);
       });
       
       // Update UI to show "waiting for delivery" state
@@ -436,9 +413,9 @@ export function SwapContainer() {
             {/* Cross-platform swap warning */}
             {inputToken?.networkChain && outputToken?.networkChain && (
               (() => {
-                const isEVMOrigin = ['Moonbeam', 'Moonriver', 'Astar', 'Shiden'].includes(inputToken.networkChain);
-                const isSubstrateDestination = !['Moonbeam', 'Moonriver', 'Astar', 'Shiden'].includes(outputToken.networkChain);
-                const isCrossPlatformSwap = isEVMOrigin && isSubstrateDestination;
+                const isSubstrateEvmOrigin = isSubstrateEvmChain(inputToken.networkChain);
+                const isSubstrateDestination = !isSubstrateEvmChain(outputToken.networkChain);
+                const isCrossPlatformSwap = isSubstrateEvmOrigin && isSubstrateDestination;
 
                 if (!isCrossPlatformSwap) return null;
 

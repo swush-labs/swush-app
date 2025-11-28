@@ -161,6 +161,21 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     }
   },
 
+  "GLMR": {
+    symbol: "GLMR",
+    name: "Moonbeam",
+    description: "Moonbeam native token",
+    category: "native",
+    networkInstances: {
+      "GLMR-native-Moonbeam": {
+        network: "Moonbeam",
+        assetType: "Native",
+        displayName: "GLMR (Native)",
+        verified: true
+      },
+    }
+  }
+
  /*  "ASTR": {
     symbol: "ASTR",
     name: "Astar",
@@ -252,20 +267,7 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     }
   },
 
-  "GLMR": {
-    symbol: "GLMR",
-    name: "Moonbeam",
-    description: "Moonbeam native token",
-    category: "native",
-    networkInstances: {
-      "GLMR-native-Moonbeam": {
-        network: "Moonbeam",
-        assetType: "Native",
-        displayName: "GLMR (Native)",
-        verified: true
-      },
-    }
-  },
+ 
  */
 };
 
