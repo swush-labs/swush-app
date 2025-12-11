@@ -1,5 +1,46 @@
 import type { TExchangeChain } from "@paraspell/xcm-router";
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Swap Provider Types - XCM (Polkadot ecosystem) vs Chainflip (cross-chain)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export type SwapProvider = 'xcm' | 'chainflip';
+
+// Chainflip supported chains (from https://chainflip-broker.io)
+// AssetHub = Polkadot Asset Hub (NOT relay chain Polkadot)
+export const CHAINFLIP_CHAINS = [
+  'Ethereum',
+  'Arbitrum',
+  'Solana',
+  'AssetHub',  // Chainflip uses "AssetHub" for Polkadot Asset Hub
+  'Bitcoin',
+] as const;
+
+export type ChainflipChain = typeof CHAINFLIP_CHAINS[number];
+
+// Networks that are part of the Polkadot ecosystem (XCM-capable)
+export const POLKADOT_ECOSYSTEM_NETWORKS = [
+  'Polkadot',
+  'AssetHubPolkadot',
+  'Hydration',
+  'Moonbeam',
+  'Acala',
+  'BifrostPolkadot',
+  'Astar',
+  'Interlay',
+  'Centrifuge',
+  'Unique',
+  'Zeitgeist',
+] as const;
+
+// Networks that require Chainflip for cross-chain swaps (non-Polkadot ecosystem)
+export const CHAINFLIP_ONLY_NETWORKS = [
+  'Ethereum',
+  'Arbitrum',
+  'Solana',
+  'Bitcoin',
+] as const;
+
 export type AssetRegistryEntry = {
   symbol: string;
   name: string;
@@ -15,134 +56,216 @@ export type AssetRegistryEntry = {
     assetType: "Native" | "Asset ID" | "Multi-Location";
     displayName: string;
     verified?: boolean;
+    // Chainflip-specific fields
+    provider?: SwapProvider;          // 'xcm' (default) or 'chainflip'
+    chainflipId?: string;             // Chainflip compound asset ID (e.g., "dot.hub", "usdc.arb")
+    decimals?: number;                // Token decimals (required for Chainflip)
+    contractAddress?: string;         // ERC20/SPL contract address
   }>;
+};
+
+/**
+ * Determine which swap provider to use based on source and destination networks
+ * @param sourceNetwork - Source chain/network name
+ * @param destNetwork - Destination chain/network name
+ * @returns 'chainflip' if cross-ecosystem swap, 'xcm' for Polkadot ecosystem
+ */
+export const getSwapProvider = (
+  sourceNetwork: string | undefined,
+  destNetwork: string | undefined
+): SwapProvider => {
+  if (!sourceNetwork || !destNetwork) return 'xcm';
+  
+  const isSourceChainflipOnly = CHAINFLIP_ONLY_NETWORKS.includes(sourceNetwork as typeof CHAINFLIP_ONLY_NETWORKS[number]);
+  const isDestChainflipOnly = CHAINFLIP_ONLY_NETWORKS.includes(destNetwork as typeof CHAINFLIP_ONLY_NETWORKS[number]);
+  
+  // If either network is Chainflip-only (Ethereum, Arbitrum, Solana, Bitcoin), use Chainflip
+  if (isSourceChainflipOnly || isDestChainflipOnly) {
+    return 'chainflip';
+  }
+  
+  // Both are Polkadot ecosystem, use XCM
+  return 'xcm';
 };
 
 // Simple registry mapping keys from useCurrencyOptions.ts to asset info
 export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
-  // USDC variants (different asset keys from useCurrencyOptions)
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // USDC - Available on XCM chains AND Chainflip chains
+  // ═══════════════════════════════════════════════════════════════════════════════
   "USDC": {
     symbol: "USDC",
     name: "USD Coin",
     description: "USD-backed stablecoin by Circle",
     category: "stablecoin",
     networkInstances: {
+      // ─── XCM Networks ───
       "USDC-1337-AssetHubPolkadot": {
         network: "AssetHubPolkadot",
         assetType: "Asset ID",
         displayName: "USDC (AssetHub)",
-        verified: true
+        verified: true,
+        provider: 'xcm',
       },
-      // "USDC-native-Moonbeam": {
-      //   network: "Moonbeam",
-      //   assetType: "Multi-Location",
-      //   displayName: "USDC (Moonbeam)",
-      //   verified: true
-      // },
       "USDC-22-Hydration": {
         network: "Hydration",
         assetType: "Asset ID",
         displayName: "USDC (Hydration)",
-        verified: true
+        verified: true,
+        provider: 'xcm',
       },
-      // "USDC-14-Acala": {
-      //   network: "Acala",
-      //   assetType: "Asset ID",
-      //   displayName: "USDC (Acala)",
-      //   verified: true
-      // },
       "USDC-5-BifrostPolkadot": {
         network: "BifrostPolkadot",
         assetType: "Asset ID",
         displayName: "USDC (BifrostPolkadot)",
-        verified: true
+        verified: true,
+        provider: 'xcm',
+      },
+      // ─── Chainflip Networks ───
+      "USDC-Ethereum": {
+        network: "Ethereum",
+        assetType: "Native",
+        displayName: "USDC (Ethereum)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'usdc.eth',
+        decimals: 6,
+        contractAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+      },
+      "USDC-Arbitrum": {
+        network: "Arbitrum",
+        assetType: "Native",
+        displayName: "USDC (Arbitrum)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'usdc.arb',
+        decimals: 6,
+        contractAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+      },
+      "USDC-Solana": {
+        network: "Solana",
+        assetType: "Native",
+        displayName: "USDC (Solana)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'usdc.sol',
+        decimals: 6,
+      },
+      // ─── Chainflip AssetHub ───
+      "USDC-AssetHub-CF": {
+        network: "AssetHub",
+        assetType: "Native",
+        displayName: "USDC (AssetHub via Chainflip)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'usdc.hub',
+        decimals: 6,
       },
     }
   },
 
-  // USDT variants
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // USDT - Available on XCM chains AND Chainflip (Ethereum)
+  // ═══════════════════════════════════════════════════════════════════════════════
   "USDT": {
     symbol: "USDT",
     name: "Tether USD",
     description: "Tether USD stablecoin",
     category: "stablecoin",
     networkInstances: {
-      // "USDT-10-Moonbeam": {
-      //   network: "Moonbeam",
-      //   assetType: "Asset ID",
-      //   displayName: "USDT (Moonbeam)",
-      //   verified: false
-      // },
+      // ─── XCM Networks ───
       "USDt-1984-AssetHubPolkadot": {
         network: "AssetHubPolkadot",
         assetType: "Asset ID",
         displayName: "USDt (AssetHubPolkadot)",
-        verified: true
+        verified: true,
+        provider: 'xcm',
       },
       "USDT-10-Hydration": {
         network: "Hydration",
         assetType: "Asset ID",
         displayName: "USDT (Hydration)",
-        verified: true
+        verified: true,
+        provider: 'xcm',
       },
-      // "USDT-1000767-Moonbeam": {
-      //   network: "Moonbeam",
-      //   assetType: "Asset ID",
-      //   displayName: "USDT (Moonbeam)",
-      //   verified: false
-      // }
       "USDT-10-BifrostPolkadot": {
         network: "BifrostPolkadot",
         assetType: "Asset ID",
         displayName: "USDT (BifrostPolkadot)",
-        verified: true
+        verified: true,
+        provider: 'xcm',
       },
-      // "USDT-12-Acala": {
-      //   network: "Acala",
-      //   assetType: "Asset ID",
-      //   displayName: "USDT (Acala)",
-      //   verified: true
-      // },
+      // ─── Chainflip Networks ───
+      "USDT-Ethereum": {
+        network: "Ethereum",
+        assetType: "Native",
+        displayName: "USDT (Ethereum)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'usdt.eth',
+        decimals: 6,
+        contractAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+      },
+      "USDT-AssetHub-CF": {
+        network: "AssetHub",
+        assetType: "Native",
+        displayName: "USDT (AssetHub via Chainflip)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'usdt.hub',
+        decimals: 6,
+      },
     }
   },
 
-  // Native tokens
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // DOT - Available on XCM chains AND Chainflip
+  // ═══════════════════════════════════════════════════════════════════════════════
   "DOT": {
     symbol: "DOT",
     name: "Polkadot",
     description: "Polkadot native token",
     category: "native",
     networkInstances: {
+      // ─── XCM Networks ───
       "DOT-native-AssetHubPolkadot": {
         network: "AssetHubPolkadot",
         assetType: "Multi-Location",
         displayName: "DOT (Native)",
-        verified: true
+        verified: true,
+        provider: 'xcm',
       },
       "DOT-5-Hydration": {
         network: "Hydration",
         assetType: "Asset ID",
         displayName: "DOT (HydraDx)",
-        verified: true
+        verified: true,
+        provider: 'xcm',
       },
-      // "xcDOT-42259045809535163221576417993425387648-Moonbeam": {
-      //   network: "Moonbeam",
-      //   assetType: "Asset ID",
-      //   displayName: "xcDOT (Moonbeam)",
-      //   verified: false
-      // },
       "DOT-native-Acala": {
         network: "Acala",
         assetType: "Multi-Location",
         displayName: "DOT (Acala)",
-        verified: true
+        verified: true,
+        provider: 'xcm',
       },
       "DOT-0-BifrostPolkadot": {
         network: "BifrostPolkadot",
         assetType: "Asset ID",
         displayName: "DOT (BifrostPolkadot)",
-        verified: true
-      }
+        verified: true,
+        provider: 'xcm',
+      },
+      // ─── Chainflip Network (AssetHub) ───
+      "DOT-AssetHub-CF": {
+        network: "AssetHub",  // Chainflip's AssetHub = Polkadot Asset Hub
+        assetType: "Native",
+        displayName: "DOT (AssetHub via Chainflip)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'dot.hub',  // Chainflip compound asset ID
+        decimals: 10,
+      },
     }
   },
 
@@ -156,7 +279,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         network: "Acala",
         assetType: "Native",
         displayName: "ACA (Native)",
-        verified: true
+        verified: true,
+        provider: 'xcm',
       },
     }
   },
@@ -171,7 +295,80 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         network: "Moonbeam",
         assetType: "Native",
         displayName: "GLMR (Native)",
-        verified: true
+        verified: true,
+        provider: 'xcm',
+      },
+    }
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // ETH - Chainflip only (Ethereum and Arbitrum)
+  // ═══════════════════════════════════════════════════════════════════════════════
+  "ETH": {
+    symbol: "ETH",
+    name: "Ethereum",
+    description: "Native Ethereum token",
+    category: "native",
+    networkInstances: {
+      "ETH-Ethereum": {
+        network: "Ethereum",
+        assetType: "Native",
+        displayName: "ETH (Ethereum)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'eth.eth',
+        decimals: 18,
+      },
+      "ETH-Arbitrum": {
+        network: "Arbitrum",
+        assetType: "Native",
+        displayName: "ETH (Arbitrum)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'eth.arb',
+        decimals: 18,
+      },
+    }
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SOL - Chainflip only (Solana)
+  // ═══════════════════════════════════════════════════════════════════════════════
+  "SOL": {
+    symbol: "SOL",
+    name: "Solana",
+    description: "Native Solana token",
+    category: "native",
+    networkInstances: {
+      "SOL-Solana": {
+        network: "Solana",
+        assetType: "Native",
+        displayName: "SOL (Solana)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'sol.sol',
+        decimals: 9,
+      },
+    }
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // BTC - Chainflip only (Bitcoin)
+  // ═══════════════════════════════════════════════════════════════════════════════
+  "BTC": {
+    symbol: "BTC",
+    name: "Bitcoin",
+    description: "Native Bitcoin",
+    category: "native",
+    networkInstances: {
+      "BTC-Bitcoin": {
+        network: "Bitcoin",
+        assetType: "Native",
+        displayName: "BTC (Bitcoin)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'btc.btc',
+        decimals: 8,
       },
     }
   }

@@ -15,6 +15,8 @@ export interface SwapHistoryItem {
   timestamp: Date;
 }
 
+import type { SwapProvider } from '@/services/xcm-router/assetRegistry';
+
 export interface TokenInfo {
   id: string;              // Asset key (e.g., "USDC-1984") - used for ParaSpell integration
   name: string;
@@ -24,6 +26,10 @@ export interface TokenInfo {
   network?: string;        // Network/chain name (e.g., "AssetHubPolkadot")
   assetKey?: string;       // Explicit asset key for XCM operations
   networkChain?: string;   // Explicit network chain for XCM operations
+  // Chainflip-specific fields
+  provider?: SwapProvider;        // 'xcm' (default) or 'chainflip'
+  chainflipId?: string;           // Chainflip compound asset ID (e.g., "dot.hub", "usdc.arb")
+  contractAddress?: string;       // ERC20/SPL contract address
 }
 
 // Extended token information that can optionally include a network/chain label

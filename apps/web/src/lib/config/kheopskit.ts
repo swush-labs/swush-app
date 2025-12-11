@@ -123,6 +123,26 @@ export const mainnet = defineChain({
   caipNetworkId: "eip155:1",
 });
 
+// Arbitrum for Chainflip integration
+export const arbitrum = defineChain({
+  id: "42161",
+  name: "Arbitrum One",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: {
+      http: ["https://arb1.arbitrum.io/rpc"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Arbiscan",
+      url: "https://arbiscan.io",
+    },
+  },
+  chainNamespace: "eip155",
+  caipNetworkId: "eip155:42161",
+});
+
 // All supported networks
 export const APPKIT_CHAINS: [AppKitNetwork, ...AppKitNetwork[]] = [
   polkadot,
@@ -130,6 +150,7 @@ export const APPKIT_CHAINS: [AppKitNetwork, ...AppKitNetwork[]] = [
   paseo,
   sepolia,
   mainnet,
+  arbitrum,
 ];
 
 // Kheopskit configuration

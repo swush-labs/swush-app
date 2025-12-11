@@ -14,21 +14,31 @@ import {
 /**
  * Convert UnifiedAssets to TokenInfo array for UI compatibility
  * Each network instance becomes a separate TokenInfo entry
+ * Supports both XCM (ParaSpell) and Chainflip networks
  */
 function convertUnifiedAssetsToTokens(assets: UnifiedAsset[]): TokenInfo[] {
   const tokens: TokenInfo[] = [];
   
   assets.forEach(asset => {
     asset.supportedNetworks.forEach(network => {
+      // For XCM networks, use ParaSpell's decimals; for Chainflip, use registry decimals
+      const decimals = network.provider === 'chainflip' 
+        ? (network.decimals || 18)
+        : (network.actualAsset?.decimals || 10);
+
       tokens.push({
         id: network.assetKey,
         name: asset.name,
         symbol: asset.symbol,
         icon: asset.symbol.charAt(0),
-        decimals: network.actualAsset.decimals || 10,
+        decimals,
         network: network.network,
         assetKey: network.assetKey,
         networkChain: network.network,
+        // Chainflip-specific fields (passed through for routing)
+        provider: network.provider,
+        chainflipId: network.chainflipId,
+        contractAddress: network.contractAddress,
       });
     });
   });

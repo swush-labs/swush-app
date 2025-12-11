@@ -8,8 +8,9 @@ import { SubmitButtonAction } from '@/components/swap/ui/SwapAction'
 import { SwapConfirmSheet } from '@/components/swap/ui/SwapConfirmSheet'
 import { SwapHistoryDialog } from '@/components/swap/ui/SwapHistoryDialog'
 import { useXcmTokens } from '@/components/swap/hooks/useXcmTokens'
-import { useXcmRoute } from '@/components/swap/hooks/useXcmRoute'
+import { useSwapRouter } from '@/components/swap/hooks/useSwapRouter'
 import { useXcmSwapExecution } from '@/components/swap/hooks/useXcmSwapExecution'
+import { useChainflipExecution } from '@/components/swap/hooks/useChainflipExecution'
 import { useSwapFlow } from '@/components/swap/hooks/useSwapFlow'
 import { useSwapHistory } from '@/components/swap/hooks/useSwapHistory'
 import { useParaSpellBalances } from '@/components/swap/hooks/useParaSpellBalances'
@@ -136,29 +137,40 @@ export function SwapContainer() {
     // Wallet disconnect cleanup
   }, []);
 
-  // Swap route - now using real ParaSpell RouterBuilder with parallel fetching
+  // Unified swap router - automatically routes to XCM or Chainflip based on tokens
   const {
+    provider,
+    providerLabel,
     outputAmount,
-    routeDex,
-    routeState,
     estimatedFees,
-    feeBreakdown,
-    debouncedFetchRoute,
-    isProcessing,
+    estimatedDuration,
+    routeState,
     isLoadingQuote,
-    isLoadingFees,
-    resetRoute
-  } = useXcmRoute({
+    isProcessing,
+    // Provider-specific data for execution
+    xcmRouteState,
+    xcmRouteDex,
+    xcmFeeBreakdown,
+    chainflipQuote,
+    // Actions
+    debouncedFetchRoute,
+    resetRoute,
+  } = useSwapRouter({
     inputToken,
     outputToken,
     walletAddress,
-    recipientAddress, // Pass recipient address for fee calculation
+    recipientAddress,
     slippageTolerance,
-    // Pass helpers from useXcmTokens
+    // Pass helpers from useXcmTokens (required for XCM routes)
     getOptimalExchanges,
     determineCurrency,
     getTAssetFromKey,
   })
+
+  // Backward compatibility aliases
+  const routeDex = xcmRouteDex || '';
+  const feeBreakdown = xcmFeeBreakdown;
+  const isLoadingFees = isLoadingQuote; // Chainflip gets fees with quote
 
   // Unified swap flow state management
   const {
@@ -177,69 +189,122 @@ export function SwapContainer() {
     isActive
   } = useSwapFlow();
 
+  // Success handler shared between XCM and Chainflip
+  const handleSwapSuccess = useCallback((success: { 
+    duration: number; 
+    inputAmount: string; 
+    inputToken: string; 
+    outputAmount: string; 
+    outputToken: string 
+  }) => {
+    // Wait for destination balance to update before marking as successful
+    console.log('🎯 Origin transaction complete, waiting for delivery...');
+    
+    // Start polling destination balance to confirm delivery
+    startBalancePolling(() => {
+      // Mark swap as successful when balance increases
+      completeSwap(success);
+      
+      // Clear input and route immediately (but don't close dialog)
+      setInputAmount('');
+      resetRoute();
+      
+      // Reset recipient to sender after successful swap (for safety)
+      resetToSender();
+      
+      // Refresh input balance to show deduction
+      refreshBalances(true);
+    });
+    
+    // Update UI to show "waiting for delivery" state
+    updateExecution({
+      statusMessage: provider === 'chainflip' 
+        ? 'Chainflip is processing your swap...' 
+        : 'Waiting for cross-chain delivery...',
+    });
+  }, [completeSwap, provider, refreshBalances, resetRoute, resetToSender, startBalancePolling, updateExecution]);
+
+  // Error handler shared between XCM and Chainflip
+  const handleSwapError = useCallback((error: { message: string; code?: string; userCancelled?: boolean }) => {
+    failSwap(error);
+    // Stop any ongoing balance polling
+    stopBalancePolling();
+    // Refresh balances after failed transaction
+    resetBalances(true);
+    // Auto-reset after showing error state
+    setTimeout(() => {
+      setInputAmount('');
+      resetRoute();
+      resetSwapFlow();
+    }, 5000);
+  }, [failSwap, resetBalances, resetRoute, resetSwapFlow, stopBalancePolling]);
+
   // XCM Swap execution hook with ParaSpell RouterBuilder
-  const { executeSwap } = useXcmSwapExecution({
-    inputToken,
-    outputToken,
+  const { executeSwap: executeXcmSwap } = useXcmSwapExecution({
+    inputToken: provider === 'xcm' ? inputToken : null,
+    outputToken: provider === 'xcm' ? outputToken : null,
     inputAmount,
     outputAmount,
     slippageTolerance,
     walletAddress,
-    recipientAddress, // Use computed recipient address
-    senderPolkadotSigner,     // Sender's polkadotSigner (signs transactions)
-    recipientPolkadotSigner,  // Recipient's polkadotSigner (XCM beneficiary construction)
-    selectedExchange: routeState.data?.exchange, // Pass the exchange from quote
+    recipientAddress,
+    senderPolkadotSigner,
+    recipientPolkadotSigner,
+    selectedExchange: xcmRouteState?.data?.exchange,
     getOptimalExchanges,
     determineCurrency,
     getTAssetFromKey,
     onExecutionStart: startExecution,
     onExecutionUpdate: updateExecution,
-    onSuccess: (success) => {
-      // Wait for destination balance to update before marking as successful
-      console.log('🎯 Origin transaction complete, waiting for XCM delivery...');
-      
-      // Start polling destination balance to confirm XCM delivery
-      startBalancePolling((newBalance, oldBalance) => {
-        // Mark swap as successful when balance increases
-        completeSwap(success);
-        
-        // Don't auto-reset - let SwapCompleteDialog control its own lifecycle
-        // Dialog will call resetSwapFlow (via onClose) when user dismisses it
-        // This allows user to interact with gift animation without being rushed
-        
-        // Clear input and route immediately (but don't close dialog)
-        setInputAmount('');
-        resetRoute();
-        
-        // Reset recipient to sender after successful swap (for safety)
-        resetToSender();
-        
-        // Refresh input balance to show deduction (balances already updated by polling)
-        refreshBalances(true);
-      });
-      
-      // Update UI to show "waiting for delivery" state
-      updateExecution({
-        statusMessage: 'Waiting for cross-chain delivery...',
-      });
-    },
-    onError: (error) => {
-      failSwap(error);
-      // Stop any ongoing balance polling
-      stopBalancePolling();
-      // Refresh balances after failed transaction
-      resetBalances(true);
-      // Auto-reset after showing error state
-      setTimeout(() => {
-        setInputAmount('');
-        resetRoute();
-        resetSwapFlow();
-      }, 5000);
-    },
-    // XCM Tracking (optional - disable for Chopsticks testing)
+    onSuccess: handleSwapSuccess,
+    onError: handleSwapError,
     enableXcmTracking: process.env.NEXT_PUBLIC_USE_LOCAL_ENDPOINTS === 'false',
     ocelloidsApiKey: process.env.NEXT_PUBLIC_OCELLOIDS_API_KEY,
   });
+
+  // Chainflip Swap execution hook
+  const { 
+    executeSwap: executeChainflipSwap,
+    depositAddress: chainflipDepositAddress,
+    stage: chainflipStage,
+  } = useChainflipExecution({
+    inputToken: provider === 'chainflip' ? inputToken : null,
+    outputToken: provider === 'chainflip' ? outputToken : null,
+    inputAmount,
+    outputAmount,
+    quote: chainflipQuote || null,
+    walletAddress,
+    recipientAddress,
+    onExecutionStart: (execution) => {
+      startExecution({
+        currentStep: 0,
+        totalSteps: 3, // Chainflip has 3 stages: deposit, swap, egress
+        transactionType: null,
+        statusMessage: execution.statusMessage,
+      });
+    },
+    onExecutionUpdate: (execution) => {
+      updateExecution({
+        statusMessage: execution.statusMessage,
+      });
+    },
+    onSuccess: (success) => handleSwapSuccess({
+      duration: success.duration,
+      inputAmount: success.inputAmount,
+      inputToken: success.inputToken,
+      outputAmount: success.outputAmount,
+      outputToken: success.outputToken,
+    }),
+    onError: handleSwapError,
+  });
+
+  // Unified executeSwap function that routes to the correct provider
+  const executeSwap = useCallback(() => {
+    if (provider === 'chainflip') {
+      return executeChainflipSwap();
+    }
+    return executeXcmSwap();
+  }, [provider, executeChainflipSwap, executeXcmSwap]);
 
   // Handle swap button click - show confirmation sheet
   const handleSwapClick = useCallback(() => {
@@ -452,11 +517,13 @@ export function SwapContainer() {
               inputToken={inputToken}
               maxTransactionFee={estimatedFees || flowState.simulationResult?.estimatedFee || '0'}
               feeBreakdown={feeBreakdown || flowState.simulationResult?.feeBreakdown}
-              route={routeDex || ''}
+              route={providerLabel || routeDex || ''}
               isLoading={routeState.isLoading}
               isProcessing={isProcessing}
               isLoadingQuote={isLoadingQuote}
               isLoadingFees={isLoadingFees}
+              estimatedDuration={estimatedDuration}
+              provider={provider}
             />
 
             <SubmitButtonAction

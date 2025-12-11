@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { TokenInfo } from '../types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import type { SwapProvider } from '@/services/xcm-router/assetRegistry';
 
 interface SubTextProps {
   className?: string
@@ -28,6 +29,8 @@ interface SwapDetailsProps {
   isProcessing?: boolean;
   isLoadingQuote?: boolean; // Separate loading state for quote
   isLoadingFees?: boolean; // Separate loading state for fees
+  estimatedDuration?: string; // Chainflip estimated swap duration
+  provider?: SwapProvider; // Current swap provider (xcm or chainflip)
 }
 
 export const SwapDetails = memo(function SwapDetails({
@@ -37,6 +40,8 @@ export const SwapDetails = memo(function SwapDetails({
   route,
   isLoadingQuote = false,
   isLoadingFees = false,
+  estimatedDuration,
+  provider,
 }: SwapDetailsProps) {
   // Helper function to display values with proper empty states
   const displayValue = (value: string, suffix = '', placeholder = '—') => {
@@ -78,12 +83,32 @@ export const SwapDetails = memo(function SwapDetails({
             </div>
           )}
         </div>
+        {/* Show estimated duration for Chainflip swaps */}
+        {provider === 'chainflip' && estimatedDuration && (
+          <>
+            <SubText>Est. Duration</SubText>
+            <SubText className="justify-self-end">
+              {isLoadingQuote ? (
+                <Skeleton className="w-16 h-5 animate-pulse" />
+              ) : (
+                estimatedDuration
+              )}
+            </SubText>
+          </>
+        )}
         <SubText>Route</SubText>
         <SubText className="justify-self-end" >
           {isLoadingQuote ? (
             <Skeleton className="w-16 h-5 animate-pulse" />
           ) : (
-            displayValue(route)
+            <span className="flex items-center gap-1.5">
+              {provider === 'chainflip' && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  Chainflip
+                </span>
+              )}
+              {displayValue(route)}
+            </span>
           )}
         </SubText>
       </div>

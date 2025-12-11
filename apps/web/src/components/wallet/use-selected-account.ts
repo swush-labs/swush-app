@@ -4,14 +4,19 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useWallets } from '@kheopskit/react';
 
 // Account interface from Kheopskit
+// Extended to support Solana when kheopskit adds support
 interface KheopskitAccount {
   id: string;
   address: string;
   name?: string;
-  platform: "polkadot" | "ethereum";
+  platform: "polkadot" | "ethereum" | "solana";
   walletName: string;
-  polkadotSigner?: any;
-  client?: any;
+  polkadotSigner?: unknown;
+  client?: unknown;
+  // Solana-specific fields (when kheopskit adds support)
+  publicKey?: Uint8Array;
+  signMessage?: (message: Uint8Array) => Promise<Uint8Array>;
+  signAndSendTransaction?: (transaction: unknown) => Promise<string>;
 }
 
 const STORAGE_KEY = 'kheopskit:selected-account-id';
@@ -134,6 +139,16 @@ export function useSelectedPolkadotAccount() {
 export function useSelectedEthereumAccount() {
   const { selectedAccount } = useSelectedAccount();
   return selectedAccount?.platform === 'ethereum' ? selectedAccount : null;
+}
+
+/**
+ * Convenience hook to get only Solana accounts
+ * (Ready for when kheopskit adds Solana support)
+ */
+export function useSelectedSolanaAccount() {
+  const { selectedAccount } = useSelectedAccount();
+  // Cast to handle future Solana platform support
+  return (selectedAccount?.platform as string) === 'solana' ? selectedAccount : null;
 }
 
 /**
