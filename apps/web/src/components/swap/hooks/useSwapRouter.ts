@@ -110,13 +110,14 @@ export function useSwapRouter({
   // Priority: If either token explicitly has provider='chainflip', use Chainflip
   // Otherwise, fall back to network-based detection
   const provider = useMemo((): SwapProvider => {
-    // Check if tokens have explicit provider set
-    if (inputToken?.provider === 'chainflip' || outputToken?.provider === 'chainflip') {
+    // If both tokens have chainflipId, can use Chainflip for cross-ecosystem swaps
+    // This allows XCM tokens on AssetHub (with chainflipId) to swap to Chainflip networks
+    if (inputToken?.chainflipId && outputToken?.chainflipId) {
       return 'chainflip';
     }
-    // Fall back to network-based detection
+    // Fall back to network-based detection (for XCM-only swaps)
     return getSwapProvider(inputToken?.network, outputToken?.network);
-  }, [inputToken?.provider, inputToken?.network, outputToken?.provider, outputToken?.network]);
+  }, [inputToken?.chainflipId, inputToken?.network, outputToken?.chainflipId, outputToken?.network]);
 
   // XCM Route Hook (only active when provider is 'xcm')
   const xcmRoute = useXcmRoute({

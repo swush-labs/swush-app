@@ -4,11 +4,11 @@ import { useMemo, useCallback, useEffect } from 'react';
 import useAssetAggregator, { determineCurrency, type UnifiedAsset } from '@/services/xcm-router/useAssetAggregator';
 import { EXCHANGE_CHAINS } from '@paraspell/xcm-router';
 import type { TokenInfo } from '@/components/swap/types';
-import { 
-  useFromTokenState, 
-  useToTokenState, 
-  useFromNetworkState, 
-  useToNetworkState 
+import {
+  useFromTokenState,
+  useToTokenState,
+  useFromNetworkState,
+  useToNetworkState
 } from './utils/queryParams';
 
 /**
@@ -18,13 +18,14 @@ import {
  */
 function convertUnifiedAssetsToTokens(assets: UnifiedAsset[]): TokenInfo[] {
   const tokens: TokenInfo[] = [];
-  
+
   assets.forEach(asset => {
     asset.supportedNetworks.forEach(network => {
-      // For XCM networks, use ParaSpell's decimals; for Chainflip, use registry decimals
-      const decimals = network.provider === 'chainflip' 
-        ? (network.decimals || 18)
-        : (network.actualAsset?.decimals || 10);
+      // Prioritize explicit registry decimals (for Chainflip + hybrid tokens),
+      // fall back to ParaSpell decimals (for XCM-only tokens)
+      const decimals = network.decimals
+        ?? network.actualAsset?.decimals
+        ?? (network.provider === 'chainflip' ? 18 : 10);
 
       tokens.push({
         id: network.assetKey,
@@ -42,7 +43,7 @@ function convertUnifiedAssetsToTokens(assets: UnifiedAsset[]): TokenInfo[] {
       });
     });
   });
-  
+
   return tokens;
 }
 
@@ -96,15 +97,15 @@ export function useXcmTokens() {
   // ✅ Derive inputToken from URL params (symbol + network)
   const inputToken = useMemo<TokenInfo | null>(() => {
     if (!fromSymbol || fromTokens.length === 0) return null;
-    
+
     // If network specified, find exact match
     if (fromNetwork) {
-      const exactMatch = fromTokens.find(t => 
+      const exactMatch = fromTokens.find(t =>
         t.symbol === fromSymbol && t.networkChain === fromNetwork
       );
       if (exactMatch) return exactMatch;
     }
-    
+
     // Otherwise, find first token with that symbol
     const firstMatch = fromTokens.find(t => t.symbol === fromSymbol);
     return firstMatch || null;
@@ -113,15 +114,15 @@ export function useXcmTokens() {
   // ✅ Derive outputToken from URL params (symbol + network)
   const outputToken = useMemo<TokenInfo | null>(() => {
     if (!toSymbol || toTokens.length === 0) return null;
-    
+
     // If network specified, find exact match
     if (toNetwork) {
-      const exactMatch = toTokens.find(t => 
+      const exactMatch = toTokens.find(t =>
         t.symbol === toSymbol && t.networkChain === toNetwork
       );
       if (exactMatch) return exactMatch;
     }
-    
+
     // Otherwise, find first token with that symbol
     const firstMatch = toTokens.find(t => t.symbol === toSymbol);
     return firstMatch || null;

@@ -106,6 +106,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         displayName: "USDC (AssetHub)",
         verified: true,
         provider: 'xcm',
+        chainflipId: 'usdc.hub',  // Available for Chainflip cross-ecosystem swaps
+        decimals: 6,
       },
       "USDC-22-Hydration": {
         network: "Hydration",
@@ -151,16 +153,6 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         chainflipId: 'usdc.sol',
         decimals: 6,
       },
-      // ─── Chainflip AssetHub ───
-      "USDC-AssetHub-CF": {
-        network: "AssetHub",
-        assetType: "Native",
-        displayName: "USDC (AssetHub via Chainflip)",
-        verified: true,
-        provider: 'chainflip',
-        chainflipId: 'usdc.hub',
-        decimals: 6,
-      },
     }
   },
 
@@ -180,6 +172,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         displayName: "USDt (AssetHubPolkadot)",
         verified: true,
         provider: 'xcm',
+        chainflipId: 'usdt.hub',  // Available for Chainflip cross-ecosystem swaps
+        decimals: 6,
       },
       "USDT-10-Hydration": {
         network: "Hydration",
@@ -206,15 +200,6 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         decimals: 6,
         contractAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
       },
-      "USDT-AssetHub-CF": {
-        network: "AssetHub",
-        assetType: "Native",
-        displayName: "USDT (AssetHub via Chainflip)",
-        verified: true,
-        provider: 'chainflip',
-        chainflipId: 'usdt.hub',
-        decimals: 6,
-      },
     }
   },
 
@@ -234,6 +219,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         displayName: "DOT (Native)",
         verified: true,
         provider: 'xcm',
+        chainflipId: 'dot.hub',  // Available for Chainflip cross-ecosystem swaps
+        decimals: 10,
       },
       "DOT-5-Hydration": {
         network: "Hydration",
@@ -255,16 +242,6 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         displayName: "DOT (BifrostPolkadot)",
         verified: true,
         provider: 'xcm',
-      },
-      // ─── Chainflip Network (AssetHub) ───
-      "DOT-AssetHub-CF": {
-        network: "AssetHub",  // Chainflip's AssetHub = Polkadot Asset Hub
-        assetType: "Native",
-        displayName: "DOT (AssetHub via Chainflip)",
-        verified: true,
-        provider: 'chainflip',
-        chainflipId: 'dot.hub',  // Chainflip compound asset ID
-        decimals: 10,
       },
     }
   },
