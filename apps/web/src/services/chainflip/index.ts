@@ -14,7 +14,6 @@ export type {
   ChainflipBoostQuote,
   ChainflipSwapRequest,
   ChainflipSwapResponse,
-  ChainflipDepositChannel,
   ChainflipSwapStatus,
   ChainflipSwapState,
   ChainflipExecutionStage,

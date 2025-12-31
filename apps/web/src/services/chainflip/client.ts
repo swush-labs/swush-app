@@ -136,28 +136,32 @@ export class ChainflipClient {
   /**
    * Request a deposit address for initiating a swap
    * User sends funds to this address to trigger the swap
-   * 
+   *
    * @param request - Swap request parameters
    * @returns Deposit address and channel information
    */
   async requestSwapDepositAddress(request: ChainflipSwapRequest): Promise<ChainflipSwapResponse> {
     console.log('🔄 Chainflip: Requesting deposit address', request);
 
-    const body: Record<string, unknown> = {
+    const params: Record<string, string> = {
       sourceAsset: request.sourceAsset,
       destinationAsset: request.destinationAsset,
       destinationAddress: request.destinationAddress,
       minimumPrice: request.minimumPrice,
       refundAddress: request.refundAddress,
-      retryDurationBlocks: request.retryDurationBlocks,
+      retryDurationBlocks: request.retryDurationBlocks.toString(),
     };
 
     // Add optional fields
     if (request.boostFee !== undefined) {
-      body.boostFee = request.boostFee;
+      params.boostFee = request.boostFee.toString();
     }
 
-    const result = await this.post<ChainflipSwapResponse>('/swap', body);
+    if (request.commissionBps !== undefined) {
+      params.commissionBps = request.commissionBps.toString();
+    }
+
+    const result = await this.get<ChainflipSwapResponse>('/swap', params);
 
     console.log('✅ Chainflip: Deposit address received', result);
     return result;
@@ -165,14 +169,15 @@ export class ChainflipClient {
 
   /**
    * Get the status of an ongoing swap
-   * 
+   *
    * @param swapId - The swap ID returned from requestSwapDepositAddress
    * @returns Current swap status
    */
-  async getSwapStatus(swapId: string): Promise<ChainflipSwapStatus> {
+  async getSwapStatus(swapId: string | number): Promise<ChainflipSwapStatus> {
     console.log('🔄 Chainflip: Getting swap status', swapId);
 
-    const result = await this.get<ChainflipSwapStatus>(`/swap/${swapId}`);
+    const params = { swapId: swapId.toString() };
+    const result = await this.get<ChainflipSwapStatus>('/status-by-id', params);
 
     console.log('✅ Chainflip: Swap status', result);
     return result;

@@ -4,7 +4,7 @@ import type { TExchangeChain } from '@paraspell/xcm-router';
 
 import type { TokenInfo } from '@/components/swap/types';
 import type { FeeSummary } from '@/services/xcm-router/feeCalculator';
-import { getSwapProvider, type SwapProvider } from '@/services/xcm-router/assetRegistry';
+import { getSwapProvider, isChainflipOnlyNetwork, type SwapProvider } from '@/services/xcm-router/assetRegistry';
 import { useXcmRoute, type RouteState } from './useXcmRoute';
 import { useChainflipRoute, type ChainflipRouteState } from './useChainflipRoute';
 import type { ChainflipQuote } from '@/services/chainflip';
@@ -107,16 +107,29 @@ export function useSwapRouter({
 }: UseSwapRouterProps): UseSwapRouterReturn {
 
   // Determine which provider to use based on token configuration
-  // Priority: If either token explicitly has provider='chainflip', use Chainflip
-  // Otherwise, fall back to network-based detection
+  //
+  // Chainflip is used ONLY when:
+  // 1. BOTH tokens have valid chainflipId
+  // 2. At least ONE network is Chainflip-only (Ethereum, Arbitrum, Solana, Bitcoin)
+  //
+  // For Polkadot ecosystem swaps (AssetHub ↔ Hydration, etc.), always use XCM
+  // even if tokens have chainflipId configured.
   const provider = useMemo((): SwapProvider => {
-    // If both tokens have chainflipId, can use Chainflip for cross-ecosystem swaps
-    // This allows XCM tokens on AssetHub (with chainflipId) to swap to Chainflip networks
-    if (inputToken?.chainflipId && outputToken?.chainflipId) {
+    // Both tokens must have chainflipId for Chainflip to be considered
+    const bothHaveChainflipId = Boolean(inputToken?.chainflipId && outputToken?.chainflipId);
+
+    // At least one network must be Chainflip-only (non-Polkadot ecosystem)
+    const hasChainflipOnlyNetwork =
+      isChainflipOnlyNetwork(inputToken?.network) ||
+      isChainflipOnlyNetwork(outputToken?.network);
+
+    // Use Chainflip only for cross-ecosystem swaps (AssetHub ↔ Ethereum/Arbitrum/Solana/Bitcoin)
+    if (bothHaveChainflipId && hasChainflipOnlyNetwork) {
       return 'chainflip';
     }
-    // Fall back to network-based detection (for XCM-only swaps)
-    return getSwapProvider(inputToken?.network, outputToken?.network);
+
+    // All other routes use XCM (Polkadot ecosystem)
+    return 'xcm';
   }, [inputToken?.chainflipId, inputToken?.network, outputToken?.chainflipId, outputToken?.network]);
 
   // XCM Route Hook (only active when provider is 'xcm')

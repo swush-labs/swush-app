@@ -85,52 +85,92 @@ export interface ChainflipSwapRequest {
   sourceAsset: ChainflipAssetId;
   destinationAsset: ChainflipAssetId;
   destinationAddress: string;
-  
-  // Required slippage protection parameters
+
+  // Slippage protection parameters (optional but recommended)
   minimumPrice: string;
   refundAddress: string;
   retryDurationBlocks: number;
-  
-  // Optional parameters
-  boostFee?: number;  // Note: API uses 'boostFee' not 'maxBoostFeeBps'
-}
 
-export interface ChainflipDepositChannel {
-  id: string;
-  createdAt: string;
-  expiresAt: string;
+  // Optional parameters
+  boostFee?: number;  // Basis points for accelerated Bitcoin swaps
+  commissionBps?: number;  // Custom commission (0-995 basis points)
+  numberOfChunks?: number;  // DCA: quantity of sub-swaps
+  chunkIntervalBlocks?: number;  // DCA: delay between chunks (minimum 2)
 }
 
 export interface ChainflipSwapResponse {
-  id: string;
-  depositAddress: string;
-  depositChannel: ChainflipDepositChannel;
-  estimatedEgressAmount: string;  // Estimated output amount in human-readable format
-  estimatedEgressAmountNative: string;  // Estimated output amount in native units
+  id: number;
+  address: string;  // Deposit address
+  issuedBlock: number;
+  network: string;
+  channelId: number;
+  sourceExpiryBlock: number;
+  explorerUrl: string;
+  channelOpeningFee: number;
+  channelOpeningFeeNative: string;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Swap Status Types
 // ═══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * Chainflip API swap states (lowercase)
+ * Reference: https://docs.chainflip-broker.io/features/get-status/
+ */
 export type ChainflipSwapState =
-  | 'AWAITING_DEPOSIT'
-  | 'DEPOSIT_RECEIVED'
-  | 'SWAP_EXECUTING'
-  | 'EGRESS_SCHEDULED'
-  | 'COMPLETED'
-  | 'FAILED'
-  | 'REFUNDED';
+  | 'waiting'      // Waiting for deposit
+  | 'receiving'    // Deposit received, being confirmed
+  | 'swapping'     // Executing the swap
+  | 'sending'      // Preparing to send output
+  | 'sent'         // Output transaction sent
+  | 'completed'    // Swap completed successfully
+  | 'failed';      // Swap failed
 
 export interface ChainflipSwapStatus {
+  // Core swap info
+  id: number;
   state: ChainflipSwapState;
   sourceAsset: ChainflipAssetId;
   destinationAsset: ChainflipAssetId;
-  depositAmount?: string;  // Deposit amount in human-readable format
-  egressAmount?: string;  // Output amount in human-readable format
-  txHash?: string;
+  destinationAddress: string;
+
+  // Deposit channel info
+  depositChannel?: {
+    id: number;
+    network: string;
+    issuedBlock: number;
+    channelId: number;
+    depositAddress: string;
+    expiryBlock: number;
+    estimatedExpiryTime: string;
+  };
+
+  // Deposit transaction
+  depositTransaction?: {
+    hash: string;
+    witnessedAt: string;
+  };
+  depositAmount?: string;
+  depositAmountNative?: string;
+
+  // Swap execution
+  swapExecutedAt?: string;
+  intermediateAmount?: string;  // For multi-hop swaps
+
+  // Egress info
+  egressAmount?: string;
+  egressAmountNative?: string;
+  egressTransaction?: {
+    hash: string;
+  };
+
+  // Fees
+  fees?: ChainflipFee[];
+
+  // Error handling
   error?: string;
-  refundTxHash?: string;
+  failureReason?: string;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

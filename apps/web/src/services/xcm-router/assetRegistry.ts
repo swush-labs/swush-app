@@ -66,7 +66,25 @@ export type AssetRegistryEntry = {
 };
 
 /**
+ * Check if a network is Chainflip-only (non-Polkadot ecosystem)
+ * @param network - Network name to check
+ * @returns true if network requires Chainflip (Ethereum, Arbitrum, Solana, Bitcoin)
+ */
+export const isChainflipOnlyNetwork = (network: string | undefined): boolean => {
+  if (!network) return false;
+  return CHAINFLIP_ONLY_NETWORKS.includes(network as typeof CHAINFLIP_ONLY_NETWORKS[number]);
+};
+
+/**
  * Determine which swap provider to use based on source and destination networks
+ *
+ * Chainflip is used ONLY when:
+ * 1. BOTH tokens have valid chainflipId (checked separately in useSwapRouter)
+ * 2. At least ONE network is Chainflip-only (Ethereum, Arbitrum, Solana, Bitcoin)
+ *
+ * For Polkadot ecosystem swaps (AssetHub ↔ Hydration, etc.), always use XCM
+ * even if tokens have chainflipId configured.
+ *
  * @param sourceNetwork - Source chain/network name
  * @param destNetwork - Destination chain/network name
  * @returns 'chainflip' if cross-ecosystem swap, 'xcm' for Polkadot ecosystem
@@ -76,15 +94,16 @@ export const getSwapProvider = (
   destNetwork: string | undefined
 ): SwapProvider => {
   if (!sourceNetwork || !destNetwork) return 'xcm';
-  
-  const isSourceChainflipOnly = CHAINFLIP_ONLY_NETWORKS.includes(sourceNetwork as typeof CHAINFLIP_ONLY_NETWORKS[number]);
-  const isDestChainflipOnly = CHAINFLIP_ONLY_NETWORKS.includes(destNetwork as typeof CHAINFLIP_ONLY_NETWORKS[number]);
-  
+
+  const isSourceChainflipOnly = isChainflipOnlyNetwork(sourceNetwork);
+  const isDestChainflipOnly = isChainflipOnlyNetwork(destNetwork);
+
   // If either network is Chainflip-only (Ethereum, Arbitrum, Solana, Bitcoin), use Chainflip
+  // Note: This requires both tokens to have chainflipId (validated in useSwapRouter)
   if (isSourceChainflipOnly || isDestChainflipOnly) {
     return 'chainflip';
   }
-  
+
   // Both are Polkadot ecosystem, use XCM
   return 'xcm';
 };

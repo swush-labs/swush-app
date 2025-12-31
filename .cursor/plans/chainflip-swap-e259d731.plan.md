@@ -466,9 +466,3 @@ Update token conversion in [`useXcmTokens.ts`](apps/web/src/components/swap/hook
 - **Deposit timeout**: Stop polling after 30 minutes, show manual check link
 
 ---
-
-## Migration Notes
-
-- Existing XCM swaps remain unchanged
-- Chainflip swaps now require single signature (vs. manual deposit)
-- Slippage tolerance from UI applies to both XCM and Chainflip routes

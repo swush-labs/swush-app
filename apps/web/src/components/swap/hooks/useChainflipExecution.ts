@@ -207,33 +207,36 @@ export function useChainflipExecution({
         const status = await chainflipClient.getSwapStatus(swapIdToPoll);
         console.log('📊 Swap status:', status);
 
-        // Update stage based on status
+        // Update stage based on status (API uses lowercase states)
         switch (status.state) {
-          case 'AWAITING_DEPOSIT':
+          case 'waiting':
+            // Waiting for deposit
             updateStage('awaiting_signature', { swapState: status.state });
             break;
 
-          case 'DEPOSIT_RECEIVED':
-          case 'SWAP_EXECUTING':
-          case 'EGRESS_SCHEDULED':
-            updateStage('swap_executing', { 
+          case 'receiving':
+          case 'swapping':
+          case 'sending':
+          case 'sent':
+            // Swap in progress
+            updateStage('swap_executing', {
               swapState: status.state,
-              txHash: status.txHash,
+              txHash: status.depositTransaction?.hash || status.egressTransaction?.hash,
             });
             break;
 
-          case 'COMPLETED':
+          case 'completed':
             clearInterval(pollingIntervalRef.current!);
             pollingIntervalRef.current = null;
-            
-            updateStage('completed', { 
+
+            updateStage('completed', {
               swapState: status.state,
-              txHash: status.txHash,
+              txHash: status.egressTransaction?.hash,
             });
-            
+
             const duration = Date.now() - startTimeRef.current;
             console.log(`✅ Chainflip swap completed in ${duration}ms!`);
-            
+
             onSuccess?.({
               duration,
               inputAmount,
@@ -241,19 +244,18 @@ export function useChainflipExecution({
               outputAmount: status.egressAmount || outputAmount || '?',
               outputToken: outputToken?.symbol || '?',
               swapId: swapIdToPoll,
-              txHash: status.txHash,
+              txHash: status.egressTransaction?.hash,
             });
             break;
 
-          case 'FAILED':
-          case 'REFUNDED':
+          case 'failed':
             clearInterval(pollingIntervalRef.current!);
             pollingIntervalRef.current = null;
-            
+
             updateStage('failed', { swapState: status.state });
-            
+
             onError?.({
-              message: status.error || `Swap ${status.state.toLowerCase()}`,
+              message: status.error || status.failureReason || 'Swap failed',
               code: status.state,
             });
             break;
@@ -359,15 +361,15 @@ export function useChainflipExecution({
       console.log('✅ Deposit address received:', swapResponse);
 
       // Store swap details
-      setDepositAddress(swapResponse.depositAddress);
-      setSwapId(swapResponse.id);
+      setDepositAddress(swapResponse.address);
+      setSwapId(swapResponse.id.toString());
 
       // Stage 2: Awaiting signature - Prompt user to sign the deposit transaction
       updateStage('awaiting_signature', {
-        depositAddress: swapResponse.depositAddress,
-        depositChannelId: swapResponse.depositChannel.id,
-        expiresAt: swapResponse.depositChannel.expiresAt,
-        swapId: swapResponse.id,
+        depositAddress: swapResponse.address,
+        depositChannelId: swapResponse.channelId.toString(),
+        expiresAt: new Date(swapResponse.sourceExpiryBlock * 6000).toISOString(), // Estimate expiry time
+        swapId: swapResponse.id.toString(),
       });
 
       // Automatically send deposit transaction
@@ -397,7 +399,7 @@ export function useChainflipExecution({
           }
           depositResult = await sendEvmNativeDeposit(
             evmSigner,
-            swapResponse.depositAddress,
+            swapResponse.address,
             inputAmount,
             inputToken.decimals || 18
           );
@@ -413,7 +415,7 @@ export function useChainflipExecution({
           }
           depositResult = await sendEvmTokenDeposit(
             evmSigner,
-            swapResponse.depositAddress,
+            swapResponse.address,
             inputToken.contractAddress,
             inputAmount,
             inputToken.decimals || 6
@@ -431,7 +433,7 @@ export function useChainflipExecution({
             : undefined;
           depositResult = await sendPolkadotDeposit(
             polkadotSigner,
-            swapResponse.depositAddress,
+            swapResponse.address,
             inputAmount,
             inputToken.decimals || 10,
             assetId
@@ -460,7 +462,7 @@ export function useChainflipExecution({
 
       // Start polling for swap status
       // Chainflip will detect the deposit and begin the swap
-      pollSwapStatus(swapResponse.id);
+      pollSwapStatus(swapResponse.id.toString());
 
     } catch (error: unknown) {
       console.error('❌ Chainflip execution error:', error);
