@@ -33,6 +33,7 @@ export interface NetworkSupport {
   chainflipId?: string;  // Chainflip compound asset ID (e.g., "dot.hub", "usdc.arb")
   decimals?: number;
   contractAddress?: string;
+  assetId?: string;  // Polkadot asset ID for Assets pallet (e.g., "1337" for USDC)
 }
 
 // Unified asset-network data structure
@@ -98,6 +99,7 @@ const createNetworkData = (
     chainflipId: instance.chainflipId,
     decimals: instance.decimals,
     contractAddress: instance.contractAddress,
+    assetId: instance.assetId,
   };
 };
 

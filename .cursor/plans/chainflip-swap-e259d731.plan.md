@@ -1,4 +1,33 @@
-<!-- e259d731-eb4d-446a-ba15-6a5fa41d7e54 5450f5f6-ad16-4343-95af-1ab894ccc487 -->
+---
+name: Chainflip Swap API Fixes & Automated Signing
+overview: ""
+todos:
+  - id: 152678dc-2feb-4733-b5a1-f31492cdfd23
+    content: Update ChainflipSwapRequest interface with required slippage parameters
+    status: pending
+  - id: 8d1e468e-ba6b-4401-b5ce-431920dc2e3f
+    content: Add calculateMinimumPrice and minutesToBlocks helper functions
+    status: pending
+  - id: e5a52f30-c37b-439f-b83f-d1ebc282dcfe
+    content: Fix requestSwapDepositAddress to send correct API parameters
+    status: pending
+  - id: 9a58cbcd-4509-47ed-bb3a-aaaf271d5e84
+    content: Implement sendPolkadotDeposit function using PAPI
+    status: pending
+  - id: 86e10151-0611-4ec2-84f0-3bfc3c987ca8
+    content: Add automatic deposit signing to useChainflipExecution
+    status: pending
+  - id: 0e4a4d19-0d05-405f-85db-071d5f02a7f3
+    content: Pass slippageTolerance and signers from SwapContainer
+    status: pending
+  - id: 07f98a52-f00d-4b20-9589-b1b19f717cb3
+    content: Add assetId field to AssetHub tokens in registry
+    status: pending
+  - id: f8095f12-e0e4-41aa-aac0-761ae8c5fb65
+    content: Test EVM and Polkadot swap flows with different token pairs
+    status: pending
+---
+
 # Chainflip Swap API Fixes & Automated Signing
 
 ## Problem Statement
@@ -39,13 +68,13 @@ flowchart TD
     SignTx --> Polkadot
 ```
 
+
+
 ## Implementation Steps
 
 ### Phase 1: Fix API Parameters & Types
 
-**File: [`apps/web/src/services/chainflip/types.ts`](apps/web/src/services/chainflip/types.ts)**
-
-Update `ChainflipSwapRequest` interface to make slippage protection parameters required:
+**File: [`apps/web/src/services/chainflip/types.ts`](apps/web/src/services/chainflip/types.ts)**Update `ChainflipSwapRequest` interface to make slippage protection parameters required:
 
 ```typescript
 export interface ChainflipSwapRequest {
@@ -63,20 +92,16 @@ export interface ChainflipSwapRequest {
 }
 ```
 
-Remove the `amount` field from the request type (it's not part of the `/swap` endpoint according to the API docs).
-
----
+Remove the `amount` field from the request type (it's not part of the `/swap` endpoint according to the API docs).---
 
 ### Phase 2: Add Helper Functions
 
-**File: [`apps/web/src/services/chainflip/client.ts`](apps/web/src/services/chainflip/client.ts)**
-
-Add helper functions for slippage calculations:
+**File: [`apps/web/src/services/chainflip/client.ts`](apps/web/src/services/chainflip/client.ts)**Add helper functions for slippage calculations:
 
 ```typescript
 /**
- * Calculate minimum price with slippage tolerance
- * Formula: minimumPrice = estimatedPrice * (1 - slippagePercent / 100)
+    * Calculate minimum price with slippage tolerance
+    * Formula: minimumPrice = estimatedPrice * (1 - slippagePercent / 100)
  */
 export const calculateMinimumPrice = (
   estimatedPrice: string | number, 
@@ -91,7 +116,7 @@ export const calculateMinimumPrice = (
 };
 
 /**
- * Convert minutes to blocks (1 block = 6 seconds on Chainflip)
+    * Convert minutes to blocks (1 block = 6 seconds on Chainflip)
  */
 export const minutesToBlocks = (minutes: number): number => {
   return Math.floor((minutes * 60) / 6);
@@ -123,14 +148,12 @@ async requestSwapDepositAddress(request: ChainflipSwapRequest): Promise<Chainfli
 
 ### Phase 3: Add Polkadot Signing Support
 
-**File: [`apps/web/src/services/chainflip/signerUtils.ts`](apps/web/src/services/chainflip/signerUtils.ts)**
-
-Add Polkadot deposit function using PAPI:
+**File: [`apps/web/src/services/chainflip/signerUtils.ts`](apps/web/src/services/chainflip/signerUtils.ts)**Add Polkadot deposit function using PAPI:
 
 ```typescript
 /**
- * Send DOT or AssetHub token deposit to Chainflip
- * Uses Polkadot API (PAPI) for transaction building
+    * Send DOT or AssetHub token deposit to Chainflip
+    * Uses Polkadot API (PAPI) for transaction building
  */
 export async function sendPolkadotDeposit(
   polkadotSigner: any,
@@ -230,6 +253,9 @@ import {
 } from '@/services/chainflip/signerUtils';
 ```
 
+
+
+
 2. **Add parameters to props interface:**
 ```typescript
 interface UseChainflipExecutionProps {
@@ -239,6 +265,9 @@ interface UseChainflipExecutionProps {
   polkadotSigner?: any;
 }
 ```
+
+
+
 
 3. **Implement automatic deposit in `executeSwap`:**
 ```typescript
@@ -317,6 +346,9 @@ updateStage('confirming', { txHash: depositResult.txHash });
 pollSwapStatus(swapResponse.id);
 ```
 
+
+
+
 4. **Add new parameters to dependency array:**
 ```typescript
 }, [
@@ -333,9 +365,7 @@ pollSwapStatus(swapResponse.id);
 
 ### Phase 5: Wire Up from SwapContainer
 
-**File: [`apps/web/src/components/swap/SwapContainer.tsx`](apps/web/src/components/swap/SwapContainer.tsx)**
-
-Pass additional parameters to `useChainflipExecution`:
+**File: [`apps/web/src/components/swap/SwapContainer.tsx`](apps/web/src/components/swap/SwapContainer.tsx)**Pass additional parameters to `useChainflipExecution`:
 
 ```typescript
 const { 
@@ -361,9 +391,7 @@ const {
 
 ### Phase 6: Update Asset Registry
 
-**File: [`apps/web/src/services/xcm-router/assetRegistry.ts`](apps/web/src/services/xcm-router/assetRegistry.ts)**
-
-Ensure AssetHub tokens have the `assetId` field for token identification:
+**File: [`apps/web/src/services/xcm-router/assetRegistry.ts`](apps/web/src/services/xcm-router/assetRegistry.ts)**Ensure AssetHub tokens have the `assetId` field for token identification:
 
 ```typescript
 "USDC-1337-AssetHubPolkadot": {
@@ -378,15 +406,11 @@ Ensure AssetHub tokens have the `assetId` field for token identification:
 },
 ```
 
-Do the same for USDT on AssetHub if configured.
-
----
+Do the same for USDT on AssetHub if configured.---
 
 ### Phase 7: Update TokenInfo Type
 
-**File: [`apps/web/src/components/swap/types.ts`](apps/web/src/components/swap/types.ts)**
-
-Add `assetId` field to `TokenInfo`:
+**File: [`apps/web/src/components/swap/types.ts`](apps/web/src/components/swap/types.ts)**Add `assetId` field to `TokenInfo`:
 
 ```typescript
 export interface TokenInfo {
@@ -397,41 +421,39 @@ export interface TokenInfo {
 }
 ```
 
-Update token conversion in [`useXcmTokens.ts`](apps/web/src/components/swap/hooks/useXcmTokens.ts) to pass through `assetId`.
-
----
+Update token conversion in [`useXcmTokens.ts`](apps/web/src/components/swap/hooks/useXcmTokens.ts) to pass through `assetId`.---
 
 ## Testing Strategy
 
 1. **EVM Native (ETH)**
 
-            - Test: ETH (Ethereum) → USDC (Arbitrum)
-            - URL: `http://localhost:3000/?from=ETH&fromNetwork=Ethereum&to=USDC&toNetwork=Arbitrum`
-            - Verify: Single MetaMask signature, automatic deposit
+                                                - Test: ETH (Ethereum) → USDC (Arbitrum)
+                                                - URL: `http://localhost:3000/?from=ETH&fromNetwork=Ethereum&to=USDC&toNetwork=Arbitrum`
+                                                - Verify: Single MetaMask signature, automatic deposit
 
 2. **EVM Token (USDC)**
 
-            - Test: USDC (Ethereum) → SOL (Solana)
-            - URL: `http://localhost:3000/?from=USDC&fromNetwork=Ethereum&to=SOL&toNetwork=Solana`
-            - Verify: ERC20 transfer signature, automatic deposit
+                                                - Test: USDC (Ethereum) → SOL (Solana)
+                                                - URL: `http://localhost:3000/?from=USDC&fromNetwork=Ethereum&to=SOL&toNetwork=Solana`
+                                                - Verify: ERC20 transfer signature, automatic deposit
 
 3. **Polkadot Native (DOT)**
 
-            - Test: DOT (AssetHub) → USDC (Arbitrum)
-            - URL: `http://localhost:3000/?from=DOT&fromNetwork=AssetHubPolkadot&to=USDC&toNetwork=Arbitrum`
-            - Verify: Polkadot.js signature, automatic deposit
+                                                - Test: DOT (AssetHub) → USDC (Arbitrum)
+                                                - URL: `http://localhost:3000/?from=DOT&fromNetwork=AssetHubPolkadot&to=USDC&toNetwork=Arbitrum`
+                                                - Verify: Polkadot.js signature, automatic deposit
 
 4. **Polkadot Token (USDC)**
 
-            - Test: USDC (AssetHub) → ETH (Ethereum)
-            - URL: `http://localhost:3000/?from=USDC&fromNetwork=AssetHubPolkadot&to=ETH&toNetwork=Ethereum`
-            - Verify: Asset transfer signature, automatic deposit
+                                                - Test: USDC (AssetHub) → ETH (Ethereum)
+                                                - URL: `http://localhost:3000/?from=USDC&fromNetwork=AssetHubPolkadot&to=ETH&toNetwork=Ethereum`
+                                                - Verify: Asset transfer signature, automatic deposit
 
 5. **Slippage Protection**
 
-            - Test: Set slippage to 0.5% in UI
-            - Verify: `minimumPrice` calculated correctly in API call
-            - Verify: Refund occurs if price moves beyond tolerance
+                                                - Test: Set slippage to 0.5% in UI
+                                                - Verify: `minimumPrice` calculated correctly in API call
+                                                - Verify: Refund occurs if price moves beyond tolerance
 
 ---
 
@@ -450,15 +472,3 @@ Update token conversion in [`useXcmTokens.ts`](apps/web/src/components/swap/hook
 - Existing XCM swaps remain unchanged
 - Chainflip swaps now require single signature (vs. manual deposit)
 - Slippage tolerance from UI applies to both XCM and Chainflip routes
-- Bitcoin and Solana swaps remain unsupported (show "coming soon" message)
-
-### To-dos
-
-- [ ] Update ChainflipSwapRequest interface with required slippage parameters
-- [ ] Add calculateMinimumPrice and minutesToBlocks helper functions
-- [ ] Fix requestSwapDepositAddress to send correct API parameters
-- [ ] Implement sendPolkadotDeposit function using PAPI
-- [ ] Add automatic deposit signing to useChainflipExecution
-- [ ] Pass slippageTolerance and signers from SwapContainer
-- [ ] Add assetId field to AssetHub tokens in registry
-- [ ] Test EVM and Polkadot swap flows with different token pairs

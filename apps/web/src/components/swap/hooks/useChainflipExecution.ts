@@ -3,11 +3,20 @@ import type { TokenInfo } from '@/components/swap/types';
 import {
   chainflipClient,
   formatDuration,
+  calculateMinimumPrice,
+  minutesToBlocks,
   type ChainflipQuote,
   type ChainflipSwapResponse,
   type ChainflipSwapState,
   type ChainflipExecutionStage,
 } from '@/services/chainflip';
+import {
+  sendEvmNativeDeposit,
+  sendEvmTokenDeposit,
+  sendPolkadotDeposit,
+  getDepositType,
+  type DepositResult,
+} from '@/services/chainflip/signerUtils';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -60,6 +69,9 @@ interface UseChainflipExecutionProps {
   quote: ChainflipQuote | null;
   walletAddress: string;
   recipientAddress: string;
+  slippageTolerance: number;
+  evmSigner?: any;
+  polkadotSigner?: any;
 
   // State management callbacks
   onExecutionStart?: (execution: ChainflipExecutionDetails) => void;
@@ -118,6 +130,9 @@ export function useChainflipExecution({
   quote,
   walletAddress,
   recipientAddress,
+  slippageTolerance,
+  evmSigner,
+  polkadotSigner,
   onExecutionStart,
   onExecutionUpdate,
   onSuccess,
@@ -317,13 +332,28 @@ export function useChainflipExecution({
         recipient: recipientAddress,
       });
 
-      // Request deposit address from Chainflip (amount is passed as-is in human-readable format)
+      // Calculate slippage protection parameters
+      const retryMinutes = 15;
+      let minimumPrice = '0';
+      
+      if (quote?.egressAmount && quote?.ingressAmount) {
+        const estimatedPrice = parseFloat(quote.egressAmount) / parseFloat(quote.ingressAmount);
+        minimumPrice = calculateMinimumPrice(estimatedPrice, slippageTolerance);
+        console.log('💰 Slippage protection:', {
+          estimatedPrice,
+          slippagePercent: `${slippageTolerance}%`,
+          minimumPrice,
+        });
+      }
+
+      // Request deposit address from Chainflip with slippage protection
       const swapResponse: ChainflipSwapResponse = await chainflipClient.requestSwapDepositAddress({
         sourceAsset: inputToken.chainflipId,
         destinationAsset: outputToken.chainflipId,
         destinationAddress: recipientAddress,
-        amount: inputAmount,  // Pass amount directly, no conversion needed
-        refundAddress: walletAddress, // For refunds
+        minimumPrice,
+        refundAddress: walletAddress,
+        retryDurationBlocks: minutesToBlocks(retryMinutes),
       });
 
       console.log('✅ Deposit address received:', swapResponse);
@@ -332,7 +362,7 @@ export function useChainflipExecution({
       setDepositAddress(swapResponse.depositAddress);
       setSwapId(swapResponse.id);
 
-      // Stage 2: Awaiting signature - User needs to send funds
+      // Stage 2: Awaiting signature - Prompt user to sign the deposit transaction
       updateStage('awaiting_signature', {
         depositAddress: swapResponse.depositAddress,
         depositChannelId: swapResponse.depositChannel.id,
@@ -340,8 +370,96 @@ export function useChainflipExecution({
         swapId: swapResponse.id,
       });
 
+      // Automatically send deposit transaction
+      const depositType = getDepositType(
+        inputToken.network || '', 
+        inputToken.symbol
+      );
+
+      console.log('💸 Initiating deposit:', {
+        type: depositType,
+        network: inputToken.network,
+        asset: inputToken.symbol,
+        amount: inputAmount,
+      });
+
+      // Stage 3: Submitting transaction
+      updateStage('submitting', {
+        statusMessage: 'Submitting deposit transaction...',
+      });
+
+      let depositResult: DepositResult;
+      switch (depositType) {
+        case 'evm-native':
+          // ETH on Ethereum or Arbitrum
+          if (!evmSigner) {
+            throw new Error('EVM wallet not connected');
+          }
+          depositResult = await sendEvmNativeDeposit(
+            evmSigner,
+            swapResponse.depositAddress,
+            inputAmount,
+            inputToken.decimals || 18
+          );
+          break;
+
+        case 'evm-token':
+          // USDC, USDT, etc. on Ethereum or Arbitrum
+          if (!evmSigner) {
+            throw new Error('EVM wallet not connected');
+          }
+          if (!inputToken.contractAddress) {
+            throw new Error('Token contract address not configured');
+          }
+          depositResult = await sendEvmTokenDeposit(
+            evmSigner,
+            swapResponse.depositAddress,
+            inputToken.contractAddress,
+            inputAmount,
+            inputToken.decimals || 6
+          );
+          break;
+
+        case 'polkadot-native':
+        case 'polkadot-token':
+          // DOT or tokens on AssetHub
+          if (!polkadotSigner) {
+            throw new Error('Polkadot wallet not connected');
+          }
+          const assetId = depositType === 'polkadot-token' 
+            ? inputToken.assetId  // e.g., "1337" for USDC
+            : undefined;
+          depositResult = await sendPolkadotDeposit(
+            polkadotSigner,
+            swapResponse.depositAddress,
+            inputAmount,
+            inputToken.decimals || 10,
+            assetId
+          );
+          break;
+
+        default:
+          throw new Error(
+            `Unsupported deposit type for ${inputToken.symbol} on ${inputToken.network}. ` +
+            'Please send funds manually to the deposit address.'
+          );
+      }
+
+      // Check if deposit was successful
+      if (!depositResult.success) {
+        throw new Error(depositResult.error || 'Deposit transaction failed');
+      }
+
+      console.log('✅ Deposit transaction submitted:', depositResult.txHash);
+
+      // Stage 4: Confirming - Wait for source chain confirmation
+      updateStage('confirming', {
+        statusMessage: 'Waiting for deposit confirmation...',
+        txHash: depositResult.txHash,
+      });
+
       // Start polling for swap status
-      // The parent component will send the transaction and we'll detect it via polling
+      // Chainflip will detect the deposit and begin the swap
       pollSwapStatus(swapResponse.id);
 
     } catch (error: unknown) {
@@ -370,6 +488,10 @@ export function useChainflipExecution({
     inputAmount,
     walletAddress,
     recipientAddress,
+    quote,
+    slippageTolerance,
+    evmSigner,
+    polkadotSigner,
     onExecutionStart,
     updateStage,
     pollSwapStatus,

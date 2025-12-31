@@ -61,6 +61,7 @@ export type AssetRegistryEntry = {
     chainflipId?: string;             // Chainflip compound asset ID (e.g., "dot.hub", "usdc.arb")
     decimals?: number;                // Token decimals (required for Chainflip)
     contractAddress?: string;         // ERC20/SPL contract address
+    assetId?: string;                 // Polkadot asset ID for Assets pallet (e.g., "1337" for USDC)
   }>;
 };
 
@@ -108,6 +109,7 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         provider: 'xcm',
         chainflipId: 'usdc.hub',  // Available for Chainflip cross-ecosystem swaps
         decimals: 6,
+        assetId: "1337",  // Asset ID for Assets.transfer call
       },
       "USDC-22-Hydration": {
         network: "Hydration",
@@ -174,6 +176,7 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         provider: 'xcm',
         chainflipId: 'usdt.hub',  // Available for Chainflip cross-ecosystem swaps
         decimals: 6,
+        assetId: "1984",  // Asset ID for Assets.transfer call
       },
       "USDT-10-Hydration": {
         network: "Hydration",

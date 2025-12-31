@@ -1,4 +1,51 @@
-<!-- fe2c56c3-95fd-49b9-952e-fc4c04180a99 bfa555f9-677b-4ce7-97e6-90efc71c650c -->
+---
+name: Chainflip Integration Implementation Plan
+overview: ""
+todos:
+  - id: abaccdeb-c7ca-4ef1-b736-ce15e518c805
+    content: "Phase 1: Extend asset registry types and add Chainflip assets"
+    status: pending
+  - id: 8400285d-6bf4-41b5-8a5f-d03221f965bc
+    content: "Phase 2: Create Chainflip service layer (types, client, API)"
+    status: pending
+  - id: 730aa8f8-9d84-40d7-b904-e77eeeac80bf
+    content: "Phase 3: Modify useAssetAggregator for dual-provider support"
+    status: pending
+  - id: 7ae381c4-a5ec-4db3-809c-962921ff6770
+    content: "Phase 4: Create useChainflipRoute and useChainflipExecution hooks"
+    status: pending
+  - id: cf33c04c-f8ee-488e-9869-e6f782af1b4d
+    content: "Phase 5: Create unified useSwapRouter hook"
+    status: pending
+  - id: deef7914-b88a-4c2b-967c-fcec34c2eaca
+    content: "Phase 6: Update kheopskit config and wallet integration"
+    status: pending
+  - id: 13c5aca8-e819-4706-af24-2103f76c8202
+    content: "Phase 7: Update SwapContainer and UI components"
+    status: pending
+  - id: 336a71c8-c901-4a27-bbeb-c163240811db
+    content: "Phase 1: Extend asset registry types and add Chainflip assets"
+    status: pending
+  - id: 82169f61-5166-42be-ba1f-c3d0cd9a054c
+    content: "Phase 2: Create Chainflip service layer (types, client, API)"
+    status: pending
+  - id: 2a3ce611-d4be-437d-a92e-88e215077654
+    content: "Phase 3: Modify useAssetAggregator for dual-provider support"
+    status: pending
+  - id: 739c8ca2-949c-4f9e-87cb-ec6beb9785d4
+    content: "Phase 4: Create useChainflipRoute and useChainflipExecution hooks"
+    status: pending
+  - id: 5960732b-2ade-4582-9d03-1d8f61cde41d
+    content: "Phase 5: Create unified useSwapRouter hook"
+    status: pending
+  - id: adaa5f1c-0951-4e80-848d-af624918efd8
+    content: "Phase 6: Update kheopskit config and wallet integration"
+    status: pending
+  - id: 3ded70f5-08b6-4ead-b59a-87287916f17a
+    content: "Phase 7: Update SwapContainer and UI components"
+    status: pending
+---
+
 # Chainflip Integration Implementation Plan
 
 ## Overview
@@ -360,20 +407,3 @@ apps/web/src/
 - `@kheopskit/core` with Solana support (signMessage implemented, signAndSendTransaction planned)
 - `@solana/kit` for Solana transaction building in app layer
 - Chainflip broker API access (mainnet: `https://chainflip-broker.io/rpc`)
-
-### To-dos
-
-- [ ] Phase 1: Extend asset registry types and add Chainflip assets
-- [ ] Phase 2: Create Chainflip service layer (types, client, API)
-- [ ] Phase 3: Modify useAssetAggregator for dual-provider support
-- [ ] Phase 4: Create useChainflipRoute and useChainflipExecution hooks
-- [ ] Phase 5: Create unified useSwapRouter hook
-- [ ] Phase 6: Update kheopskit config and wallet integration
-- [ ] Phase 7: Update SwapContainer and UI components
-- [ ] Phase 1: Extend asset registry types and add Chainflip assets
-- [ ] Phase 2: Create Chainflip service layer (types, client, API)
-- [ ] Phase 3: Modify useAssetAggregator for dual-provider support
-- [ ] Phase 4: Create useChainflipRoute and useChainflipExecution hooks
-- [ ] Phase 5: Create unified useSwapRouter hook
-- [ ] Phase 6: Update kheopskit config and wallet integration
-- [ ] Phase 7: Update SwapContainer and UI components

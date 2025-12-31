@@ -85,10 +85,14 @@ export interface ChainflipSwapRequest {
   sourceAsset: ChainflipAssetId;
   destinationAsset: ChainflipAssetId;
   destinationAddress: string;
-  amount: string;  // Amount in human-readable format (e.g., "1" for 1 BTC, "100" for 100 USDC)
-  refundAddress?: string;  // For refunds
-  maxBoostFeeBps?: number;  // Max boost fee in basis points
-  dcaEnabled?: boolean;  // Enable DCA (Dollar Cost Averaging)
+  
+  // Required slippage protection parameters
+  minimumPrice: string;
+  refundAddress: string;
+  retryDurationBlocks: number;
+  
+  // Optional parameters
+  boostFee?: number;  // Note: API uses 'boostFee' not 'maxBoostFeeBps'
 }
 
 export interface ChainflipDepositChannel {

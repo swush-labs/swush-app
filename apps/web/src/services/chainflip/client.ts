@@ -147,18 +147,14 @@ export class ChainflipClient {
       sourceAsset: request.sourceAsset,
       destinationAsset: request.destinationAsset,
       destinationAddress: request.destinationAddress,
-      amount: request.amount,
+      minimumPrice: request.minimumPrice,
+      refundAddress: request.refundAddress,
+      retryDurationBlocks: request.retryDurationBlocks,
     };
 
     // Add optional fields
-    if (request.refundAddress) {
-      body.refundAddress = request.refundAddress;
-    }
-    if (request.maxBoostFeeBps !== undefined) {
-      body.maxBoostFeeBps = request.maxBoostFeeBps;
-    }
-    if (request.dcaEnabled !== undefined) {
-      body.dcaEnabled = request.dcaEnabled;
+    if (request.boostFee !== undefined) {
+      body.boostFee = request.boostFee;
     }
 
     const result = await this.post<ChainflipSwapResponse>('/swap', body);
@@ -238,4 +234,33 @@ export const formatDuration = (seconds: number): string => {
   }
   // Add some buffer for cross-chain swaps
   return `${minutes}-${minutes + 3} min`;
+};
+
+/**
+ * Calculate minimum price with slippage tolerance
+ * Formula: minimumPrice = estimatedPrice * (1 - slippagePercent / 100)
+ * @param estimatedPrice - The estimated price from quote
+ * @param slippagePercent - Slippage tolerance percentage (e.g., 0.5, 1, 2.5)
+ * @returns Minimum acceptable price
+ */
+export const calculateMinimumPrice = (
+  estimatedPrice: string | number, 
+  slippagePercent: number
+): string => {
+  const price = typeof estimatedPrice === 'string' 
+    ? parseFloat(estimatedPrice) 
+    : estimatedPrice;
+  const multiplier = (100 - slippagePercent) / 100;
+  const minimumPrice = price * multiplier;
+  // High precision for price ratios
+  return minimumPrice.toFixed(10);
+};
+
+/**
+ * Convert minutes to blocks (1 block = 6 seconds on Chainflip)
+ * @param minutes - Duration in minutes
+ * @returns Number of blocks
+ */
+export const minutesToBlocks = (minutes: number): number => {
+  return Math.floor((minutes * 60) / 6);
 };

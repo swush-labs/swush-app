@@ -28,6 +28,8 @@ export {
   toSmallestUnit,
   fromSmallestUnit,
   formatDuration,
+  calculateMinimumPrice,
+  minutesToBlocks,
 } from './client';
 
 // Signer Utilities
@@ -36,6 +38,7 @@ export {
   sendEvmTokenDeposit,
   sendSolanaDeposit,
   sendSolanaTokenDeposit,
+  sendPolkadotDeposit,
   getDepositType,
   isChainSupportedForDeposit,
   type DepositResult,

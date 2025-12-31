@@ -6,6 +6,10 @@
  */
 
 import { toSmallestUnit } from './client';
+import { polkadot_asset_hub } from '@polkadot-api/descriptors';
+import { createClient } from 'polkadot-api';
+import { getWsProvider } from 'polkadot-api/ws-provider/web';
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -119,11 +123,11 @@ export async function sendEvmTokenDeposit(
     // ERC20 transfer function signature: transfer(address,uint256)
     // Function selector: 0xa9059cbb
     const transferSelector = '0xa9059cbb';
-    
+
     // Encode parameters (address and uint256)
     const paddedAddress = depositAddress.slice(2).padStart(64, '0');
     const paddedAmount = amountSmallest.toString(16).padStart(64, '0');
-    
+
     const data = `${transferSelector}${paddedAddress}${paddedAmount}` as `0x${string}`;
 
     console.log('💸 Sending EVM token deposit:', {
@@ -180,9 +184,9 @@ export async function sendSolanaDeposit(
   // 1. Creating a SystemProgram.transfer instruction
   // 2. Building a transaction with recent blockhash
   // 3. Signing with account.signAndSendTransaction or manual flow
-  
+
   console.warn('⚠️ Solana deposits not yet implemented');
-  
+
   return {
     txHash: '',
     success: false,
@@ -214,14 +218,112 @@ export async function sendSolanaTokenDeposit(
   // 1. Getting/creating associated token accounts
   // 2. Creating a Token.transfer instruction
   // 3. Building and signing the transaction
-  
+
   console.warn('⚠️ Solana token deposits not yet implemented');
-  
+
   return {
     txHash: '',
     success: false,
     error: 'Solana token deposits not yet implemented. Please use a Solana wallet directly.',
   };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Helper Functions
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Send DOT or AssetHub token deposit to Chainflip
+ * Uses Polkadot API (PAPI) for transaction building
+ * 
+ * @param polkadotSigner - Polkadot signer from kheopskit
+ * @param depositAddress - Chainflip deposit address
+ * @param amount - Amount in human-readable format (e.g., "1.5")
+ * @param decimals - Token decimals (10 for DOT, 6 for USDC)
+ * @param assetId - For tokens like USDC (asset ID 1337), undefined for DOT
+ * @returns Transaction hash
+ */
+export async function sendPolkadotDeposit(
+  polkadotSigner: any,
+  depositAddress: string,
+  amount: string,
+  decimals: number,
+  assetId?: string
+): Promise<DepositResult> {
+  let client: ReturnType<typeof createClient> | null = null;
+  
+  try {
+    console.log('💸 Sending Polkadot deposit:', {
+      to: depositAddress,
+      amount: amount,
+      decimals,
+      assetId,
+    });
+
+    // Create WebSocket provider for AssetHub
+    const wsProvider = getWsProvider('wss://polkadot-asset-hub-rpc.polkadot.io');
+    
+    // Create client with typed API
+    client = createClient(wsProvider);
+    
+    // Get typed API for AssetHub
+    const typedApi = client.getTypedApi(polkadot_asset_hub);
+    
+    // Build transfer transaction
+    const amountBigInt = BigInt(toSmallestUnit(amount, decimals));
+    
+    let tx;
+    if (assetId) {
+      // Transfer asset (USDC, USDT, etc.) using Assets pallet
+      console.log('🔧 Building Assets.transfer transaction for asset ID:', assetId);
+      tx = typedApi.tx.Assets.transfer({
+        id: Number(assetId),
+        target: {
+          type: 'Id',
+          value: depositAddress,
+        },
+        amount: amountBigInt,
+      });
+    } else {
+      // Transfer native DOT using Balances pallet
+      console.log('🔧 Building Balances.transfer_keep_alive transaction');
+      tx = typedApi.tx.Balances.transfer_keep_alive({
+        dest: {
+          type: 'Id',
+          value: depositAddress,
+        },
+        value: amountBigInt,
+      });
+    }
+    
+    console.log('🔐 Signing and submitting transaction...');
+    
+    // Sign and submit using the polkadot signer
+    const result = await tx.signAndSubmit(polkadotSigner);
+    
+    console.log('✅ Polkadot deposit sent:', result.txHash);
+    
+    return {
+      txHash: result.txHash,
+      success: true,
+    };
+  } catch (error) {
+    console.error('❌ Polkadot deposit failed:', error);
+    return {
+      txHash: '',
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  } finally {
+    // Cleanup: destroy client connection
+    if (client) {
+      try {
+        client.destroy();
+      } catch (e) {
+        console.warn('Failed to destroy PAPI client:', e);
+      }
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -238,18 +340,17 @@ export async function sendSolanaTokenDeposit(
 export function getDepositType(
   chain: string,
   asset: string
-): 'evm-native' | 'evm-token' | 'solana-native' | 'solana-token' | 'unsupported' {
+): 'evm-native' | 'evm-token' | 'polkadot-native' | 'polkadot-token' | 'solana-native' | 'solana-token' | 'unsupported' {
   switch (chain) {
     case 'Ethereum':
     case 'Arbitrum':
       return asset === 'ETH' ? 'evm-native' : 'evm-token';
+    case 'AssetHubPolkadot':
+      return asset === 'DOT' ? 'polkadot-native' : 'polkadot-token';
     case 'Solana':
       return asset === 'SOL' ? 'solana-native' : 'solana-token';
     case 'Bitcoin':
       // Bitcoin requires external wallet - not supported in-app
-      return 'unsupported';
-    case 'Polkadot':
-      // Polkadot DOT via Chainflip - handled separately
       return 'unsupported';
     default:
       return 'unsupported';
@@ -260,7 +361,7 @@ export function getDepositType(
  * Check if a chain is supported for in-app deposits
  */
 export function isChainSupportedForDeposit(chain: string): boolean {
-  return ['Ethereum', 'Arbitrum'].includes(chain);
+  return ['Ethereum', 'Arbitrum', 'AssetHubPolkadot'].includes(chain);
   // Add 'Solana' when kheopskit adds support
 }
 

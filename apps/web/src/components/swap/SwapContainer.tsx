@@ -275,6 +275,9 @@ export function SwapContainer() {
     quote: chainflipQuote || null,
     walletAddress,
     recipientAddress,
+    slippageTolerance,
+    evmSigner,
+    polkadotSigner: senderPolkadotSigner,
     onExecutionStart: (execution) => {
       startExecution({
         currentStep: 0,

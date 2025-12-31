@@ -40,6 +40,7 @@ function convertUnifiedAssetsToTokens(assets: UnifiedAsset[]): TokenInfo[] {
         provider: network.provider,
         chainflipId: network.chainflipId,
         contractAddress: network.contractAddress,
+        assetId: network.assetId,
       });
     });
   });
