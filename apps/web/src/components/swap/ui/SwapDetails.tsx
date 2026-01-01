@@ -101,14 +101,7 @@ export const SwapDetails = memo(function SwapDetails({
           {isLoadingQuote ? (
             <Skeleton className="w-16 h-5 animate-pulse" />
           ) : (
-            <span className="flex items-center gap-1.5">
-              {provider === 'chainflip' && (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  Chainflip
-                </span>
-              )}
-              {displayValue(route)}
-            </span>
+            displayValue(route)
           )}
         </SubText>
       </div>
