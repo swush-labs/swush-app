@@ -3,7 +3,7 @@ import { cn, shortenAddress } from "@/lib/utils";
 import { X, Check } from "lucide-react";
 import { useWallets } from "@kheopskit/react";
 import { useSelectedAccount } from "@/components/wallet/use-selected-account";
-import Identicon from "@polkadot/react-identicon";
+import Identicon from "@/components/ui/identicon";
 import { useState } from "react";
 import { toast } from 'react-hot-toast';
 

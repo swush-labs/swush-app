@@ -5,7 +5,7 @@ import { ArrowRight, CircleAlert, X, Check, RefreshCw, Bookmark } from "lucide-r
 import { useSelectedAccount } from "@/components/wallet/use-selected-account";
 import { useRecipientAccount } from "@/components/wallet/use-recipient-account";
 import { shortenAddress } from "@/lib/utils";
-import Identicon from "@polkadot/react-identicon";
+import Identicon from "@/components/ui/identicon";
 import { useState } from "react";
 
 interface KheopskitAccount {

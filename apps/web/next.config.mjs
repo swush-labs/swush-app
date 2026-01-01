@@ -28,36 +28,44 @@ const nextConfig = {
     if (!isServer) {
       config.output.webassemblyModuleFilename = 'static/wasm/[modulehash].wasm';
       
-      // Apply heavy optimizations in PRODUCTION only for faster dev builds
-      if (!dev) {
-        config.optimization = {
-          ...config.optimization,
-          // Prevent creating duplicate WASM instances
-          runtimeChunk: 'single',
-          splitChunks: {
-            chunks: 'all',
-            cacheGroups: {
-              // Group all WASM-related code together
-              wasm: {
-                test: /\.wasm$/,
-                name: 'wasm-modules',
-                priority: 20,
-                enforce: true,
-              },
-              polkadot: {
-                test: /[\\/]node_modules[\\/]@polkadot[\\/]/,
-                name: 'polkadot',
-                priority: 15,
-              },
-              paraspell: {
-                test: /[\\/]node_modules[\\/]@paraspell[\\/]/,
-                name: 'paraspell',
-                priority: 15,
-              },
+      // Apply WASM optimizations in both dev and production
+      // This is CRITICAL to prevent "Out of memory: Cannot allocate Wasm memory" errors
+      config.optimization = {
+        ...config.optimization,
+        // Prevent creating duplicate WASM instances - use single runtime chunk
+        runtimeChunk: 'single',
+        splitChunks: {
+          chunks: 'all',
+          // Increase limits to allow more granular code splitting
+          maxInitialRequests: 25,
+          maxAsyncRequests: 30,
+          cacheGroups: {
+            // Group all WASM-related code together to ensure single initialization
+            wasm: {
+              test: /\.wasm$/,
+              name: 'wasm-modules',
+              priority: 20,
+              enforce: true,
+              reuseExistingChunk: true, // Reuse existing chunks to avoid duplication
+            },
+            // Consolidate all @polkadot packages to avoid duplicate WASM instances
+            polkadot: {
+              test: /[\\/]node_modules[\\/]@polkadot[\\/]/,
+              name: 'polkadot',
+              priority: 15,
+              enforce: true, // Force this caching group
+              reuseExistingChunk: true,
+            },
+            // Consolidate ParaSpell packages
+            paraspell: {
+              test: /[\\/]node_modules[\\/]@paraspell[\\/]/,
+              name: 'paraspell',
+              priority: 15,
+              reuseExistingChunk: true,
             },
           },
-        };
-      }
+        },
+      };
     } else {
       config.output.webassemblyModuleFilename = './../static/wasm/[modulehash].wasm';
     }

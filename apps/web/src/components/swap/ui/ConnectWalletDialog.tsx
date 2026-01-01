@@ -4,8 +4,7 @@ import { X, ArrowLeft, Check } from "lucide-react"
 import Image from 'next/image';
 import { useWallets } from "@kheopskit/react";
 import { useSelectedAccount } from "@/components/wallet/use-selected-account";
-import { Card } from "@/components/ui/card";
-import Identicon from "@polkadot/react-identicon";
+import Identicon from "@/components/ui/identicon";
 import { useState, useEffect, useRef } from "react";
 import { toast } from 'react-hot-toast';
 

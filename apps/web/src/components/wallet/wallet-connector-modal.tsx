@@ -16,7 +16,7 @@ import { shortenAddress } from "@/lib/utils";
 import Image from "next/image";
 import { Wallet, Check, ArrowLeft, User, Plug, PlugZap } from "lucide-react";
 import { toast } from 'react-hot-toast';
-import Identicon from "@polkadot/react-identicon";
+import Identicon from "@/components/ui/identicon";
 import { useSelectedAccount } from "./use-selected-account";
 
 // Enhanced Wallet Card Component with Connection Status
