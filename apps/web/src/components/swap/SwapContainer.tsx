@@ -97,18 +97,12 @@ export function SwapContainer() {
     ? recipientAccount.polkadotSigner
     : undefined
 
-  // Log signer info for debugging
+  // Signer validation
   useEffect(() => {
-    if (selectedAccount) {
-      console.log('📝 Signer Info:', {
-        senderPlatform: selectedAccount.platform,
-        senderAddress: selectedAccount.address,
-        hasSenderPolkadotSigner: !!senderPolkadotSigner,
-        recipientPlatform: recipientAccount?.platform,
-        hasRecipientPolkadotSigner: !!recipientPolkadotSigner,
-      });
+    if (selectedAccount && !senderPolkadotSigner && selectedAccount.platform === 'polkadot') {
+      console.warn('Missing Polkadot signer for Polkadot account');
     }
-  }, [selectedAccount, senderPolkadotSigner, recipientAccount, recipientPolkadotSigner]);
+  }, [selectedAccount, senderPolkadotSigner]);
 
   // Balance fetching using ParaSpell SDK
   const {
@@ -198,8 +192,6 @@ export function SwapContainer() {
     outputToken: string 
   }) => {
     // Wait for destination balance to update before marking as successful
-    console.log('🎯 Origin transaction complete, waiting for delivery...');
-    
     // Start polling destination balance to confirm delivery
     startBalancePolling(() => {
       // Mark swap as successful when balance increases

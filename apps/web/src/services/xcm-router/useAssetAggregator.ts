@@ -280,14 +280,6 @@ const useAssetAggregator = (
     // DEX selection functions
     getOptimalExchanges,
     validateExchangeCompatibility,
-    
-    // Backward compatibility
-    aggregatedFromAssets: unifiedFromAssets,
-    aggregatedToAssets: unifiedToAssets,
-    registeredFromAssets: unifiedFromAssets,
-    unregisteredFromAssets: [],
-    registeredToAssets: unifiedToAssets,
-    unregisteredToAssets: [],
   };
 };
 

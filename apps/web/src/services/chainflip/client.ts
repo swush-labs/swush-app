@@ -208,21 +208,6 @@ export const toSmallestUnit = (amount: string, decimals: number): string => {
   return combined.replace(/^0+/, '') || '0';
 };
 
-/**
- * Convert smallest unit to human-readable amount
- * @param amount - Amount in smallest unit
- * @param decimals - Token decimals
- * @returns Human-readable amount
- */
-export const fromSmallestUnit = (amount: string, decimals: number): string => {
-  const padded = amount.padStart(decimals + 1, '0');
-  const insertPoint = padded.length - decimals;
-  const whole = padded.slice(0, insertPoint) || '0';
-  const fraction = padded.slice(insertPoint);
-  // Trim trailing zeros from fraction
-  const trimmedFraction = fraction.replace(/0+$/, '');
-  return trimmedFraction ? `${whole}.${trimmedFraction}` : whole;
-};
 
 /**
  * Format estimated duration in human-readable format

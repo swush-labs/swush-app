@@ -5,7 +5,7 @@
  * These utilities abstract the chain-specific transaction building and signing.
  */
 
-import { toSmallestUnit } from './client';
+import { toSmallestUnit } from '@/lib/amountUtils';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
 import { createClient } from 'polkadot-api';
 import { getWsProvider } from 'polkadot-api/ws-provider/web';
@@ -270,7 +270,7 @@ export async function sendPolkadotDeposit(
     const typedApi = client.getTypedApi(polkadot_asset_hub);
     
     // Build transfer transaction
-    const amountBigInt = BigInt(toSmallestUnit(amount, decimals));
+    const amountBigInt = toSmallestUnit(amount, decimals);
     
     let tx;
     if (assetId) {
@@ -325,10 +325,6 @@ export async function sendPolkadotDeposit(
     }
   }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Helper Functions
-// ═══════════════════════════════════════════════════════════════════════════════
 
 /**
  * Determine the appropriate deposit function based on chain and asset

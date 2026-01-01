@@ -16,6 +16,7 @@ import { calculateTotalFees, formatFeeSummary, safeStringify } from '@/services/
 import { formatAmount } from '@/services/balances/utils';
 import { NUMBER_FORMAT_OPTIONS, TEST_RPC_ACALA, TEST_RPC_ASSET_HUB, TEST_RPC_HYDRATION, TEST_RPC_BIFROST } from '@/services/constants';
 import { ROUTE_FETCH_TIMEOUT } from '@/lib/const';
+import { toSmallestUnit } from '@/services/chainflip';
 
 /**
  * Check if price fetching should be skipped (from environment variable)
@@ -24,34 +25,6 @@ import { ROUTE_FETCH_TIMEOUT } from '@/lib/const';
 const shouldSkipPriceFetch = (): boolean => {
   return process.env.NEXT_PUBLIC_SKIP_PRICE_FETCH === 'true';
 };
-
-/**
- * Convert user input (decimal string) to smallest unit (bigint)
- * 
- * Uses string manipulation to preserve precision for large decimals
- * Example: "1.5" with 12 decimals → 1500000000000n
- * 
- * @param amount - Decimal amount as string (e.g., "1.5")
- * @param decimals - Number of decimal places (e.g., 12 for DOT)
- * @returns Amount in smallest unit as bigint
- */
-function toSmallestUnit(amount: string, decimals: number): bigint {
-
-  const parsed = parseFloat(amount);
-
-  if (parsed > Number.MAX_SAFE_INTEGER) {
-    throw new Error('Amount too large');
-  }
-
-  if (isNaN(parsed) || parsed <= 0) return BigInt(0);
-
-  // Handle decimal places with string manipulation to avoid precision loss
-  const [whole = '0', fraction = ''] = amount.split('.');
-  const paddedFraction = fraction.padEnd(decimals, '0').slice(0, decimals);
-  const combined = whole + paddedFraction;
-
-  return BigInt(combined);
-}
 
 
 /**

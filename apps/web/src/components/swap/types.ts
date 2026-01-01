@@ -33,17 +33,13 @@ export interface TokenInfo {
   assetId?: string;               // Polkadot asset ID for Assets pallet (e.g., "1337" for USDC on AssetHub)
 }
 
-// Extended token information that can optionally include a network/chain label
-// Note: NetworkTokenInfo is now equivalent to TokenInfo since network was added to TokenInfo
-export interface NetworkTokenInfo extends TokenInfo {}
-
 // Group of the same asset symbol across multiple networks
 export interface AssetGroup {
   symbol: string;
   name: string;
   icon: string;
   network: string;
-  tokens: NetworkTokenInfo[];
+  tokens: TokenInfo[];
 }
 
 export interface DetailedRouteInfo {
@@ -55,8 +51,8 @@ export interface DetailedRouteInfo {
 
 export interface AssetListProps {
   assetGroups: AssetGroup[];
-  onSelect: (asset: NetworkTokenInfo) => void;
-  currentAsset?: NetworkTokenInfo | null;
+  onSelect: (asset: TokenInfo) => void;
+  currentAsset?: TokenInfo | null;
   onClose: () => void;
 }
 

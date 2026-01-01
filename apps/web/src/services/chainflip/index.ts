@@ -25,7 +25,6 @@ export {
   ChainflipClient,
   chainflipClient,
   toSmallestUnit,
-  fromSmallestUnit,
   formatDuration,
   calculateMinimumPrice,
   minutesToBlocks,

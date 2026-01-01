@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { TokenButton } from '../button/TokenButton';
-import { AssetListProps, NetworkTokenInfo, AssetGroup } from '../types';
+import { AssetListProps, TokenInfo, AssetGroup } from '../types';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
@@ -21,7 +21,7 @@ export const AssetList = ({ assetGroups, onSelect, currentAsset, onClose }: Asse
     );
   });
 
-  const handleSelect = (asset: NetworkTokenInfo) => {
+  const handleSelect = (asset: TokenInfo) => {
     onSelect(asset);
     onClose();
   };
