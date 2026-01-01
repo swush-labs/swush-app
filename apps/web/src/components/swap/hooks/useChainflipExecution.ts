@@ -205,13 +205,25 @@ export function useChainflipExecution({
         }
 
         const status = await chainflipClient.getSwapStatus(swapIdToPoll);
-        console.log('📊 Swap status:', status);
+
+        // Log detailed status for debugging
+        const swapState = status.status.state;
+        console.log('📊 Swap status:', {
+          swapId: status.id,
+          state: swapState,
+          depositAmount: status.status.depositAmount,
+          egressAmount: status.status.egressAmount,
+          depositTx: status.status.depositTransaction?.hash,
+          egressTx: status.status.egressTransaction?.hash,
+          error: status.status.error,
+          explorerUrl: `https://scan.perseverance.chainflip.io/swaps/${status.id}`,
+        });
 
         // Update stage based on status (API uses lowercase states)
-        switch (status.state) {
+        switch (swapState) {
           case 'waiting':
             // Waiting for deposit
-            updateStage('awaiting_signature', { swapState: status.state });
+            updateStage('awaiting_signature', { swapState: swapState });
             break;
 
           case 'receiving':
@@ -220,8 +232,8 @@ export function useChainflipExecution({
           case 'sent':
             // Swap in progress
             updateStage('swap_executing', {
-              swapState: status.state,
-              txHash: status.depositTransaction?.hash || status.egressTransaction?.hash,
+              swapState: swapState,
+              txHash: status.status.depositTransaction?.hash || status.status.egressTransaction?.hash,
             });
             break;
 
@@ -230,8 +242,8 @@ export function useChainflipExecution({
             pollingIntervalRef.current = null;
 
             updateStage('completed', {
-              swapState: status.state,
-              txHash: status.egressTransaction?.hash,
+              swapState: swapState,
+              txHash: status.status.egressTransaction?.hash,
             });
 
             const duration = Date.now() - startTimeRef.current;
@@ -241,10 +253,10 @@ export function useChainflipExecution({
               duration,
               inputAmount,
               inputToken: inputToken?.symbol || '?',
-              outputAmount: status.egressAmount || outputAmount || '?',
+              outputAmount: status.status.egressAmount || outputAmount || '?',
               outputToken: outputToken?.symbol || '?',
               swapId: swapIdToPoll,
-              txHash: status.egressTransaction?.hash,
+              txHash: status.status.egressTransaction?.hash,
             });
             break;
 
@@ -252,17 +264,21 @@ export function useChainflipExecution({
             clearInterval(pollingIntervalRef.current!);
             pollingIntervalRef.current = null;
 
-            updateStage('failed', { swapState: status.state });
+            updateStage('failed', { swapState: swapState });
 
             onError?.({
-              message: status.error || status.failureReason || 'Swap failed',
-              code: status.state,
+              message: status.status.error || status.status.failureReason || 'Swap failed',
+              code: swapState,
             });
             break;
         }
       } catch (error) {
-        console.error('❌ Error polling swap status:', error);
-        // Don't stop polling on transient errors
+        // 404 errors are expected while deposit is being confirmed on-chain
+        const is404 = error instanceof Error && error.message.includes('404');
+        if (!is404) {
+          console.error('❌ Error polling swap status:', error);
+        }
+        // Don't stop polling on transient errors (including 404s during confirmation)
       }
     }, pollInterval);
   }, [inputToken, outputToken, inputAmount, outputAmount, updateStage, onSuccess, onError]);
@@ -401,7 +417,8 @@ export function useChainflipExecution({
             evmSigner,
             swapResponse.address,
             inputAmount,
-            inputToken.decimals || 18
+            inputToken.decimals || 18,
+            inputToken.network
           );
           break;
 
@@ -418,7 +435,9 @@ export function useChainflipExecution({
             swapResponse.address,
             inputToken.contractAddress,
             inputAmount,
-            inputToken.decimals || 6
+            inputToken.decimals || 6,
+            inputToken.network,
+            inputToken.testnetContractAddress // Pass testnet address if available
           );
           break;
 

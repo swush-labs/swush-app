@@ -29,7 +29,8 @@ export interface TokenInfo {
   // Chainflip-specific fields
   provider?: SwapProvider;        // 'xcm' (default) or 'chainflip'
   chainflipId?: string;           // Chainflip compound asset ID (e.g., "dot.hub", "usdc.arb")
-  contractAddress?: string;       // ERC20/SPL contract address
+  contractAddress?: string;       // ERC20/SPL contract address (mainnet)
+  testnetContractAddress?: string; // ERC20/SPL contract address (testnet)
   assetId?: string;               // Polkadot asset ID for Assets pallet (e.g., "1337" for USDC on AssetHub)
 }
 

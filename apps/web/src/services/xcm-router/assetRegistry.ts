@@ -154,6 +154,7 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         chainflipId: 'usdc.eth',
         decimals: 6,
         contractAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        testnetContractAddress: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', // USDC on Sepolia
       },
       "USDC-Arbitrum": {
         network: "Arbitrum",
@@ -368,6 +369,29 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         provider: 'chainflip',
         chainflipId: 'btc.btc',
         decimals: 8,
+      },
+    }
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // FLIP - Chainflip native token (Ethereum/Sepolia)
+  // ═══════════════════════════════════════════════════════════════════════════════
+  "FLIP": {
+    symbol: "FLIP",
+    name: "Chainflip",
+    description: "Chainflip native token",
+    category: "native",
+    networkInstances: {
+      "FLIP-Ethereum": {
+        network: "Ethereum",
+        assetType: "Native",
+        displayName: "FLIP (Ethereum)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'flip.eth',
+        decimals: 18,
+        contractAddress: '0x826180541412D574cf1336d22c0C0a287822678A',
+        testnetContractAddress: '0xdC27c60956cB065D19F08bb69a707E37b36d8086', // tFLIP on Sepolia
       },
     }
   }

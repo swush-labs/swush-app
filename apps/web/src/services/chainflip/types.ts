@@ -130,47 +130,64 @@ export type ChainflipSwapState =
 export interface ChainflipSwapStatus {
   // Core swap info
   id: number;
-  state: ChainflipSwapState;
-  sourceAsset: ChainflipAssetId;
-  destinationAsset: ChainflipAssetId;
-  destinationAddress: string;
+  status: {
+    state: ChainflipSwapState;
+    sourceAsset: ChainflipAssetId;
+    destinationAsset: ChainflipAssetId;
+    destinationAddress: string;
 
-  // Deposit channel info
-  depositChannel?: {
-    id: number;
-    network: string;
-    issuedBlock: number;
-    channelId: number;
-    depositAddress: string;
-    expiryBlock: number;
-    estimatedExpiryTime: string;
+    // Deposit channel info
+    depositChannel?: {
+      id: string;
+      createdAt: number;
+      createdAtDate: string;
+      brokerCommissionBps: number;
+      depositAddress: string;
+      sourceChainExpiryBlock: string;
+      estimatedExpiryTime: number;
+      estimatedExpiryDate: string;
+      isExpired: boolean;
+      openedThroughBackend: boolean;
+      affiliateBrokers: any[];
+      fillOrKillParams?: {
+        retryDurationBlocks: number;
+        refundAddress: string;
+        minimumPrice: string;
+      };
+    };
+
+    // Deposit transaction
+    depositTransaction?: {
+      hash: string;
+      witnessedAt: string;
+    };
+    depositAmount?: string;
+    depositAmountNative?: string;
+
+    // Swap execution
+    swapExecutedAt?: string;
+    intermediateAmount?: string;  // For multi-hop swaps
+
+    // Egress info
+    egressAmount?: string;
+    egressAmountNative?: string;
+    egressTransaction?: {
+      hash: string;
+    };
+
+    // Fees
+    fees?: ChainflipFee[];
+
+    // Timing
+    estimatedDurationSeconds?: number;
+    sourceChainRequiredBlockConfirmations?: number;
+    lastStateChainUpdateAt?: number;
+    lastStateChainUpdateAtDate?: string;
+
+    // Error handling
+    error?: string;
+    failureReason?: string;
   };
-
-  // Deposit transaction
-  depositTransaction?: {
-    hash: string;
-    witnessedAt: string;
-  };
-  depositAmount?: string;
-  depositAmountNative?: string;
-
-  // Swap execution
-  swapExecutedAt?: string;
-  intermediateAmount?: string;  // For multi-hop swaps
-
-  // Egress info
-  egressAmount?: string;
-  egressAmountNative?: string;
-  egressTransaction?: {
-    hash: string;
-  };
-
-  // Fees
-  fees?: ChainflipFee[];
-
-  // Error handling
-  error?: string;
-  failureReason?: string;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

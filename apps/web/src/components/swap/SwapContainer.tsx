@@ -184,31 +184,48 @@ export function SwapContainer() {
   } = useSwapFlow();
 
   // Success handler shared between XCM and Chainflip
-  const handleSwapSuccess = useCallback((success: { 
-    duration: number; 
-    inputAmount: string; 
-    inputToken: string; 
-    outputAmount: string; 
-    outputToken: string 
+  const handleSwapSuccess = useCallback((success: {
+    duration: number;
+    inputAmount: string;
+    inputToken: string;
+    outputAmount: string;
+    outputToken: string
   }) => {
-    // Wait for destination balance to update before marking as successful
-    // Start polling destination balance to confirm delivery
-    startBalancePolling(() => {
-      // Mark swap as successful when balance increases
+    // For Chainflip swaps, complete immediately since Chainflip handles the full swap
+    // For XCM swaps, wait for balance polling to confirm delivery
+    if (provider === 'chainflip') {
+      // Chainflip swap is already complete - mark it as successful immediately
       completeSwap(success);
-      
+
       // Clear input and route immediately (but don't close dialog)
       setInputAmount('');
       resetRoute();
-      
+
       // Reset recipient to sender after successful swap (for safety)
       resetToSender();
-      
+
       // Refresh input balance to show deduction
       refreshBalances(true);
-    });
-    
-    // Update UI to show "waiting for delivery" state
+    } else {
+      // XCM: Wait for destination balance to update before marking as successful
+      // Start polling destination balance to confirm delivery
+      startBalancePolling(() => {
+        // Mark swap as successful when balance increases
+        completeSwap(success);
+
+        // Clear input and route immediately (but don't close dialog)
+        setInputAmount('');
+        resetRoute();
+
+        // Reset recipient to sender after successful swap (for safety)
+        resetToSender();
+
+        // Refresh input balance to show deduction
+        refreshBalances(true);
+      });
+    }
+
+    // Update UI to show "waiting for delivery" state (only for XCM)
     updateExecution({
       statusMessage: provider === 'chainflip' 
         ? 'Chainflip is processing your swap...' 
@@ -273,7 +290,7 @@ export function SwapContainer() {
     onExecutionStart: (execution) => {
       startExecution({
         currentStep: 0,
-        totalSteps: 3, // Chainflip has 3 stages: deposit, swap, egress
+        totalSteps: 1, // Chainflip: user signs deposit once, then Chainflip handles everything
         transactionType: null,
         statusMessage: execution.statusMessage,
       });

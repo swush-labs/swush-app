@@ -149,7 +149,7 @@ export class ChainflipClient {
       destinationAddress: request.destinationAddress,
       minimumPrice: request.minimumPrice,
       refundAddress: request.refundAddress,
-      retryDurationBlocks: request.retryDurationBlocks.toString(),
+      retryDurationInBlocks: request.retryDurationBlocks.toString(),
     };
 
     // Add optional fields

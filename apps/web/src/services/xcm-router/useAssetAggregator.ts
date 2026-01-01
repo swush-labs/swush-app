@@ -33,6 +33,7 @@ export interface NetworkSupport {
   chainflipId?: string;  // Chainflip compound asset ID (e.g., "dot.hub", "usdc.arb")
   decimals?: number;
   contractAddress?: string;
+  testnetContractAddress?: string;  // Testnet contract address (used when NEXT_PUBLIC_IS_TESTNET=true)
   assetId?: string;  // Polkadot asset ID for Assets pallet (e.g., "1337" for USDC)
 }
 
@@ -99,6 +100,7 @@ const createNetworkData = (
     chainflipId: instance.chainflipId,
     decimals: instance.decimals,
     contractAddress: instance.contractAddress,
+    testnetContractAddress: instance.testnetContractAddress,
     assetId: instance.assetId,
   };
 };

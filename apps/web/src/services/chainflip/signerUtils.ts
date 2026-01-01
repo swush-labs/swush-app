@@ -1,6 +1,6 @@
 /**
  * Chainflip Signer Utilities
- * 
+ *
  * Helper functions to build and send transactions for Chainflip deposits.
  * These utilities abstract the chain-specific transaction building and signing.
  */
@@ -9,6 +9,55 @@ import { toSmallestUnit } from '@/lib/amountUtils';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
 import { createClient } from 'polkadot-api';
 import { getWsProvider } from 'polkadot-api/ws-provider/web';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Chain Resolution
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Minimal chain definition for viem sendTransaction
+ */
+interface ViemChain {
+  id: number;
+  name: string;
+}
+
+/**
+ * Predefined chain configurations
+ */
+const CHAINS: Record<string, ViemChain> = {
+  mainnet: { id: 1, name: 'Ethereum' },
+  sepolia: { id: 11155111, name: 'Sepolia' },
+  arbitrum: { id: 42161, name: 'Arbitrum One' },
+  arbitrumSepolia: { id: 421614, name: 'Arbitrum Sepolia' },
+};
+
+/**
+ * Check if we're in testnet mode based on environment variable
+ */
+const isTestnet = (): boolean => {
+  return process.env.NEXT_PUBLIC_IS_TESTNET === 'true';
+};
+
+/**
+ * Get the chain object for a given network name
+ * Handles both mainnet and testnet (Perseverance) environments
+ */
+const getChainForNetwork = (network: string): ViemChain | undefined => {
+  const testnet = isTestnet();
+
+  switch (network) {
+    case 'Ethereum':
+      // In testnet mode, "Ethereum" means Sepolia
+      return testnet ? CHAINS.sepolia : CHAINS.mainnet;
+    case 'Arbitrum':
+      // In testnet mode, "Arbitrum" means Arbitrum Sepolia
+      return testnet ? CHAINS.arbitrumSepolia : CHAINS.arbitrum;
+    default:
+      console.warn(`Unknown EVM network: ${network}`);
+      return undefined;
+  }
+};
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -23,10 +72,12 @@ interface EvmWalletClient {
     to: `0x${string}`;
     value?: bigint;
     data?: `0x${string}`;
+    chain?: any;
   }) => Promise<`0x${string}`>;
   account?: {
     address: `0x${string}`;
   };
+  chain?: any;
 }
 
 /**
@@ -54,33 +105,49 @@ export interface DepositResult {
 
 /**
  * Send native ETH/ARB deposit to Chainflip deposit address
- * 
+ *
  * @param client - EVM wallet client from kheopskit
  * @param depositAddress - Chainflip deposit address
  * @param amount - Amount in human-readable format (e.g., "1.5")
  * @param decimals - Token decimals (18 for ETH)
+ * @param network - Network name (e.g., "Ethereum", "Sepolia", "Arbitrum")
  * @returns Transaction hash
  */
 export async function sendEvmNativeDeposit(
   client: EvmWalletClient,
   depositAddress: string,
   amount: string,
-  decimals: number = 18
+  decimals: number = 18,
+  network?: string
 ): Promise<DepositResult> {
   try {
     // Convert amount to wei
     const amountWei = BigInt(toSmallestUnit(amount, decimals));
 
+    // Resolve the chain based on network name and environment (testnet vs mainnet)
+    const chain = network ? getChainForNetwork(network) : client.chain;
+
     console.log('💸 Sending EVM native deposit:', {
       to: depositAddress,
       amount: amount,
       amountWei: amountWei.toString(),
+      network,
+      chainId: chain?.id,
+      chainName: chain?.name,
+      isTestnet: isTestnet(),
     });
 
-    // Send transaction
+    if (!chain) {
+      throw new Error(
+        `Could not determine chain for network "${network}". Please ensure you're connected to the correct network.`
+      );
+    }
+
+    // Send transaction with explicit chain
     const txHash = await client.sendTransaction({
       to: depositAddress as `0x${string}`,
       value: amountWei,
+      chain,
     });
 
     console.log('✅ EVM native deposit sent:', txHash);
@@ -101,12 +168,14 @@ export async function sendEvmNativeDeposit(
 
 /**
  * Send ERC20 token deposit to Chainflip deposit address
- * 
+ *
  * @param client - EVM wallet client from kheopskit
  * @param depositAddress - Chainflip deposit address
- * @param tokenAddress - ERC20 token contract address
+ * @param tokenAddress - ERC20 token contract address (mainnet)
  * @param amount - Amount in human-readable format (e.g., "100")
  * @param decimals - Token decimals (6 for USDC/USDT)
+ * @param network - Network name (e.g., "Ethereum", "Sepolia", "Arbitrum")
+ * @param testnetTokenAddress - Optional testnet contract address (used when NEXT_PUBLIC_IS_TESTNET=true)
  * @returns Transaction hash
  */
 export async function sendEvmTokenDeposit(
@@ -114,9 +183,20 @@ export async function sendEvmTokenDeposit(
   depositAddress: string,
   tokenAddress: string,
   amount: string,
-  decimals: number
+  decimals: number,
+  network?: string,
+  testnetTokenAddress?: string
 ): Promise<DepositResult> {
   try {
+    // Use testnet address if in testnet mode and testnet address is provided
+    const actualTokenAddress = isTestnet() && testnetTokenAddress
+      ? testnetTokenAddress
+      : tokenAddress;
+
+    if (isTestnet() && testnetTokenAddress) {
+      console.log(`🔄 Using testnet token address: ${testnetTokenAddress} (mainnet: ${tokenAddress})`);
+    }
+
     // Convert amount to smallest unit
     const amountSmallest = BigInt(toSmallestUnit(amount, decimals));
 
@@ -130,17 +210,32 @@ export async function sendEvmTokenDeposit(
 
     const data = `${transferSelector}${paddedAddress}${paddedAmount}` as `0x${string}`;
 
+    // Resolve the chain based on network name and environment (testnet vs mainnet)
+    const chain = network ? getChainForNetwork(network) : client.chain;
+
     console.log('💸 Sending EVM token deposit:', {
-      token: tokenAddress,
+      token: actualTokenAddress,
+      originalToken: tokenAddress !== actualTokenAddress ? tokenAddress : undefined,
       to: depositAddress,
       amount: amount,
       amountSmallest: amountSmallest.toString(),
+      network,
+      chainId: chain?.id,
+      chainName: chain?.name,
+      isTestnet: isTestnet(),
     });
 
-    // Send transaction
+    if (!chain) {
+      throw new Error(
+        `Could not determine chain for network "${network}". Please ensure you're connected to the correct network.`
+      );
+    }
+
+    // Send transaction with explicit chain - use the resolved token address
     const txHash = await client.sendTransaction({
-      to: tokenAddress as `0x${string}`,
+      to: actualTokenAddress as `0x${string}`,
       data,
+      chain,
     });
 
     console.log('✅ EVM token deposit sent:', txHash);
