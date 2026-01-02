@@ -193,3 +193,20 @@ export const getEvmChainId = (network: string): number | undefined => {
   return typeof chain.id === 'string' ? parseInt(chain.id, 10) : chain.id;
 };
 
+/**
+ * Get network name from EVM chain ID
+ * Reverse lookup of getEvmChainId
+ * 
+ * @param chainId - Numeric chain ID (e.g., 1, 11155111, 42161)
+ * @returns Network name or undefined if not found
+ */
+export const getNetworkNameFromChainId = (chainId: number): string | undefined => {
+  const chain = APPKIT_CHAINS.find(c => {
+    if ((c as { chainNamespace?: string }).chainNamespace !== 'eip155') return false;
+    const id = typeof c.id === 'string' ? parseInt(c.id, 10) : c.id;
+    return id === chainId;
+  });
+  
+  return chain?.name;
+};
+

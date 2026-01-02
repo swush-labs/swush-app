@@ -17,6 +17,48 @@ import {
   getDepositType,
   type DepositResult,
 } from '@/services/chainflip/signerUtils';
+import { getNetworkNameFromChainId } from '@/lib/config/kheopskit';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Error Parsing Utilities
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Parse chain mismatch error from viem/wallet and return user-friendly message
+ * 
+ * Example error: "The current chain of the wallet (id: 1) does not match the target chain for the transaction (id: 11155111 – Sepolia)"
+ * 
+ * @param errorMessage - Raw error message from wallet/viem
+ * @returns Parsed error details with user-friendly message
+ */
+function parseChainMismatchError(errorMessage: string): {
+  isChainMismatch: boolean;
+  currentChainId?: number;
+  expectedChainId?: number;
+  expectedChainName?: string;
+  userFriendlyMessage?: string;
+} {
+  // Match pattern: "current chain of the wallet (id: X)" and "target chain for the transaction (id: Y"
+  const currentChainMatch = errorMessage.match(/current chain of the wallet \(id:\s*(\d+)\)/i);
+  const targetChainMatch = errorMessage.match(/target chain.*\(id:\s*(\d+)/i);
+  
+  if (!currentChainMatch || !targetChainMatch) {
+    return { isChainMismatch: false };
+  }
+  
+  const currentChainId = parseInt(currentChainMatch[1], 10);
+  const expectedChainId = parseInt(targetChainMatch[1], 10);
+  const expectedChainName = getNetworkNameFromChainId(expectedChainId) || `Chain ${expectedChainId}`;
+  const currentChainName = getNetworkNameFromChainId(currentChainId) || `Chain ${currentChainId}`;
+  
+  return {
+    isChainMismatch: true,
+    currentChainId,
+    expectedChainId,
+    expectedChainName,
+    userFriendlyMessage: `Wrong network! Please switch your wallet from ${currentChainName} to ${expectedChainName} to complete this swap.`,
+  };
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -505,20 +547,27 @@ export function useChainflipExecution({
     } catch (error: unknown) {
       console.error('❌ Chainflip execution error:', error);
 
-      const errorMessage = error instanceof Error
+      const rawErrorMessage = error instanceof Error
         ? error.message
         : 'Failed to execute Chainflip swap';
 
-      const userCancelled = errorMessage.includes('User rejected') ||
-        errorMessage.includes('Cancelled') ||
-        errorMessage.includes('User cancelled');
+      // Check for chain mismatch error and provide user-friendly message
+      const chainMismatch = parseChainMismatchError(rawErrorMessage);
+      
+      const errorMessage = chainMismatch.isChainMismatch && chainMismatch.userFriendlyMessage
+        ? chainMismatch.userFriendlyMessage
+        : rawErrorMessage;
+
+      const userCancelled = rawErrorMessage.includes('User rejected') ||
+        rawErrorMessage.includes('Cancelled') ||
+        rawErrorMessage.includes('User cancelled');
 
       setStage('failed');
       setIsExecuting(false);
 
       onError?.({
         message: errorMessage,
-        code: userCancelled ? 'USER_CANCELLED' : undefined,
+        code: chainMismatch.isChainMismatch ? 'CHAIN_MISMATCH' : (userCancelled ? 'USER_CANCELLED' : undefined),
         userCancelled,
       });
     }
