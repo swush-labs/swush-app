@@ -13,7 +13,7 @@ import { useXcmSwapExecution } from '@/components/swap/hooks/useXcmSwapExecution
 import { useChainflipExecution } from '@/components/swap/hooks/useChainflipExecution'
 import { useSwapFlow } from '@/components/swap/hooks/useSwapFlow'
 import { useSwapHistory } from '@/components/swap/hooks/useSwapHistory'
-import { useParaSpellBalances } from '@/components/swap/hooks/useParaSpellBalances'
+import { useUnifiedBalances } from '@/components/swap/hooks/useUnifiedBalances'
 import { LoadState } from '@/components/swap/ui/LoadState'
 import { ArrowSymbolDown } from '@/components/swap/ui/ArrowSymbolDown'
 import { calculateMinimumReceived } from '@/components/swap/utils'
@@ -104,7 +104,7 @@ export function SwapContainer() {
     }
   }, [selectedAccount, senderPolkadotSigner]);
 
-  // Balance fetching using ParaSpell SDK
+  // Unified balance fetching - automatically routes to EVM (wagmi) or XCM (ParaSpell)
   const {
     inputBalance,
     outputBalance,
@@ -116,7 +116,7 @@ export function SwapContainer() {
     refreshBalances,
     startBalancePolling,
     stopBalancePolling,
-  } = useParaSpellBalances({
+  } = useUnifiedBalances({
     isConnected,
     walletAddress,
     recipientAddress, // Pass recipient address for output balance

@@ -63,6 +63,9 @@ export type AssetRegistryEntry = {
     contractAddress?: string;         // ERC20/SPL contract address (mainnet)
     testnetContractAddress?: string;  // ERC20/SPL contract address (testnet)
     assetId?: string;                 // Polkadot asset ID for Assets pallet (e.g., "1337" for USDC)
+    // EVM chain identification
+    chainId?: number;                 // EVM chain ID (e.g., 1 for Ethereum, 42161 for Arbitrum)
+    testnetChainId?: number;          // EVM testnet chain ID (e.g., 11155111 for Sepolia)
   }>;
 };
 
@@ -156,6 +159,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         decimals: 6,
         contractAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
         testnetContractAddress: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', // USDC on Sepolia
+        chainId: 1,
+        testnetChainId: 11155111, // Sepolia
       },
       "USDC-Arbitrum": {
         network: "Arbitrum",
@@ -166,6 +171,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         chainflipId: 'usdc.arb',
         decimals: 6,
         contractAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+        chainId: 42161,
+        testnetChainId: 421614, // Arbitrum Sepolia
       },
       "USDC-Solana": {
         network: "Solana",
@@ -175,6 +182,7 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         provider: 'chainflip',
         chainflipId: 'usdc.sol',
         decimals: 6,
+        // Solana uses different chain identification, not EVM chainId
       },
     }
   },
@@ -223,6 +231,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         chainflipId: 'usdt.eth',
         decimals: 6,
         contractAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+        chainId: 1,
+        testnetChainId: 11155111, // Sepolia
       },
     }
   },
@@ -319,6 +329,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         provider: 'chainflip',
         chainflipId: 'eth.eth',
         decimals: 18,
+        chainId: 1,
+        testnetChainId: 11155111, // Sepolia
       },
       "ETH-Arbitrum": {
         network: "Arbitrum",
@@ -328,6 +340,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         provider: 'chainflip',
         chainflipId: 'eth.arb',
         decimals: 18,
+        chainId: 42161,
+        testnetChainId: 421614, // Arbitrum Sepolia
       },
     }
   },
@@ -393,6 +407,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         decimals: 18,
         contractAddress: '0x826180541412D574cf1336d22c0C0a287822678A',
         testnetContractAddress: '0xdC27c60956cB065D19F08bb69a707E37b36d8086', // tFLIP on Sepolia
+        chainId: 1,
+        testnetChainId: 11155111, // Sepolia
       },
     }
   }

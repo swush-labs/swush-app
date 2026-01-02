@@ -32,6 +32,9 @@ export interface TokenInfo {
   contractAddress?: string;       // ERC20/SPL contract address (mainnet)
   testnetContractAddress?: string; // ERC20/SPL contract address (testnet)
   assetId?: string;               // Polkadot asset ID for Assets pallet (e.g., "1337" for USDC on AssetHub)
+  // EVM chain identification
+  chainId?: number;               // EVM chain ID (e.g., 1 for Ethereum, 42161 for Arbitrum)
+  testnetChainId?: number;        // EVM testnet chain ID (e.g., 11155111 for Sepolia)
 }
 
 // Group of the same asset symbol across multiple networks
