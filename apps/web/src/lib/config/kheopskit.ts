@@ -126,7 +126,7 @@ export const mainnet = defineChain({
 // Arbitrum for Chainflip integration
 export const arbitrum = defineChain({
   id: "42161",
-  name: "Arbitrum One",
+  name: "Arbitrum",
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
   rpcUrls: {
     default: {
@@ -171,5 +171,25 @@ export const kheopskitConfig: KheopskitConfig = {
     networks: APPKIT_CHAINS,
   },
   debug: process.env.NODE_ENV === "development",
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Chain ID Utilities - Single Source of Truth
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Get EVM chain ID by network name
+ * Network names match those used throughout the app (assetRegistry, etc.)
+ * 
+ * @param network - Network name (e.g., "Ethereum", "Sepolia", "Arbitrum")
+ * @returns Numeric chain ID or undefined if not found
+ */
+export const getEvmChainId = (network: string): number | undefined => {
+  const chain = APPKIT_CHAINS.find(
+    c => c.name === network && (c as { chainNamespace?: string }).chainNamespace === 'eip155'
+  );
+  
+  if (!chain) return undefined;
+  return typeof chain.id === 'string' ? parseInt(chain.id, 10) : chain.id;
 };
 

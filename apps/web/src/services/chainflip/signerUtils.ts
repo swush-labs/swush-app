@@ -9,6 +9,7 @@ import { toSmallestUnit } from '@/lib/amountUtils';
 import { polkadot_asset_hub } from '@polkadot-api/descriptors';
 import { createClient } from 'polkadot-api';
 import { getWsProvider } from 'polkadot-api/ws-provider/web';
+import { APPKIT_CHAINS } from '@/lib/config/kheopskit';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Chain Resolution
@@ -24,20 +25,30 @@ interface ViemChain {
 
 /**
  * Get chain object from chainId
- * Uses chainId directly from token's network instance (no testnet conditional logic)
+ * Uses chain definitions from kheopskit config for consistency
  */
 const getChainFromId = (chainId: number): ViemChain | undefined => {
-  // Chain name mapping for logging/debugging (optional)
-  const chainNames: Record<number, string> = {
-    1: 'Ethereum',
-    11155111: 'Sepolia',
-    42161: 'Arbitrum One',
-    421614: 'Arbitrum Sepolia',
-  };
+  // Filter EVM chains from kheopskit config and create a mapping
+  const evmChains = APPKIT_CHAINS.filter(
+    (chain) => (chain as { chainNamespace?: string }).chainNamespace === 'eip155'
+  );
+
+  // Find matching chain by converting string ID to number
+  const chain = evmChains.find((c) => {
+    const id = typeof c.id === 'string' ? parseInt(c.id, 10) : c.id;
+    return id === chainId;
+  });
+
+  if (!chain) {
+    return undefined;
+  }
+
+  // Convert chain ID to number if it's a string
+  const numericId = typeof chain.id === 'string' ? parseInt(chain.id, 10) : chain.id;
 
   return {
-    id: chainId,
-    name: chainNames[chainId] || `Chain ${chainId}`,
+    id: numericId,
+    name: chain.name || `Chain ${chainId}`,
   };
 };
 

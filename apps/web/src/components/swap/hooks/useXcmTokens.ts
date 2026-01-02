@@ -4,6 +4,7 @@ import { useMemo, useCallback, useEffect } from 'react';
 import useAssetAggregator, { determineCurrency, type UnifiedAsset } from '@/services/xcm-router/useAssetAggregator';
 import { EXCHANGE_CHAINS } from '@paraspell/xcm-router';
 import type { TokenInfo } from '@/components/swap/types';
+import { getEvmChainId } from '@/lib/config/kheopskit';
 import {
   useFromTokenState,
   useToTokenState,
@@ -27,6 +28,9 @@ function convertUnifiedAssetsToTokens(assets: UnifiedAsset[]): TokenInfo[] {
         ?? network.actualAsset?.decimals
         ?? (network.provider === 'chainflip' ? 18 : 10);
 
+      // Derive EVM chain ID from network name (single source of truth in kheopskit.ts)
+      const chainId = getEvmChainId(network.network);
+
       tokens.push({
         id: network.assetKey,
         name: asset.name,
@@ -41,8 +45,8 @@ function convertUnifiedAssetsToTokens(assets: UnifiedAsset[]): TokenInfo[] {
         chainflipId: network.chainflipId,
         contractAddress: network.contractAddress,
         assetId: network.assetId,
-        // EVM chain identification (for balance fetching)
-        chainId: network.chainId,
+        // EVM chain identification (derived from network name for balance fetching)
+        chainId,
       });
     });
   });
