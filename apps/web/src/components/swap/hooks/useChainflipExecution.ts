@@ -107,6 +107,22 @@ const STAGE_MESSAGES: Record<ChainflipExecutionStage, string> = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// Polling Configuration
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Polling interval for swap status checks (in milliseconds)
+ * Default: 7.5 seconds (7500ms) - reduced from 10 seconds to lower API load
+ */
+const SWAP_STATUS_POLL_INTERVAL_MS = 7500;
+
+/**
+ * Maximum time to poll for swap status (in milliseconds)
+ * Default: 30 minutes
+ */
+const MAX_POLL_TIME_MS = 30 * 60 * 1000;
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // Hook Implementation
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -185,14 +201,12 @@ export function useChainflipExecution({
       clearInterval(pollingIntervalRef.current);
     }
 
-    const pollInterval = 5000; // 5 seconds
-    const maxPollTime = 30 * 60 * 1000; // 30 minutes max
     const startPollTime = Date.now();
 
     pollingIntervalRef.current = setInterval(async () => {
       try {
         // Check if we've exceeded max poll time
-        if (Date.now() - startPollTime > maxPollTime) {
+        if (Date.now() - startPollTime > MAX_POLL_TIME_MS) {
           console.warn('⚠️ Swap status polling timed out');
           clearInterval(pollingIntervalRef.current!);
           pollingIntervalRef.current = null;
@@ -280,7 +294,7 @@ export function useChainflipExecution({
         }
         // Don't stop polling on transient errors (including 404s during confirmation)
       }
-    }, pollInterval);
+    }, SWAP_STATUS_POLL_INTERVAL_MS);
   }, [inputToken, outputToken, inputAmount, outputAmount, updateStage, onSuccess, onError]);
 
   /**
@@ -413,22 +427,28 @@ export function useChainflipExecution({
           if (!evmSigner) {
             throw new Error('EVM wallet not connected');
           }
+          if (!inputToken.chainId) {
+            throw new Error('Token chainId not configured');
+          }
           depositResult = await sendEvmNativeDeposit(
             evmSigner,
             swapResponse.address,
             inputAmount,
             inputToken.decimals || 18,
-            inputToken.network
+            inputToken.chainId
           );
           break;
 
         case 'evm-token':
-          // USDC, USDT, etc. on Ethereum or Arbitrum
+          // USDC, USDT, FLIP, etc. on Ethereum, Sepolia, or Arbitrum
           if (!evmSigner) {
             throw new Error('EVM wallet not connected');
           }
           if (!inputToken.contractAddress) {
             throw new Error('Token contract address not configured');
+          }
+          if (!inputToken.chainId) {
+            throw new Error('Token chainId not configured');
           }
           depositResult = await sendEvmTokenDeposit(
             evmSigner,
@@ -436,8 +456,7 @@ export function useChainflipExecution({
             inputToken.contractAddress,
             inputAmount,
             inputToken.decimals || 6,
-            inputToken.network,
-            inputToken.testnetContractAddress // Pass testnet address if available
+            inputToken.chainId
           );
           break;
 

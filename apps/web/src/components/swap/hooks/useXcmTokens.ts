@@ -40,11 +40,9 @@ function convertUnifiedAssetsToTokens(assets: UnifiedAsset[]): TokenInfo[] {
         provider: network.provider,
         chainflipId: network.chainflipId,
         contractAddress: network.contractAddress,
-        testnetContractAddress: network.testnetContractAddress,
         assetId: network.assetId,
         // EVM chain identification (for balance fetching)
         chainId: network.chainId,
-        testnetChainId: network.testnetChainId,
       });
     });
   });

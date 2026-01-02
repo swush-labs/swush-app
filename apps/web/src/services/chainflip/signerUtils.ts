@@ -23,40 +23,22 @@ interface ViemChain {
 }
 
 /**
- * Predefined chain configurations
+ * Get chain object from chainId
+ * Uses chainId directly from token's network instance (no testnet conditional logic)
  */
-const CHAINS: Record<string, ViemChain> = {
-  mainnet: { id: 1, name: 'Ethereum' },
-  sepolia: { id: 11155111, name: 'Sepolia' },
-  arbitrum: { id: 42161, name: 'Arbitrum One' },
-  arbitrumSepolia: { id: 421614, name: 'Arbitrum Sepolia' },
-};
+const getChainFromId = (chainId: number): ViemChain | undefined => {
+  // Chain name mapping for logging/debugging (optional)
+  const chainNames: Record<number, string> = {
+    1: 'Ethereum',
+    11155111: 'Sepolia',
+    42161: 'Arbitrum One',
+    421614: 'Arbitrum Sepolia',
+  };
 
-/**
- * Check if we're in testnet mode based on environment variable
- */
-const isTestnet = (): boolean => {
-  return process.env.NEXT_PUBLIC_IS_TESTNET === 'true';
-};
-
-/**
- * Get the chain object for a given network name
- * Handles both mainnet and testnet (Perseverance) environments
- */
-const getChainForNetwork = (network: string): ViemChain | undefined => {
-  const testnet = isTestnet();
-
-  switch (network) {
-    case 'Ethereum':
-      // In testnet mode, "Ethereum" means Sepolia
-      return testnet ? CHAINS.sepolia : CHAINS.mainnet;
-    case 'Arbitrum':
-      // In testnet mode, "Arbitrum" means Arbitrum Sepolia
-      return testnet ? CHAINS.arbitrumSepolia : CHAINS.arbitrum;
-    default:
-      console.warn(`Unknown EVM network: ${network}`);
-      return undefined;
-  }
+  return {
+    id: chainId,
+    name: chainNames[chainId] || `Chain ${chainId}`,
+  };
 };
 
 
@@ -110,7 +92,7 @@ export interface DepositResult {
  * @param depositAddress - Chainflip deposit address
  * @param amount - Amount in human-readable format (e.g., "1.5")
  * @param decimals - Token decimals (18 for ETH)
- * @param network - Network name (e.g., "Ethereum", "Sepolia", "Arbitrum")
+ * @param chainId - EVM chain ID (e.g., 1 for Ethereum, 11155111 for Sepolia, 42161 for Arbitrum)
  * @returns Transaction hash
  */
 export async function sendEvmNativeDeposit(
@@ -118,28 +100,26 @@ export async function sendEvmNativeDeposit(
   depositAddress: string,
   amount: string,
   decimals: number = 18,
-  network?: string
+  chainId?: number
 ): Promise<DepositResult> {
   try {
     // Convert amount to wei
     const amountWei = BigInt(toSmallestUnit(amount, decimals));
 
-    // Resolve the chain based on network name and environment (testnet vs mainnet)
-    const chain = network ? getChainForNetwork(network) : client.chain;
+    // Resolve the chain from chainId (preferred) or use client's chain
+    const chain = chainId ? getChainFromId(chainId) : client.chain;
 
     console.log('💸 Sending EVM native deposit:', {
       to: depositAddress,
       amount: amount,
       amountWei: amountWei.toString(),
-      network,
       chainId: chain?.id,
       chainName: chain?.name,
-      isTestnet: isTestnet(),
     });
 
     if (!chain) {
       throw new Error(
-        `Could not determine chain for network "${network}". Please ensure you're connected to the correct network.`
+        `Could not determine chain. Please provide chainId or ensure client has chain configured.`
       );
     }
 
@@ -171,11 +151,10 @@ export async function sendEvmNativeDeposit(
  *
  * @param client - EVM wallet client from kheopskit
  * @param depositAddress - Chainflip deposit address
- * @param tokenAddress - ERC20 token contract address (mainnet)
+ * @param tokenAddress - ERC20 token contract address (correct for the network)
  * @param amount - Amount in human-readable format (e.g., "100")
- * @param decimals - Token decimals (6 for USDC/USDT)
- * @param network - Network name (e.g., "Ethereum", "Sepolia", "Arbitrum")
- * @param testnetTokenAddress - Optional testnet contract address (used when NEXT_PUBLIC_IS_TESTNET=true)
+ * @param decimals - Token decimals (6 for USDC/USDT, 18 for FLIP)
+ * @param chainId - EVM chain ID (e.g., 1 for Ethereum, 11155111 for Sepolia, 42161 for Arbitrum)
  * @returns Transaction hash
  */
 export async function sendEvmTokenDeposit(
@@ -184,19 +163,9 @@ export async function sendEvmTokenDeposit(
   tokenAddress: string,
   amount: string,
   decimals: number,
-  network?: string,
-  testnetTokenAddress?: string
+  chainId?: number
 ): Promise<DepositResult> {
   try {
-    // Use testnet address if in testnet mode and testnet address is provided
-    const actualTokenAddress = isTestnet() && testnetTokenAddress
-      ? testnetTokenAddress
-      : tokenAddress;
-
-    if (isTestnet() && testnetTokenAddress) {
-      console.log(`🔄 Using testnet token address: ${testnetTokenAddress} (mainnet: ${tokenAddress})`);
-    }
-
     // Convert amount to smallest unit
     const amountSmallest = BigInt(toSmallestUnit(amount, decimals));
 
@@ -210,30 +179,27 @@ export async function sendEvmTokenDeposit(
 
     const data = `${transferSelector}${paddedAddress}${paddedAmount}` as `0x${string}`;
 
-    // Resolve the chain based on network name and environment (testnet vs mainnet)
-    const chain = network ? getChainForNetwork(network) : client.chain;
+    // Resolve the chain from chainId (preferred) or use client's chain
+    const chain = chainId ? getChainFromId(chainId) : client.chain;
 
     console.log('💸 Sending EVM token deposit:', {
-      token: actualTokenAddress,
-      originalToken: tokenAddress !== actualTokenAddress ? tokenAddress : undefined,
+      token: tokenAddress,
       to: depositAddress,
       amount: amount,
       amountSmallest: amountSmallest.toString(),
-      network,
       chainId: chain?.id,
       chainName: chain?.name,
-      isTestnet: isTestnet(),
     });
 
     if (!chain) {
       throw new Error(
-        `Could not determine chain for network "${network}". Please ensure you're connected to the correct network.`
+        `Could not determine chain. Please provide chainId or ensure client has chain configured.`
       );
     }
 
-    // Send transaction with explicit chain - use the resolved token address
+    // Send transaction with explicit chain
     const txHash = await client.sendTransaction({
-      to: actualTokenAddress as `0x${string}`,
+      to: tokenAddress as `0x${string}`,
       data,
       chain,
     });
@@ -434,6 +400,7 @@ export function getDepositType(
 ): 'evm-native' | 'evm-token' | 'polkadot-native' | 'polkadot-token' | 'solana-native' | 'solana-token' | 'unsupported' {
   switch (chain) {
     case 'Ethereum':
+    case 'Sepolia':
     case 'Arbitrum':
       return asset === 'ETH' ? 'evm-native' : 'evm-token';
     case 'AssetHubPolkadot':
@@ -452,7 +419,7 @@ export function getDepositType(
  * Check if a chain is supported for in-app deposits
  */
 export function isChainSupportedForDeposit(chain: string): boolean {
-  return ['Ethereum', 'Arbitrum', 'AssetHubPolkadot'].includes(chain);
+  return ['Ethereum', 'Sepolia', 'Arbitrum', 'AssetHubPolkadot'].includes(chain);
   // Add 'Solana' when kheopskit adds support
 }
 

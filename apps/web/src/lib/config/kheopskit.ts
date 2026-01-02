@@ -91,7 +91,7 @@ export const sepolia = defineChain({
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
   rpcUrls: {
     default: {
-      http: ["https://rpc.sepolia.org"],
+      http: ["https://ethereum-sepolia.publicnode.com"],
     },
   },
   blockExplorers: {
@@ -143,14 +143,17 @@ export const arbitrum = defineChain({
   caipNetworkId: "eip155:42161",
 });
 
-// All supported networks
+// All supported networks - include both mainnet and testnet
 export const APPKIT_CHAINS: [AppKitNetwork, ...AppKitNetwork[]] = [
+  // Mainnet
   polkadot,
-  polkadotAssetHub, 
-  paseo,
-  sepolia,
+  polkadotAssetHub,
   mainnet,
   arbitrum,
+  // Testnet
+  paseo,
+  paseoAssetHub,
+  sepolia,
 ];
 
 // Kheopskit configuration

@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useBalance, useReadContract } from 'wagmi';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { getBalance, readContract } from 'wagmi/actions';
+import { wagmiConfig } from '@/lib/config/wagmi';
 import { formatAmount } from '@/services/balances/utils';
 import { NUMBER_FORMAT_OPTIONS } from '@/services/constants';
 import type { TokenInfo } from '@/components/swap/types';
@@ -17,18 +18,14 @@ const erc20BalanceOfAbi = [
   },
 ] as const;
 
-/**
- * Check if we're in testnet mode
- */
-const isTestnet = process.env.NEXT_PUBLIC_USE_TESTNET === 'true';
 
 /**
- * Hook to fetch EVM token balance using wagmi
+ * Hook to fetch EVM token balance using wagmi actions (no React Query required)
  *
  * Supports:
- * - Native ETH balances (on Ethereum, Arbitrum)
+ * - Native ETH balances (on Ethereum, Sepolia, Arbitrum)
  * - ERC20 token balances (USDC, USDT, FLIP, etc.)
- * - Automatic testnet detection via NEXT_PUBLIC_USE_TESTNET
+ * - Network selection handled by asset registry (separate Ethereum/Sepolia instances)
  *
  * @param token - TokenInfo with chainId, contractAddress, decimals
  * @param userAddress - User's EVM wallet address (0x...)
@@ -38,16 +35,19 @@ export function useEvmBalance(
   token: TokenInfo | null,
   userAddress: string | undefined
 ) {
-  // Determine the correct chain ID based on testnet mode
+  const [balance, setBalance] = useState<string>('0');
+  const [balanceRaw, setBalanceRaw] = useState<string>('0');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  // Use the chain ID from token (asset registry provides correct instance)
   const chainId = useMemo(() => {
-    if (!token) return undefined;
-    return isTestnet ? token.testnetChainId : token.chainId;
+    return token?.chainId;
   }, [token]);
 
-  // Determine the correct contract address based on testnet mode
+  // Use the contract address from token (asset registry provides correct instance)
   const contractAddress = useMemo(() => {
-    if (!token) return undefined;
-    return isTestnet ? token.testnetContractAddress : token.contractAddress;
+    return token?.contractAddress;
   }, [token]);
 
   // Check if this is a native token (ETH) or ERC20
@@ -66,70 +66,75 @@ export function useEvmBalance(
     return !!token && !!chainId && !!isValidAddress;
   }, [token, chainId, isValidAddress]);
 
-  // Native ETH balance (useBalance for native tokens)
-  const nativeBalance = useBalance({
-    address: userAddress as `0x${string}`,
-    chainId: chainId,
-    query: {
-      enabled: isEnabled && isNativeToken,
-    },
-  });
-
-  // ERC20 token balance (useReadContract for ERC20 tokens)
-  const tokenBalance = useReadContract({
-    address: contractAddress as `0x${string}`,
-    abi: erc20BalanceOfAbi,
-    functionName: 'balanceOf',
-    args: userAddress ? [userAddress as `0x${string}`] : undefined,
-    chainId: chainId,
-    query: {
-      enabled: isEnabled && !isNativeToken && !!contractAddress,
-    },
-  });
-
-  // Format the balance
-  const formattedBalance = useMemo(() => {
-    if (!token) {
-      return { raw: '0', decimal: '0' };
+  // Fetch balance function
+  const fetchBalance = useCallback(async () => {
+    if (!isEnabled || !token || !chainId || !userAddress) {
+      setBalance('0');
+      setBalanceRaw('0');
+      return;
     }
 
-    let rawBalance: bigint | undefined;
+    setIsLoading(true);
+    setError(null);
 
-    if (isNativeToken) {
-      rawBalance = nativeBalance.data?.value;
-    } else {
-      rawBalance = tokenBalance.data as bigint | undefined;
+    try {
+      let rawBalance: bigint;
+
+      if (isNativeToken) {
+        // Fetch native ETH balance
+        const result = await getBalance(wagmiConfig, {
+          address: userAddress as `0x${string}`,
+          chainId: chainId as any,
+        });
+        rawBalance = result.value;
+      } else if (contractAddress) {
+        // Fetch ERC20 token balance
+        rawBalance = await readContract(wagmiConfig, {
+          address: contractAddress as `0x${string}`,
+          abi: erc20BalanceOfAbi,
+          functionName: 'balanceOf',
+          args: [userAddress as `0x${string}`],
+          chainId: chainId as any,
+        });
+      } else {
+        // No contract address and not native token
+        setBalance('0');
+        setBalanceRaw('0');
+        setIsLoading(false);
+        return;
+      }
+
+      // Format the balance
+      const formatted = formatAmount(rawBalance.toString(), token.decimals, NUMBER_FORMAT_OPTIONS);
+      setBalance(formatted.decimal);
+      setBalanceRaw(formatted.raw);
+    } catch (err) {
+      console.error('Error fetching EVM balance:', err);
+      setError(err instanceof Error ? err : new Error('Failed to fetch balance'));
+      setBalance('0');
+      setBalanceRaw('0');
+    } finally {
+      setIsLoading(false);
     }
+  }, [isEnabled, token, chainId, userAddress, isNativeToken, contractAddress]);
 
-    if (rawBalance === undefined) {
-      return { raw: '0', decimal: '0' };
-    }
+  // Fetch balance when dependencies change
+  useEffect(() => {
+    fetchBalance();
+  }, [fetchBalance]);
 
-    return formatAmount(rawBalance.toString(), token.decimals, NUMBER_FORMAT_OPTIONS);
-  }, [token, isNativeToken, nativeBalance.data?.value, tokenBalance.data]);
-
-  // Determine loading and error states
-  const isLoading = isNativeToken ? nativeBalance.isLoading : tokenBalance.isLoading;
-  const isFetching = isNativeToken ? nativeBalance.isFetching : tokenBalance.isFetching;
-  const error = isNativeToken ? nativeBalance.error : tokenBalance.error;
-
-  // Refetch function
-  const refetch = () => {
-    if (isNativeToken) {
-      return nativeBalance.refetch();
-    } else {
-      return tokenBalance.refetch();
-    }
-  };
+  // Refetch function for manual refresh
+  const refetch = useCallback(() => {
+    return fetchBalance();
+  }, [fetchBalance]);
 
   return {
     // Formatted balance for display
-    balance: formattedBalance.decimal,
+    balance,
     // Raw balance as string (for calculations)
-    balanceRaw: formattedBalance.raw,
-    // Loading states
+    balanceRaw,
+    // Loading state
     isLoading,
-    isFetching,
     // Error state
     error,
     // Whether this is an EVM token with valid chainId
@@ -146,8 +151,7 @@ export function useEvmBalance(
  */
 export function isEvmToken(token: TokenInfo | null): boolean {
   if (!token) return false;
-  const chainId = isTestnet ? token.testnetChainId : token.chainId;
-  return !!chainId;
+  return !!token.chainId;
 }
 
 export default useEvmBalance;

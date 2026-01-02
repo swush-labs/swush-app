@@ -33,11 +33,9 @@ export interface NetworkSupport {
   chainflipId?: string;  // Chainflip compound asset ID (e.g., "dot.hub", "usdc.arb")
   decimals?: number;
   contractAddress?: string;
-  testnetContractAddress?: string;  // Testnet contract address (used when NEXT_PUBLIC_IS_TESTNET=true)
   assetId?: string;  // Polkadot asset ID for Assets pallet (e.g., "1337" for USDC)
   // EVM chain identification (for balance fetching)
-  chainId?: number;  // EVM chain ID (e.g., 1 for Ethereum, 42161 for Arbitrum)
-  testnetChainId?: number;  // EVM testnet chain ID (e.g., 11155111 for Sepolia)
+  chainId?: number;  // EVM chain ID (e.g., 1 for Ethereum, 11155111 for Sepolia, 42161 for Arbitrum)
 }
 
 // Unified asset-network data structure
@@ -103,11 +101,9 @@ const createNetworkData = (
     chainflipId: instance.chainflipId,
     decimals: instance.decimals,
     contractAddress: instance.contractAddress,
-    testnetContractAddress: instance.testnetContractAddress,
     assetId: instance.assetId,
     // Pass through EVM chain IDs (for balance fetching)
     chainId: instance.chainId,
-    testnetChainId: instance.testnetChainId,
   };
 };
 

@@ -14,4 +14,3 @@ export function KheopskitProvider({ children }: { children: React.ReactNode }) {
     </KheopskitProviderCore>
   );
 }
-

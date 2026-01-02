@@ -29,12 +29,10 @@ export interface TokenInfo {
   // Chainflip-specific fields
   provider?: SwapProvider;        // 'xcm' (default) or 'chainflip'
   chainflipId?: string;           // Chainflip compound asset ID (e.g., "dot.hub", "usdc.arb")
-  contractAddress?: string;       // ERC20/SPL contract address (mainnet)
-  testnetContractAddress?: string; // ERC20/SPL contract address (testnet)
+  contractAddress?: string;       // ERC20/SPL contract address
   assetId?: string;               // Polkadot asset ID for Assets pallet (e.g., "1337" for USDC on AssetHub)
   // EVM chain identification
-  chainId?: number;               // EVM chain ID (e.g., 1 for Ethereum, 42161 for Arbitrum)
-  testnetChainId?: number;        // EVM testnet chain ID (e.g., 11155111 for Sepolia)
+  chainId?: number;               // EVM chain ID (e.g., 1 for Ethereum, 11155111 for Sepolia, 42161 for Arbitrum)
 }
 
 // Group of the same asset symbol across multiple networks
