@@ -12,9 +12,9 @@
  */
 
 import { type Message, xcm } from '@sodazone/ocelloids-client';
-import { OcelloidsClient } from '../apps/web/src/services/xcm-tracker/OcelloidsClient';
-import { XcmMessageTracker } from '../apps/web/src/services/xcm-tracker/XcmMessageTracker';
-import { getOcelloidsUrn, isChainSupported } from '../apps/web/src/services/xcm-tracker/chain-mapping';
+import { OcelloidsClient } from '../../apps/web/src/services/xcm-tracker/OcelloidsClient';
+import { XcmMessageTracker } from '../../apps/web/src/services/xcm-tracker/XcmMessageTracker';
+import { getOcelloidsUrn, isChainSupported } from '../../apps/web/src/services/xcm-tracker/chain-mapping';
 
 // Node.js globals
 declare const process: {
