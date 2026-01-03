@@ -143,6 +143,45 @@ export const arbitrum = defineChain({
   caipNetworkId: "eip155:42161",
 });
 
+// Solana for Chainflip integration
+export const solanaMainnet = defineChain({
+  id: "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+  name: "Solana",
+  nativeCurrency: { name: "Solana", symbol: "SOL", decimals: 9 },
+  rpcUrls: {
+    default: {
+      http: ["https://api.mainnet-beta.solana.com"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Solscan",
+      url: "https://solscan.io",
+    },
+  },
+  chainNamespace: "solana",
+  caipNetworkId: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+});
+
+export const solanaDevnet = defineChain({
+  id: "EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+  name: "Solana Devnet",
+  nativeCurrency: { name: "Solana", symbol: "SOL", decimals: 9 },
+  rpcUrls: {
+    default: {
+      http: ["https://api.devnet.solana.com"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Solscan Devnet",
+      url: "https://solscan.io?cluster=devnet",
+    },
+  },
+  chainNamespace: "solana",
+  caipNetworkId: "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+});
+
 // All supported networks - include both mainnet and testnet
 export const APPKIT_CHAINS: [AppKitNetwork, ...AppKitNetwork[]] = [
   // Mainnet
@@ -150,16 +189,18 @@ export const APPKIT_CHAINS: [AppKitNetwork, ...AppKitNetwork[]] = [
   polkadotAssetHub,
   mainnet,
   arbitrum,
+  solanaMainnet,
   // Testnet
   paseo,
   paseoAssetHub,
   sepolia,
+  solanaDevnet,
 ];
 
 // Kheopskit configuration
 export const kheopskitConfig: KheopskitConfig = {
   autoReconnect: true,
-  platforms: ["polkadot", "ethereum"], // Support both platforms
+  platforms: ["polkadot", "ethereum", "solana"], // Support all three platforms
   walletConnect: {
     projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || "demo-project-id",
     metadata: {

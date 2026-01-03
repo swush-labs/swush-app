@@ -74,13 +74,16 @@ interface EvmWalletClient {
 }
 
 /**
- * Solana account interface (from kheopskit when available)
+ * Solana account interface (from kheopskit)
  */
 interface SolanaAccount {
   address: string;
   publicKey: Uint8Array;
   signMessage: (message: Uint8Array) => Promise<Uint8Array>;
-  signAndSendTransaction?: (transaction: unknown) => Promise<string>;
+  signAndSendTransaction: (
+    transaction: Uint8Array,
+    options?: { minContextSlot?: number }
+  ) => Promise<{ signature: Uint8Array }>;
 }
 
 /**
@@ -232,50 +235,98 @@ export async function sendEvmTokenDeposit(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Solana Deposit Functions (Placeholder - requires @solana/kit)
+// Solana Deposit Functions
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
  * Send native SOL deposit to Chainflip deposit address
  * 
- * Note: This is a placeholder. Full implementation requires @solana/kit
- * and will be completed when kheopskit adds Solana support.
- * 
  * @param account - Solana account from kheopskit
  * @param depositAddress - Chainflip deposit address
  * @param amount - Amount in human-readable format (e.g., "1.5")
+ * @param rpcUrl - Solana RPC URL (defaults to mainnet)
  * @returns Transaction hash
  */
 export async function sendSolanaDeposit(
   account: SolanaAccount,
   depositAddress: string,
-  amount: string
+  amount: string,
+  rpcUrl: string = 'https://api.mainnet-beta.solana.com'
 ): Promise<DepositResult> {
-  // TODO: Implement when @solana/kit is added
-  // This will require:
-  // 1. Creating a SystemProgram.transfer instruction
-  // 2. Building a transaction with recent blockhash
-  // 3. Signing with account.signAndSendTransaction or manual flow
-
-  console.warn('⚠️ Solana deposits not yet implemented');
-
-  return {
-    txHash: '',
-    success: false,
-    error: 'Solana deposits not yet implemented. Please use a Solana wallet directly.',
-  };
+  try {
+    // Dynamic import to avoid bundling issues
+    const { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } = await import('@solana/web3.js');
+    
+    const connection = new Connection(rpcUrl, 'confirmed');
+    
+    // Convert amount to lamports (SOL has 9 decimals)
+    const lamports = BigInt(toSmallestUnit(amount, 9));
+    
+    const fromPubkey = new PublicKey(account.address);
+    const toPubkey = new PublicKey(depositAddress);
+    
+    // Create transfer instruction
+    const transferInstruction = SystemProgram.transfer({
+      fromPubkey,
+      toPubkey,
+      lamports: Number(lamports), // SystemProgram.transfer expects number
+    });
+    
+    // Get recent blockhash
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+    
+    // Build transaction
+    const transaction = new Transaction({
+      blockhash,
+      lastValidBlockHeight,
+      feePayer: fromPubkey,
+    }).add(transferInstruction);
+    
+    // Serialize transaction
+    const serializedTx = transaction.serialize({
+      requireAllSignatures: false,
+      verifySignatures: false,
+    });
+    
+    console.log('💸 Sending SOL deposit:', {
+      from: account.address,
+      to: depositAddress,
+      amount,
+      lamports: lamports.toString(),
+    });
+    
+    // Sign and send via kheopskit wallet
+    const { signature } = await account.signAndSendTransaction(serializedTx);
+    
+    // Convert signature bytes to base58 string
+    const bs58 = await import('bs58');
+    const signatureStr = bs58.default.encode(signature);
+    
+    console.log('✅ SOL deposit sent:', signatureStr);
+    
+    return {
+      txHash: signatureStr,
+      success: true,
+    };
+  } catch (error) {
+    console.error('❌ SOL deposit failed:', error);
+    return {
+      txHash: '',
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
 }
 
 /**
  * Send SPL token deposit to Chainflip deposit address
- * 
- * Note: This is a placeholder. Full implementation requires @solana/kit
  * 
  * @param account - Solana account from kheopskit
  * @param depositAddress - Chainflip deposit address
  * @param tokenMint - SPL token mint address
  * @param amount - Amount in human-readable format
  * @param decimals - Token decimals
+ * @param rpcUrl - Solana RPC URL (defaults to mainnet)
  * @returns Transaction hash
  */
 export async function sendSolanaTokenDeposit(
@@ -283,21 +334,81 @@ export async function sendSolanaTokenDeposit(
   depositAddress: string,
   tokenMint: string,
   amount: string,
-  decimals: number
+  decimals: number,
+  rpcUrl: string = 'https://api.mainnet-beta.solana.com'
 ): Promise<DepositResult> {
-  // TODO: Implement when @solana/kit is added
-  // This will require:
-  // 1. Getting/creating associated token accounts
-  // 2. Creating a Token.transfer instruction
-  // 3. Building and signing the transaction
-
-  console.warn('⚠️ Solana token deposits not yet implemented');
-
-  return {
-    txHash: '',
-    success: false,
-    error: 'Solana token deposits not yet implemented. Please use a Solana wallet directly.',
-  };
+  try {
+    // Dynamic imports
+    const { Connection, PublicKey, Transaction } = await import('@solana/web3.js');
+    const { getAssociatedTokenAddress, createTransferInstruction, TOKEN_PROGRAM_ID } = await import('@solana/spl-token');
+    
+    const connection = new Connection(rpcUrl, 'confirmed');
+    
+    const fromPubkey = new PublicKey(account.address);
+    const toPubkey = new PublicKey(depositAddress);
+    const mintPubkey = new PublicKey(tokenMint);
+    
+    // Get associated token accounts
+    const sourceAta = await getAssociatedTokenAddress(mintPubkey, fromPubkey);
+    const destAta = await getAssociatedTokenAddress(mintPubkey, toPubkey);
+    
+    // Convert amount to smallest unit
+    const tokenAmount = BigInt(toSmallestUnit(amount, decimals));
+    
+    // Create transfer instruction
+    const transferInstruction = createTransferInstruction(
+      sourceAta,
+      destAta,
+      fromPubkey,
+      tokenAmount,
+      [],
+      TOKEN_PROGRAM_ID
+    );
+    
+    // Get recent blockhash
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+    
+    // Build transaction
+    const transaction = new Transaction({
+      blockhash,
+      lastValidBlockHeight,
+      feePayer: fromPubkey,
+    }).add(transferInstruction);
+    
+    // Serialize transaction
+    const serializedTx = transaction.serialize({
+      requireAllSignatures: false,
+      verifySignatures: false,
+    });
+    
+    console.log('💸 Sending SPL token deposit:', {
+      from: account.address,
+      to: depositAddress,
+      token: tokenMint,
+      amount,
+    });
+    
+    // Sign and send via kheopskit wallet
+    const { signature } = await account.signAndSendTransaction(serializedTx);
+    
+    // Convert signature bytes to base58 string
+    const bs58 = await import('bs58');
+    const signatureStr = bs58.default.encode(signature);
+    
+    console.log('✅ SPL token deposit sent:', signatureStr);
+    
+    return {
+      txHash: signatureStr,
+      success: true,
+    };
+  } catch (error) {
+    console.error('❌ SPL token deposit failed:', error);
+    return {
+      txHash: '',
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -430,8 +541,7 @@ export function getDepositType(
  * Check if a chain is supported for in-app deposits
  */
 export function isChainSupportedForDeposit(chain: string): boolean {
-  return ['Ethereum', 'Sepolia', 'Arbitrum', 'AssetHubPolkadot'].includes(chain);
-  // Add 'Solana' when kheopskit adds support
+  return ['Ethereum', 'Sepolia', 'Arbitrum', 'AssetHubPolkadot', 'Solana'].includes(chain);
 }
 
 
