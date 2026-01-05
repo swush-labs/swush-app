@@ -182,6 +182,27 @@ export const solanaDevnet = defineChain({
   caipNetworkId: "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
 });
 
+// AssetHub Chainflip Testnet (Perseverance)
+export const assetHubChainflipTestnet = defineChain({
+  id: "assethub-perseverance-chainflip",
+  name: "AssetHub Chainflip Testnet",
+  nativeCurrency: { name: "Polkadot", symbol: "DOT", decimals: 10 },
+  rpcUrls: {
+    default: {
+      http: [], // WebSocket only endpoint
+      webSocket: ["wss://assethub.perseverance.chainflip.io"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Perseverance Explorer",
+      url: "https://scan.perseverance.chainflip.io",
+    },
+  },
+  chainNamespace: "polkadot",
+  caipNetworkId: "polkadot:assethub-perseverance-chainflip",
+});
+
 // All supported networks - include both mainnet and testnet
 export const APPKIT_CHAINS: [AppKitNetwork, ...AppKitNetwork[]] = [
   // Mainnet
@@ -195,6 +216,7 @@ export const APPKIT_CHAINS: [AppKitNetwork, ...AppKitNetwork[]] = [
   paseoAssetHub,
   sepolia,
   solanaDevnet,
+  assetHubChainflipTestnet,
 ];
 
 // Kheopskit configuration

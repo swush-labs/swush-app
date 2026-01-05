@@ -37,6 +37,7 @@ export {
   sendSolanaDeposit,
   sendSolanaTokenDeposit,
   sendPolkadotDeposit,
+  sendPolkadotTestnetDeposit,
   getDepositType,
   isChainSupportedForDeposit,
   type DepositResult,

@@ -40,6 +40,8 @@ export const CHAINFLIP_ONLY_NETWORKS = [
   'Arbitrum',
   'Solana',
   'Bitcoin',
+  'AssetHubPerseverance',
+  'SolanaDevnet',
 ] as const;
 
 export type AssetRegistryEntry = {
@@ -132,6 +134,16 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         decimals: 6,
         assetId: "1337",  // Asset ID for Assets.transfer call
       },
+      "USDC-1337-AssetHubPerseverance": {
+        network: "AssetHubPerseverance",
+        assetType: "Asset ID",
+        displayName: "USDC (AssetHub Perseverance)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'usdc.hub',
+        decimals: 6,
+        assetId: "1337",  // Asset ID for Assets.transfer call
+      },
       "USDC-22-Hydration": {
         network: "Hydration",
         assetType: "Asset ID",
@@ -207,6 +219,16 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         verified: true,
         provider: 'xcm',
         chainflipId: 'usdt.hub',  // Available for Chainflip cross-ecosystem swaps
+        decimals: 6,
+        assetId: "1984",  // Asset ID for Assets.transfer call
+      },
+      "USDt-1984-AssetHubPerseverance": {
+        network: "AssetHubPerseverance",
+        assetType: "Asset ID",
+        displayName: "USDt (AssetHub Perseverance)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'usdt.hub',
         decimals: 6,
         assetId: "1984",  // Asset ID for Assets.transfer call
       },
@@ -288,6 +310,16 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         verified: true,
         provider: 'xcm',
       },
+      // ─── Chainflip Testnet ───
+      "DOT-native-AssetHubPerseverance": {
+        network: "AssetHubPerseverance",
+        assetType: "Multi-Location",
+        displayName: "DOT (AssetHub Perseverance)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'dot.hub',
+        decimals: 10,
+      },
     }
   },
 
@@ -363,7 +395,7 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
   },
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // SOL - Chainflip only (Solana)
+  // SOL - Chainflip only (Solana Mainnet and Devnet)
   // ═══════════════════════════════════════════════════════════════════════════════
   "SOL": {
     symbol: "SOL",
@@ -375,6 +407,15 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         network: "Solana",
         assetType: "Native",
         displayName: "SOL (Solana)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'sol.sol',
+        decimals: 9,
+      },
+      "SOL-SolanaDevnet": {
+        network: "SolanaDevnet",
+        assetType: "Native",
+        displayName: "SOL (Solana Devnet)",
         verified: true,
         provider: 'chainflip',
         chainflipId: 'sol.sol',

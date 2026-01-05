@@ -510,6 +510,100 @@ export async function sendPolkadotDeposit(
 }
 
 /**
+ * Send DOT or AssetHub token deposit to Chainflip Testnet (Perseverance)
+ * Uses Polkadot API (PAPI) with unsafe API for testnet
+ * 
+ * @param polkadotSigner - Polkadot signer from kheopskit
+ * @param depositAddress - Chainflip deposit address
+ * @param amount - Amount in human-readable format (e.g., "1.5")
+ * @param decimals - Token decimals (10 for DOT, 6 for USDC)
+ * @param assetId - For tokens like USDC (asset ID 1337), undefined for DOT
+ * @returns Transaction hash
+ */
+export async function sendPolkadotTestnetDeposit(
+  polkadotSigner: any,
+  depositAddress: string,
+  amount: string,
+  decimals: number,
+  assetId?: string
+): Promise<DepositResult> {
+  let client: ReturnType<typeof createClient> | null = null;
+  
+  try {
+    console.log('💸 Sending Polkadot testnet deposit:', {
+      to: depositAddress,
+      amount: amount,
+      decimals,
+      assetId,
+    });
+
+    // Create WebSocket provider for AssetHub Chainflip Testnet
+    const wsProvider = getWsProvider('wss://assethub.perseverance.chainflip.io');
+    
+    // Create client
+    client = createClient(wsProvider);
+    
+    // Use unsafe API for testnet (no typed descriptor available)
+    const unsafeApi = client.getUnsafeApi();
+    
+    // Build transfer transaction
+    const amountBigInt = toSmallestUnit(amount, decimals);
+    
+    let tx;
+    if (assetId) {
+      // Transfer asset (USDC, USDT, etc.) using Assets pallet
+      console.log('🔧 Building Assets.transfer transaction for asset ID:', assetId);
+      tx = unsafeApi.tx.Assets.transfer({
+        id: Number(assetId),
+        target: {
+          type: 'Id',
+          value: depositAddress,
+        },
+        amount: amountBigInt,
+      });
+    } else {
+      // Transfer native DOT using Balances pallet
+      console.log('🔧 Building Balances.transfer_keep_alive transaction');
+      tx = unsafeApi.tx.Balances.transfer_keep_alive({
+        dest: {
+          type: 'Id',
+          value: depositAddress,
+        },
+        value: amountBigInt,
+      });
+    }
+    
+    console.log('🔐 Signing and submitting transaction...');
+    
+    // Sign and submit using the polkadot signer
+    const result = await tx.signAndSubmit(polkadotSigner);
+    
+    console.log('✅ Polkadot testnet deposit sent:', result.txHash);
+    
+    return {
+      txHash: result.txHash,
+      success: true,
+    };
+  } catch (error) {
+    console.error('❌ Polkadot testnet deposit failed:', error);
+    return {
+      txHash: '',
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  } finally {
+    // Cleanup: destroy client connection
+    if (client) {
+      try {
+        client.destroy();
+      } catch (e) {
+        console.warn('Failed to destroy PAPI client:', e);
+      }
+    }
+  }
+}
+
+/**
  * Determine the appropriate deposit function based on chain and asset
  * 
  * @param chain - Chainflip chain name
@@ -519,7 +613,7 @@ export async function sendPolkadotDeposit(
 export function getDepositType(
   chain: string,
   asset: string
-): 'evm-native' | 'evm-token' | 'polkadot-native' | 'polkadot-token' | 'solana-native' | 'solana-token' | 'unsupported' {
+): 'evm-native' | 'evm-token' | 'polkadot-native' | 'polkadot-token' | 'polkadot-testnet-native' | 'polkadot-testnet-token' | 'solana-native' | 'solana-token' | 'unsupported' {
   switch (chain) {
     case 'Ethereum':
     case 'Sepolia':
@@ -527,7 +621,10 @@ export function getDepositType(
       return asset === 'ETH' ? 'evm-native' : 'evm-token';
     case 'AssetHubPolkadot':
       return asset === 'DOT' ? 'polkadot-native' : 'polkadot-token';
+    case 'AssetHubPerseverance':
+      return asset === 'DOT' ? 'polkadot-testnet-native' : 'polkadot-testnet-token';
     case 'Solana':
+    case 'SolanaDevnet':
       return asset === 'SOL' ? 'solana-native' : 'solana-token';
     case 'Bitcoin':
       // Bitcoin requires external wallet - not supported in-app
@@ -541,7 +638,7 @@ export function getDepositType(
  * Check if a chain is supported for in-app deposits
  */
 export function isChainSupportedForDeposit(chain: string): boolean {
-  return ['Ethereum', 'Sepolia', 'Arbitrum', 'AssetHubPolkadot', 'Solana'].includes(chain);
+  return ['Ethereum', 'Sepolia', 'Arbitrum', 'AssetHubPolkadot', 'AssetHubPerseverance', 'Solana', 'SolanaDevnet'].includes(chain);
 }
 
 

@@ -3,6 +3,8 @@
 import { useMemo } from 'react';
 import { useParaSpellBalances } from './useParaSpellBalances';
 import { useEvmBalance, isEvmToken } from './useEvmBalance';
+import { useSolanaBalance, isSolanaToken } from './useSolanaBalance';
+import { usePolkadotTestnetBalance, isPolkadotTestnetToken } from './usePolkadotTestnetBalance';
 import type { TokenInfo } from '@/components/swap/types';
 
 interface UseUnifiedBalancesProps {
@@ -30,10 +32,12 @@ interface UseUnifiedBalancesReturn {
 
 /**
  * Unified balance hook that automatically routes to the correct balance source:
- * - EVM tokens (Ethereum, Arbitrum): Uses wagmi useBalance/useReadContract
- * - Polkadot tokens (XCM): Uses ParaSpell SDK getAssetBalance
+ * - EVM tokens (Ethereum, Arbitrum, Sepolia): Uses wagmi useBalance/useReadContract
+ * - Solana tokens (Solana, SolanaDevnet): Uses @solana/web3.js
+ * - Polkadot testnet (AssetHubPerseverance): Uses PAPI unsafe API
+ * - Polkadot XCM tokens: Uses ParaSpell SDK getAssetBalance
  *
- * The hook detects the token type based on chainId presence and uses the appropriate method.
+ * The hook detects the token type and routes to the appropriate balance fetcher.
  */
 export function useUnifiedBalances({
   isConnected,
@@ -47,15 +51,21 @@ export function useUnifiedBalances({
   // Detect token types
   const isInputEvmToken = useMemo(() => isEvmToken(inputToken), [inputToken]);
   const isOutputEvmToken = useMemo(() => isEvmToken(outputToken), [outputToken]);
+  
+  const isInputSolanaToken = useMemo(() => isSolanaToken(inputToken), [inputToken]);
+  const isOutputSolanaToken = useMemo(() => isSolanaToken(outputToken), [outputToken]);
+  
+  const isInputPolkadotTestnet = useMemo(() => isPolkadotTestnetToken(inputToken), [inputToken]);
+  const isOutputPolkadotTestnet = useMemo(() => isPolkadotTestnetToken(outputToken), [outputToken]);
 
   // ParaSpell balances for XCM tokens
   const paraSpellBalances = useParaSpellBalances({
     isConnected,
     walletAddress,
     recipientAddress,
-    // Only pass non-EVM tokens to ParaSpell
-    inputToken: isInputEvmToken ? null : inputToken,
-    outputToken: isOutputEvmToken ? null : outputToken,
+    // Only pass XCM tokens to ParaSpell (exclude EVM, Solana, and testnet)
+    inputToken: (isInputEvmToken || isInputSolanaToken || isInputPolkadotTestnet) ? null : inputToken,
+    outputToken: (isOutputEvmToken || isOutputSolanaToken || isOutputPolkadotTestnet) ? null : outputToken,
     determineCurrency,
     getTAssetFromKey,
   });
@@ -72,59 +82,197 @@ export function useUnifiedBalances({
     recipientAddress || walletAddress
   );
 
-  // Combine balances based on token types
+  // Solana balance for input token
+  const solanaInputBalance = useSolanaBalance(
+    isInputSolanaToken ? inputToken : null,
+    walletAddress
+  );
+
+  // Solana balance for output token (uses recipient address)
+  const solanaOutputBalance = useSolanaBalance(
+    isOutputSolanaToken ? outputToken : null,
+    recipientAddress || walletAddress
+  );
+
+  // Polkadot testnet balance for input token
+  const testnetInputBalance = usePolkadotTestnetBalance(
+    isInputPolkadotTestnet ? inputToken : null,
+    walletAddress
+  );
+
+  // Polkadot testnet balance for output token (uses recipient address)
+  const testnetOutputBalance = usePolkadotTestnetBalance(
+    isOutputPolkadotTestnet ? outputToken : null,
+    recipientAddress || walletAddress
+  );
+
+  // Combine balances based on token types (priority: EVM > Solana > Testnet > ParaSpell)
   const inputBalance = useMemo(() => {
     if (!isConnected || !inputToken) return '0';
-    return isInputEvmToken ? evmInputBalance.balance : paraSpellBalances.inputBalance;
-  }, [isConnected, inputToken, isInputEvmToken, evmInputBalance.balance, paraSpellBalances.inputBalance]);
+    if (isInputEvmToken) return evmInputBalance.balance;
+    if (isInputSolanaToken) return solanaInputBalance.balance;
+    if (isInputPolkadotTestnet) return testnetInputBalance.balance;
+    return paraSpellBalances.inputBalance;
+  }, [
+    isConnected, 
+    inputToken, 
+    isInputEvmToken, 
+    isInputSolanaToken, 
+    isInputPolkadotTestnet,
+    evmInputBalance.balance, 
+    solanaInputBalance.balance,
+    testnetInputBalance.balance,
+    paraSpellBalances.inputBalance
+  ]);
 
   const outputBalance = useMemo(() => {
     if (!isConnected || !outputToken) return '0';
-    return isOutputEvmToken ? evmOutputBalance.balance : paraSpellBalances.outputBalance;
-  }, [isConnected, outputToken, isOutputEvmToken, evmOutputBalance.balance, paraSpellBalances.outputBalance]);
+    if (isOutputEvmToken) return evmOutputBalance.balance;
+    if (isOutputSolanaToken) return solanaOutputBalance.balance;
+    if (isOutputPolkadotTestnet) return testnetOutputBalance.balance;
+    return paraSpellBalances.outputBalance;
+  }, [
+    isConnected, 
+    outputToken, 
+    isOutputEvmToken, 
+    isOutputSolanaToken, 
+    isOutputPolkadotTestnet,
+    evmOutputBalance.balance, 
+    solanaOutputBalance.balance,
+    testnetOutputBalance.balance,
+    paraSpellBalances.outputBalance
+  ]);
 
   const inputBalanceRaw = useMemo(() => {
     if (!isConnected || !inputToken) return '0';
-    return isInputEvmToken ? evmInputBalance.balanceRaw : paraSpellBalances.inputBalanceRaw;
-  }, [isConnected, inputToken, isInputEvmToken, evmInputBalance.balanceRaw, paraSpellBalances.inputBalanceRaw]);
+    if (isInputEvmToken) return evmInputBalance.balanceRaw;
+    if (isInputSolanaToken) return solanaInputBalance.balanceRaw;
+    if (isInputPolkadotTestnet) return testnetInputBalance.balanceRaw;
+    return paraSpellBalances.inputBalanceRaw;
+  }, [
+    isConnected, 
+    inputToken, 
+    isInputEvmToken, 
+    isInputSolanaToken, 
+    isInputPolkadotTestnet,
+    evmInputBalance.balanceRaw, 
+    solanaInputBalance.balanceRaw,
+    testnetInputBalance.balanceRaw,
+    paraSpellBalances.inputBalanceRaw
+  ]);
 
   const outputBalanceRaw = useMemo(() => {
     if (!isConnected || !outputToken) return '0';
-    return isOutputEvmToken ? evmOutputBalance.balanceRaw : paraSpellBalances.outputBalanceRaw;
-  }, [isConnected, outputToken, isOutputEvmToken, evmOutputBalance.balanceRaw, paraSpellBalances.outputBalanceRaw]);
+    if (isOutputEvmToken) return evmOutputBalance.balanceRaw;
+    if (isOutputSolanaToken) return solanaOutputBalance.balanceRaw;
+    if (isOutputPolkadotTestnet) return testnetOutputBalance.balanceRaw;
+    return paraSpellBalances.outputBalanceRaw;
+  }, [
+    isConnected, 
+    outputToken, 
+    isOutputEvmToken, 
+    isOutputSolanaToken, 
+    isOutputPolkadotTestnet,
+    evmOutputBalance.balanceRaw, 
+    solanaOutputBalance.balanceRaw,
+    testnetOutputBalance.balanceRaw,
+    paraSpellBalances.outputBalanceRaw
+  ]);
 
   // Combined loading state
   const isBalanceLoading = useMemo(() => {
     const inputLoading = isInputEvmToken ? evmInputBalance.isLoading : false;
     const outputLoading = isOutputEvmToken ? evmOutputBalance.isLoading : false;
-    return paraSpellBalances.isBalanceLoading || inputLoading || outputLoading;
-  }, [isInputEvmToken, isOutputEvmToken, evmInputBalance.isLoading, evmOutputBalance.isLoading, paraSpellBalances.isBalanceLoading]);
+    const inputSolanaLoading = isInputSolanaToken ? solanaInputBalance.isLoading : false;
+    const outputSolanaLoading = isOutputSolanaToken ? solanaOutputBalance.isLoading : false;
+    const inputTestnetLoading = isInputPolkadotTestnet ? testnetInputBalance.isLoading : false;
+    const outputTestnetLoading = isOutputPolkadotTestnet ? testnetOutputBalance.isLoading : false;
+    
+    return (
+      paraSpellBalances.isBalanceLoading || 
+      inputLoading || 
+      outputLoading || 
+      inputSolanaLoading || 
+      outputSolanaLoading ||
+      inputTestnetLoading ||
+      outputTestnetLoading
+    );
+  }, [
+    isInputEvmToken, 
+    isOutputEvmToken, 
+    isInputSolanaToken, 
+    isOutputSolanaToken,
+    isInputPolkadotTestnet,
+    isOutputPolkadotTestnet,
+    evmInputBalance.isLoading, 
+    evmOutputBalance.isLoading, 
+    solanaInputBalance.isLoading,
+    solanaOutputBalance.isLoading,
+    testnetInputBalance.isLoading,
+    testnetOutputBalance.isLoading,
+    paraSpellBalances.isBalanceLoading
+  ]);
 
   // Balances loaded state
   const balancesLoaded = useMemo(() => {
-    // For EVM tokens, consider loaded when not loading and no error
+    // For EVM tokens, consider loaded when not loading
     const inputLoaded = isInputEvmToken
       ? !evmInputBalance.isLoading
+      : isInputSolanaToken
+      ? !solanaInputBalance.isLoading
+      : isInputPolkadotTestnet
+      ? !testnetInputBalance.isLoading
       : true;
+      
     const outputLoaded = isOutputEvmToken
       ? !evmOutputBalance.isLoading
+      : isOutputSolanaToken
+      ? !solanaOutputBalance.isLoading
+      : isOutputPolkadotTestnet
+      ? !testnetOutputBalance.isLoading
       : true;
 
     return paraSpellBalances.balancesLoaded && inputLoaded && outputLoaded;
-  }, [isInputEvmToken, isOutputEvmToken, evmInputBalance.isLoading, evmOutputBalance.isLoading, paraSpellBalances.balancesLoaded]);
+  }, [
+    isInputEvmToken, 
+    isOutputEvmToken, 
+    isInputSolanaToken, 
+    isOutputSolanaToken,
+    isInputPolkadotTestnet,
+    isOutputPolkadotTestnet,
+    evmInputBalance.isLoading, 
+    evmOutputBalance.isLoading, 
+    solanaInputBalance.isLoading,
+    solanaOutputBalance.isLoading,
+    testnetInputBalance.isLoading,
+    testnetOutputBalance.isLoading,
+    paraSpellBalances.balancesLoaded
+  ]);
 
-  // Reset balances - handles both EVM and XCM
+  // Reset balances - handles all balance types
   const resetBalances = (afterSwap = false) => {
     // ParaSpell handles its own reset
     paraSpellBalances.resetBalances(afterSwap);
 
-    // For EVM tokens, trigger refetch
+    // For all other token types, trigger refetch
     if (afterSwap) {
       if (isInputEvmToken) {
         evmInputBalance.refetch();
       }
       if (isOutputEvmToken) {
         evmOutputBalance.refetch();
+      }
+      if (isInputSolanaToken) {
+        solanaInputBalance.refetch();
+      }
+      if (isOutputSolanaToken) {
+        solanaOutputBalance.refetch();
+      }
+      if (isInputPolkadotTestnet) {
+        testnetInputBalance.refetch();
+      }
+      if (isOutputPolkadotTestnet) {
+        testnetOutputBalance.refetch();
       }
     }
   };
@@ -134,12 +282,24 @@ export function useUnifiedBalances({
     // Refresh ParaSpell balances
     await paraSpellBalances.refreshBalances(afterSwap);
 
-    // Refresh EVM balances
+    // Refresh all other balance types
     if (isInputEvmToken) {
       await evmInputBalance.refetch();
     }
     if (isOutputEvmToken) {
       await evmOutputBalance.refetch();
+    }
+    if (isInputSolanaToken) {
+      await solanaInputBalance.refetch();
+    }
+    if (isOutputSolanaToken) {
+      await solanaOutputBalance.refetch();
+    }
+    if (isInputPolkadotTestnet) {
+      await testnetInputBalance.refetch();
+    }
+    if (isOutputPolkadotTestnet) {
+      await testnetOutputBalance.refetch();
     }
   };
 

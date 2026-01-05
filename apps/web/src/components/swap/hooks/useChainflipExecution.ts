@@ -14,10 +14,12 @@ import {
   sendEvmNativeDeposit,
   sendEvmTokenDeposit,
   sendPolkadotDeposit,
+  sendPolkadotTestnetDeposit,
   getDepositType,
   type DepositResult,
 } from '@/services/chainflip/signerUtils';
 import { getNetworkNameFromChainId } from '@/lib/config/kheopskit';
+import { AddressService } from '@/services/AddressService';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Error Parsing Utilities
@@ -406,6 +408,38 @@ export function useChainflipExecution({
         recipient: recipientAddress,
       });
 
+      // Format addresses for Chainflip (AssetHub format for Polkadot addresses)
+      const addressService = AddressService.getInstance();
+      let formattedDestinationAddress = recipientAddress;
+      let formattedRefundAddress = walletAddress;
+
+      // Format Polkadot/AssetHub addresses with correct SS58 prefix
+      if (outputToken.network && (outputToken.network.includes('AssetHub') || outputToken.network.includes('Polkadot'))) {
+        try {
+          formattedDestinationAddress = addressService.formatForChainflip(recipientAddress);
+          console.log('📍 Formatted destination address:', {
+            original: recipientAddress,
+            formatted: formattedDestinationAddress,
+          });
+        } catch (error) {
+          console.error('❌ Invalid destination address:', error);
+          throw new Error(`Invalid Polkadot destination address: ${recipientAddress}`);
+        }
+      }
+
+      if (inputToken.network && (inputToken.network.includes('AssetHub') || inputToken.network.includes('Polkadot'))) {
+        try {
+          formattedRefundAddress = addressService.formatForChainflip(walletAddress);
+          console.log('📍 Formatted refund address:', {
+            original: walletAddress,
+            formatted: formattedRefundAddress,
+          });
+        } catch (error) {
+          console.error('❌ Invalid refund address:', error);
+          throw new Error(`Invalid Polkadot refund address: ${walletAddress}`);
+        }
+      }
+
       // Calculate slippage protection parameters
       const retryMinutes = 15;
       let minimumPrice = '0';
@@ -424,9 +458,9 @@ export function useChainflipExecution({
       const swapResponse: ChainflipSwapResponse = await chainflipClient.requestSwapDepositAddress({
         sourceAsset: inputToken.chainflipId,
         destinationAsset: outputToken.chainflipId,
-        destinationAddress: recipientAddress,
+        destinationAddress: formattedDestinationAddress,
         minimumPrice,
-        refundAddress: walletAddress,
+        refundAddress: formattedRefundAddress,
         retryDurationBlocks: minutesToBlocks(retryMinutes),
       });
 
@@ -504,7 +538,7 @@ export function useChainflipExecution({
 
         case 'polkadot-native':
         case 'polkadot-token':
-          // DOT or tokens on AssetHub
+          // DOT or tokens on AssetHub (mainnet)
           if (!polkadotSigner) {
             throw new Error('Polkadot wallet not connected');
           }
@@ -517,6 +551,24 @@ export function useChainflipExecution({
             inputAmount,
             inputToken.decimals || 10,
             assetId
+          );
+          break;
+
+        case 'polkadot-testnet-native':
+        case 'polkadot-testnet-token':
+          // DOT or tokens on AssetHub Chainflip Testnet (Perseverance)
+          if (!polkadotSigner) {
+            throw new Error('Polkadot wallet not connected');
+          }
+          const testnetAssetId = depositType === 'polkadot-testnet-token' 
+            ? inputToken.assetId  // e.g., "1337" for USDC
+            : undefined;
+          depositResult = await sendPolkadotTestnetDeposit(
+            polkadotSigner,
+            swapResponse.address,
+            inputAmount,
+            inputToken.decimals || 10,
+            testnetAssetId
           );
           break;
 

@@ -118,4 +118,24 @@ export class AddressService {
       return null;
     }
   }
+
+  /**
+   * Format address for Chainflip (AssetHub format with prefix 0)
+   * Used for Chainflip API calls that require AssetHub addresses
+   * 
+   * @param address - Any valid SS58 address
+   * @returns Address formatted with AssetHub prefix (0)
+   */
+  public formatForChainflip(address: string): string {
+    try {
+      // Decode the address to get the public key
+      const publicKey = decodeAddress(address);
+      
+      // Re-encode with AssetHub prefix (0)
+      return encodeAddress(publicKey, 0);
+    } catch (error) {
+      console.error('Error formatting address for Chainflip:', error);
+      throw new Error(`Invalid Polkadot address: ${address}`);
+    }
+  }
 } 

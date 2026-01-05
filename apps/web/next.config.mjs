@@ -16,6 +16,8 @@ const nextConfig = {
       ...config.experiments,
       asyncWebAssembly: true,
       layers: true,
+      // Add topLevelAwait to support WASM initialization
+      topLevelAwait: true,
     };
 
     // Configure WASM file handling
@@ -34,33 +36,49 @@ const nextConfig = {
         ...config.optimization,
         // Prevent creating duplicate WASM instances - use single runtime chunk
         runtimeChunk: 'single',
+        // Prevent module concatenation which can duplicate WASM instances
+        concatenateModules: false,
         splitChunks: {
           chunks: 'all',
           // Increase limits to allow more granular code splitting
           maxInitialRequests: 25,
           maxAsyncRequests: 30,
+          // Reduce min sizes to ensure better chunking
+          minSize: 20000,
+          maxSize: 244000,
           cacheGroups: {
             // Group all WASM-related code together to ensure single initialization
             wasm: {
               test: /\.wasm$/,
               name: 'wasm-modules',
-              priority: 20,
+              priority: 30, // Highest priority
               enforce: true,
-              reuseExistingChunk: true, // Reuse existing chunks to avoid duplication
-            },
-            // Consolidate all @polkadot packages to avoid duplicate WASM instances
-            polkadot: {
-              test: /[\\/]node_modules[\\/]@polkadot[\\/]/,
-              name: 'polkadot',
-              priority: 15,
-              enforce: true, // Force this caching group
               reuseExistingChunk: true,
             },
-            // Consolidate ParaSpell packages
+            // CRITICAL: Consolidate ALL @polkadot packages into a single chunk
+            // This prevents multiple WASM instances from being created
+            polkadot: {
+              test: /[\\/]node_modules[\\/](@polkadot|polkadot-api)[\\/]/,
+              name: 'polkadot-bundle',
+              priority: 25,
+              enforce: true,
+              reuseExistingChunk: true,
+              // Force all polkadot code into this chunk
+              chunks: 'all',
+            },
+            // Consolidate ParaSpell packages (which also use Polkadot)
             paraspell: {
               test: /[\\/]node_modules[\\/]@paraspell[\\/]/,
-              name: 'paraspell',
-              priority: 15,
+              name: 'paraspell-bundle',
+              priority: 20,
+              reuseExistingChunk: true,
+              chunks: 'all',
+            },
+            // Separate vendor chunks for other large dependencies
+            defaultVendors: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              priority: 10,
               reuseExistingChunk: true,
             },
           },
@@ -88,6 +106,8 @@ const nextConfig = {
   // Ensure modern JavaScript target
   experimental: {
     esmExternals: 'loose',
+    // Enable modern output to reduce bundle size
+    optimizePackageImports: ['@polkadot/util', '@polkadot/util-crypto'],
   },
 
   // Reduced transpile list - only transpile what's absolutely necessary
