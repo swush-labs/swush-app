@@ -96,7 +96,9 @@ class CoinGeckoPriceService {
       // Build API URL with query params
       const idsParam = coingeckoIds.join(',');
       const apiKey = process.env.NEXT_PUBLIC_COINGECKO_API_KEY;
-      const url = `${this.API_BASE}/simple/price?ids=${idsParam}&vs_currencies=usd${apiKey ? `&x_cg_pro_api_key=${apiKey}` : ''}`;
+      
+      // For free tier with API key, use x_cg_demo_api_key parameter
+      const url = `${this.API_BASE}/simple/price?ids=${idsParam}&vs_currencies=usd${apiKey ? `&x_cg_demo_api_key=${apiKey}` : ''}`;
 
       const response = await fetch(url);
 
