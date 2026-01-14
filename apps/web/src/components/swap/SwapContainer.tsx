@@ -9,11 +9,12 @@ import { SwapConfirmSheet } from '@/components/swap/ui/SwapConfirmSheet'
 import { SwapHistoryDialog } from '@/components/swap/ui/SwapHistoryDialog'
 import { useXcmTokens } from '@/components/swap/hooks/useXcmTokens'
 import { useSwapRouter } from '@/components/swap/hooks/useSwapRouter'
-import { useXcmSwapExecution } from '@/components/swap/hooks/useXcmSwapExecution'
-import { useChainflipExecution } from '@/components/swap/hooks/useChainflipExecution'
+import { useUnifiedSwapExecution } from '@/components/swap/hooks/useUnifiedSwapExecution'
 import { useSwapFlow } from '@/components/swap/hooks/useSwapFlow'
 import { useSwapHistory } from '@/components/swap/hooks/useSwapHistory'
 import { useUnifiedBalances } from '@/components/swap/hooks/useUnifiedBalances'
+import { useSwapCallbacks } from '@/components/swap/hooks/useSwapCallbacks'
+import { useSwapSigners } from '@/components/swap/hooks/useSwapSigners'
 import { LoadState } from '@/components/swap/ui/LoadState'
 import { ArrowSymbolDown } from '@/components/swap/ui/ArrowSymbolDown'
 import { calculateMinimumReceived } from '@/components/swap/utils'
@@ -24,7 +25,6 @@ import SelectRecipientDialog from './ui/SelectRecipientDialog'
 import SelectRecipientWalletDialog from './ui/SelectRecipientWalletDialog'
 import { useSelectedAccount } from '@/components/wallet/use-selected-account'
 import { useRecipientAccount } from '@/components/wallet/use-recipient-account'
-import { isSubstrateEvmChain } from '@/services/xcm-router/substrateEvmChains'
 
 export function SwapContainer() {
   // UI state
@@ -47,18 +47,6 @@ export function SwapContainer() {
 
   // Get selected account from global hook
   const { selectedAccount } = useSelectedAccount()
-  const isConnected = !!selectedAccount
-  const walletAddress = selectedAccount?.address || ''
-  
-  // Get polkadotSigner from sender - only available for Polkadot accounts
-  const senderPolkadotSigner = selectedAccount && 'polkadotSigner' in selectedAccount 
-    ? selectedAccount.polkadotSigner 
-    : undefined
-  
-  // Get EVM signer (client) - only available for Ethereum accounts
-  const evmSigner = selectedAccount && 'client' in selectedAccount 
-    ? selectedAccount.client 
-    : undefined
 
   // Get recipient account from hook (with localStorage persistence)
   const {
@@ -69,8 +57,16 @@ export function SwapContainer() {
     resetToSender,
     isDifferentFromSender,
     isCustomAddress,
-    hasSavedRecipient,
   } = useRecipientAccount()
+
+  // Extract signers from accounts (simplified with hook)
+  const {
+    isConnected,
+    walletAddress,
+    senderPolkadotSigner,
+    evmSigner,
+    recipientPolkadotSigner,
+  } = useSwapSigners(selectedAccount, recipientAccount)
 
   // Custom hooks - Token and Balance handling (nuqs handles URL params automatically)
   const { 
@@ -92,17 +88,6 @@ export function SwapContainer() {
     unifiedToAssets,
   } = useXcmTokens()
 
-  // Get polkadotSigner from recipient - used for cross-platform swaps (EVM → Substrate)
-  const recipientPolkadotSigner = recipientAccount && 'polkadotSigner' in recipientAccount
-    ? recipientAccount.polkadotSigner
-    : undefined
-
-  // Signer validation
-  useEffect(() => {
-    if (selectedAccount && !senderPolkadotSigner && selectedAccount.platform === 'polkadot') {
-      console.warn('Missing Polkadot signer for Polkadot account');
-    }
-  }, [selectedAccount, senderPolkadotSigner]);
 
   // Unified balance fetching - automatically routes to EVM (wagmi) or XCM (ParaSpell)
   const {
@@ -126,10 +111,6 @@ export function SwapContainer() {
     getTAssetFromKey,
   });
 
-  // Handle wallet disconnect - account management is now handled by the wallet dialog
-  const handleDisconnect = useCallback(() => {
-    // Wallet disconnect cleanup
-  }, []);
 
   // Unified swap router - automatically routes to XCM or Chainflip based on tokens
   const {
@@ -183,86 +164,44 @@ export function SwapContainer() {
     isActive
   } = useSwapFlow();
 
-  // Success handler shared between XCM and Chainflip
-  const handleSwapSuccess = useCallback((success: {
-    duration: number;
-    inputAmount: string;
-    inputToken: string;
-    outputAmount: string;
-    outputToken: string
-  }) => {
-    // For Chainflip swaps, complete immediately since Chainflip handles the full swap
-    // For XCM swaps, wait for balance polling to confirm delivery
-    if (provider === 'chainflip') {
-      // Chainflip swap is already complete - mark it as successful immediately
-      completeSwap(success);
+  // Swap success/error handlers (extracted to custom hook)
+  const { handleSwapSuccess, handleSwapError } = useSwapCallbacks({
+    provider,
+    setInputAmount,
+    resetRoute,
+    resetToSender,
+    refreshBalances,
+    startBalancePolling,
+    stopBalancePolling,
+    resetBalances,
+    resetSwapFlow,
+    completeSwap,
+    failSwap,
+    updateExecution,
+  });
 
-      // Clear input and route immediately (but don't close dialog)
-      setInputAmount('');
-      resetRoute();
-
-      // Reset recipient to sender after successful swap (for safety)
-      resetToSender();
-
-      // Refresh input balance to show deduction
-      refreshBalances(true);
-    } else {
-      // XCM: Wait for destination balance to update before marking as successful
-      // Start polling destination balance to confirm delivery
-      startBalancePolling(() => {
-        // Mark swap as successful when balance increases
-        completeSwap(success);
-
-        // Clear input and route immediately (but don't close dialog)
-        setInputAmount('');
-        resetRoute();
-
-        // Reset recipient to sender after successful swap (for safety)
-        resetToSender();
-
-        // Refresh input balance to show deduction
-        refreshBalances(true);
-      });
-    }
-
-    // Update UI to show "waiting for delivery" state (only for XCM)
-    updateExecution({
-      statusMessage: provider === 'chainflip' 
-        ? 'Chainflip is processing your swap...' 
-        : 'Waiting for cross-chain delivery...',
-    });
-  }, [completeSwap, provider, refreshBalances, resetRoute, resetToSender, startBalancePolling, updateExecution]);
-
-  // Error handler shared between XCM and Chainflip
-  const handleSwapError = useCallback((error: { message: string; code?: string; userCancelled?: boolean }) => {
-    failSwap(error);
-    // Stop any ongoing balance polling
-    stopBalancePolling();
-    // Refresh balances after failed transaction
-    resetBalances(true);
-    // Auto-reset after showing error state
-    setTimeout(() => {
-      setInputAmount('');
-      resetRoute();
-      resetSwapFlow();
-    }, 5000);
-  }, [failSwap, resetBalances, resetRoute, resetSwapFlow, stopBalancePolling]);
-
-  // XCM Swap execution hook with ParaSpell RouterBuilder
-  const { executeSwap: executeXcmSwap } = useXcmSwapExecution({
-    inputToken: provider === 'xcm' ? inputToken : null,
-    outputToken: provider === 'xcm' ? outputToken : null,
+  // Unified swap execution - handles both XCM and Chainflip
+  const { 
+    executeSwap,
+    chainflipDepositAddress,
+    chainflipStage,
+  } = useUnifiedSwapExecution({
+    provider,
+    inputToken,
+    outputToken,
     inputAmount,
     outputAmount,
-    slippageTolerance,
     walletAddress,
     recipientAddress,
     senderPolkadotSigner,
     recipientPolkadotSigner,
-    selectedExchange: xcmRouteState?.data?.exchange,
+    evmSigner,
+    slippageTolerance,
+    xcmRouteExchange: xcmRouteState?.data?.exchange,
     getOptimalExchanges,
     determineCurrency,
     getTAssetFromKey,
+    chainflipQuote,
     onExecutionStart: startExecution,
     onExecutionUpdate: updateExecution,
     onSuccess: handleSwapSuccess,
@@ -270,53 +209,6 @@ export function SwapContainer() {
     enableXcmTracking: process.env.NEXT_PUBLIC_USE_LOCAL_ENDPOINTS === 'false',
     ocelloidsApiKey: process.env.NEXT_PUBLIC_OCELLOIDS_API_KEY,
   });
-
-  // Chainflip Swap execution hook
-  const { 
-    executeSwap: executeChainflipSwap,
-    depositAddress: chainflipDepositAddress,
-    stage: chainflipStage,
-  } = useChainflipExecution({
-    inputToken: provider === 'chainflip' ? inputToken : null,
-    outputToken: provider === 'chainflip' ? outputToken : null,
-    inputAmount,
-    outputAmount,
-    quote: chainflipQuote || null,
-    walletAddress,
-    recipientAddress,
-    slippageTolerance,
-    evmSigner,
-    polkadotSigner: senderPolkadotSigner,
-    onExecutionStart: (execution) => {
-      startExecution({
-        currentStep: 0,
-        totalSteps: 1, // Chainflip: user signs deposit once, then Chainflip handles everything
-        transactionType: null,
-        statusMessage: execution.statusMessage,
-      });
-    },
-    onExecutionUpdate: (execution) => {
-      updateExecution({
-        statusMessage: execution.statusMessage,
-      });
-    },
-    onSuccess: (success) => handleSwapSuccess({
-      duration: success.duration,
-      inputAmount: success.inputAmount,
-      inputToken: success.inputToken,
-      outputAmount: success.outputAmount,
-      outputToken: success.outputToken,
-    }),
-    onError: handleSwapError,
-  });
-
-  // Unified executeSwap function that routes to the correct provider
-  const executeSwap = useCallback(() => {
-    if (provider === 'chainflip') {
-      return executeChainflipSwap();
-    }
-    return executeXcmSwap();
-  }, [provider, executeChainflipSwap, executeXcmSwap]);
 
   // Handle swap button click - show confirmation sheet
   const handleSwapClick = useCallback(() => {
@@ -342,17 +234,6 @@ export function SwapContainer() {
     cancelSwap(); // Resets to 'idle'
   }, [cancelSwap]);
 
-  // Handle wallet disconnect with confirmation state cleanup
-  const handleWalletDisconnect = useCallback(() => {
-    handleDisconnect();
-    if (isActive) {
-      resetSwapFlow();
-    }
-    // Reset route state
-    resetRoute();
-    // Reset input amount
-    setInputAmount('');
-  }, [handleDisconnect, isActive, resetSwapFlow, resetRoute]);
 
   // Recipient management handlers (simplified with hook)
   const handleSelectDifferentWallet = useCallback(() => {
@@ -487,41 +368,6 @@ export function SwapContainer() {
               />
             </div>
 
-            {/* Cross-platform swap warning */}
-            {inputToken?.networkChain && outputToken?.networkChain && (
-              (() => {
-                const isSubstrateEvmOrigin = isSubstrateEvmChain(inputToken.networkChain);
-                const isSubstrateDestination = !isSubstrateEvmChain(outputToken.networkChain);
-                const isCrossPlatformSwap = isSubstrateEvmOrigin && isSubstrateDestination;
-
-                if (!isCrossPlatformSwap) return null;
-
-                const hasRecipientPolkadotWallet = recipientAccount?.platform === 'polkadot';
-                const isUsingCustomAddress = isCustomAddress;
-
-                return (
-                  <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm">
-                    <div className="flex items-start gap-2">
-                      <svg className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                      <div className="flex-1">
-                        <p className="font-medium text-amber-500 mb-1">Cross-chain Swap</p>
-                        <p className="text-muted-foreground text-xs leading-relaxed">
-                          {!hasRecipientPolkadotWallet && !isUsingCustomAddress ? (
-                            <>Swapping from {inputToken.networkChain} to {outputToken.networkChain} requires a Polkadot wallet. Please select a Polkadot wallet as the recipient.</>
-                          ) : isUsingCustomAddress ? (
-                            <>Custom addresses are not supported for cross-chain swaps. Please select a connected Polkadot wallet as the recipient.</>
-                          ) : (
-                            <>This swap will use your recipient's Polkadot wallet to construct the cross-chain message.</>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()
-            )}
 
             <SwapDetails
               minimumReceived={calculateMinimumReceived(outputAmount, slippageTolerance)}

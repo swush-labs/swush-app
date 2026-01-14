@@ -9,7 +9,7 @@ interface KheopskitAccount {
   id: string;
   address: string;
   name?: string;
-  platform: "polkadot" | "ethereum";
+  platform: "polkadot" | "ethereum" | "solana";
   walletName: string;
   polkadotSigner?: any;
   client?: any;
@@ -89,24 +89,6 @@ export function useRecipientAccount() {
       }
     }
   }, [recipientId, accounts, isInitialized]);
-
-  // Clear recipient when sender account changes (wallet switch)
-  useEffect(() => {
-    if (!senderAccount || !isInitialized) return;
-
-    // If there's a wallet-based recipient set, and it's the same as the new sender, clear it
-    if (recipientId && recipientAccountFromWallet) {
-      if (recipientAccountFromWallet.address === senderAccount.address) {
-        console.log('Recipient is same as sender after wallet switch, clearing');
-        setRecipientId(null);
-        setCustomAddress(null);
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem(RECIPIENT_STORAGE_KEY);
-          localStorage.removeItem(CUSTOM_ADDRESS_STORAGE_KEY);
-        }
-      }
-    }
-  }, [senderAccount?.id, isInitialized, recipientId, recipientAccountFromWallet]); // Only trigger on sender ID change
 
   // Determine final recipient account
   const recipientAccount = useMemo(() => {
