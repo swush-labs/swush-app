@@ -35,7 +35,7 @@ function convertUnifiedAssetsToTokens(assets: UnifiedAsset[]): TokenInfo[] {
         id: network.assetKey,
         name: asset.name,
         symbol: asset.symbol,
-        icon: asset.symbol.charAt(0),
+        icon: asset.logo || asset.symbol.charAt(0),
         decimals,
         network: network.network,
         assetKey: network.assetKey,

@@ -44,6 +44,7 @@ export type UnifiedAsset = {
   name: string;
   category: string;
   description?: string;
+  logo?: string;
   // Pre-computed networks that support this asset (now includes both XCM and Chainflip)
   supportedNetworks: NetworkSupport[];
   // Validation status
@@ -138,6 +139,7 @@ const processRegistryAssets = (
       name: registryEntry.name,
       category: registryEntry.category,
       description: registryEntry.description,
+      logo: registryEntry.logo,
       supportedNetworks: [],
       isValid: false,
       totalNetworks: Object.keys(registryEntry.networkInstances).length,
