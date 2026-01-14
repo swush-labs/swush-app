@@ -25,6 +25,7 @@ import SelectRecipientDialog from './ui/SelectRecipientDialog'
 import SelectRecipientWalletDialog from './ui/SelectRecipientWalletDialog'
 import { useSelectedAccount } from '@/components/wallet/use-selected-account'
 import { useRecipientAccount } from '@/components/wallet/use-recipient-account'
+import { usePriceAggregator } from '@/services/prices'
 
 export function SwapContainer() {
   // UI state
@@ -87,6 +88,17 @@ export function SwapContainer() {
     unifiedFromAssets,
     unifiedToAssets,
   } = useXcmTokens()
+
+  // Extract unique symbols from fromTokens and toTokens for price fetching
+  const allSymbols = useMemo(() => {
+    const symbols = new Set<string>();
+    fromTokens.forEach(t => symbols.add(t.symbol));
+    toTokens.forEach(t => symbols.add(t.symbol));
+    return Array.from(symbols);
+  }, [fromTokens, toTokens]);
+
+  // Fetch prices for all visible tokens
+  const { formatUSD } = usePriceAggregator(allSymbols);
 
 
   // Unified balance fetching - automatically routes to EVM (wagmi) or XCM (ParaSpell)
@@ -341,6 +353,7 @@ export function SwapContainer() {
                 balancesLoaded={balancesLoaded}
                 isConnected={isConnected}
                 onConnectWalletClick={() => setIsConnectWalletOpen(true)}
+                formatUSD={formatUSD}
               />
 
               <ArrowSymbolDown />
@@ -365,6 +378,7 @@ export function SwapContainer() {
                 onSelectRecipientClick={() => setIsSelectRecipientOpen(true)}
                 recipientAddress={isDifferentFromSender ? recipientAddress : undefined}
                 isCustomRecipient={isCustomAddress || isDifferentFromSender}
+                formatUSD={formatUSD}
               />
             </div>
 
@@ -382,6 +396,7 @@ export function SwapContainer() {
               isLoadingFees={isLoadingFees}
               estimatedDuration={estimatedDuration}
               provider={provider}
+              formatUSD={formatUSD}
             />
 
             <SubmitButtonAction

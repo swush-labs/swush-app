@@ -45,6 +45,7 @@ export function SwapField({
   onSelectRecipientClick,
   recipientAddress,
   isCustomRecipient = false,
+  formatUSD,
 }: SwapFieldProps) {
   const isInput = type === 'input';
 
@@ -198,15 +199,23 @@ export function SwapField({
             {!isInput && isProcessing ? (
               <Skeleton className="w-full max-w-24 sm:max-w-52 h-11 ml-auto" />
             ) : (
-              <Input
-                type="text"
-                inputMode="decimal"
-                value={amount}
-                onChange={handleInputChange}
-                readOnly={!isInput}
-                className="border-0 bg-transparent px-0 text-2xl md:text-3xl text-white focus-visible:ring-0 focus-visible:ring-offset-0 text-right appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                placeholder="0"
-              />
+              <div className="flex flex-col items-end">
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={handleInputChange}
+                  readOnly={!isInput}
+                  className="border-0 bg-transparent px-0 text-2xl md:text-3xl text-white focus-visible:ring-0 focus-visible:ring-offset-0 text-right appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  placeholder="0"
+                />
+                {/* USD Value Display */}
+                {token && amount && formatUSD && parseFloat(amount) > 0 && (
+                  <div className="text-sm text-forest-400 mt-1">
+                    ≈ {formatUSD(amount, token.symbol, token.decimals)}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

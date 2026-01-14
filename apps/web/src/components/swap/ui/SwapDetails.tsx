@@ -31,6 +31,7 @@ interface SwapDetailsProps {
   isLoadingFees?: boolean; // Separate loading state for fees
   estimatedDuration?: string; // Chainflip estimated swap duration
   provider?: SwapProvider; // Current swap provider (xcm or chainflip)
+  formatUSD?: (amount: string, symbol: string, decimals: number) => string; // Function to format USD value
 }
 
 export const SwapDetails = memo(function SwapDetails({
@@ -42,6 +43,7 @@ export const SwapDetails = memo(function SwapDetails({
   isLoadingFees = false,
   estimatedDuration,
   provider,
+  formatUSD,
 }: SwapDetailsProps) {
   // Helper function to display values with proper empty states
   const displayValue = (value: string, suffix = '', placeholder = '—') => {
@@ -58,13 +60,26 @@ export const SwapDetails = memo(function SwapDetails({
     >
       <div className="grid grid-cols-2 gap-y-3 sm:gap-y-3" >
         <SubText>Minimum Received</SubText>
-        <SubText className="justify-self-end" >
+        <div className="justify-self-end text-right">
           {isLoadingQuote ? (
             <Skeleton className="w-20 h-5 animate-pulse" />
           ) : (
-            displayValue(minimumReceived, outputToken?.symbol || '')
+            <>
+              <SubText>
+                {displayValue(minimumReceived, outputToken?.symbol || '')}
+              </SubText>
+              {outputToken && minimumReceived && formatUSD && 
+               minimumReceived !== '—' && 
+               minimumReceived !== '0' && 
+               minimumReceived !== 'NaN' && 
+               parseFloat(minimumReceived) > 0 && (
+                <div className="text-xs text-forest-400 mt-0.5">
+                  ≈ {formatUSD(minimumReceived, outputToken.symbol, outputToken.decimals)}
+                </div>
+              )}
+            </>
           )}
-        </SubText>
+        </div>
         <SubText>Transaction Fee</SubText>
         <div className="justify-self-end" >
           {isLoadingFees ? (

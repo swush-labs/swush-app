@@ -33,6 +33,8 @@ export interface TokenInfo {
   assetId?: string;               // Polkadot asset ID for Assets pallet (e.g., "1337" for USDC on AssetHub)
   // EVM chain identification
   chainId?: number;               // EVM chain ID (e.g., 1 for Ethereum, 11155111 for Sepolia, 42161 for Arbitrum)
+  // Price data
+  usdPrice?: number;              // Current USD price per token
 }
 
 // Group of the same asset symbol across multiple networks
@@ -102,6 +104,8 @@ export interface SwapFieldProps {
   onSelectRecipientClick?: () => void
   recipientAddress?: string // Address of the recipient (for output field)
   isCustomRecipient?: boolean // Whether recipient is different from sender
+  // Price display
+  formatUSD?: (amount: string, symbol: string, decimals: number) => string; // Function to format USD value
 }
 
 export interface XcmSwapPreviewData {

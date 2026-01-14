@@ -1,14 +1,23 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { TokenButton } from '../button/TokenButton';
 import { AssetListProps, TokenInfo, AssetGroup } from '../types';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { usePriceAggregator } from '@/services/prices';
 
 export const AssetList = ({ assetGroups, onSelect, currentAsset, onClose }: AssetListProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
+
+  // Extract unique symbols from asset groups for price fetching
+  const symbols = useMemo(() => {
+    return Array.from(new Set(assetGroups.map(group => group.symbol)));
+  }, [assetGroups]);
+
+  // Fetch prices for all symbols
+  const { getPrice } = usePriceAggregator(symbols);
 
   const filteredGroups = assetGroups.filter((group: AssetGroup) => {
     const q = searchQuery.toLowerCase();
@@ -55,7 +64,11 @@ export const AssetList = ({ assetGroups, onSelect, currentAsset, onClose }: Asse
                   <span className="text-forest-400 text-xs">{group.tokens.length} Networks</span>
                 </div>
               </div>
-              <span className="text-forest-400 text-sm">$0</span>
+              <span className="text-forest-400 text-sm">
+                {getPrice(group.symbol) 
+                  ? `$${getPrice(group.symbol)!.toFixed(2)}` 
+                  : '—'}
+              </span>
             </button>
 
             {expandedSymbol === group.symbol && (
