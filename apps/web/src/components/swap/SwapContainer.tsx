@@ -25,6 +25,8 @@ import SelectRecipientDialog from './ui/SelectRecipientDialog'
 import SelectRecipientWalletDialog from './ui/SelectRecipientWalletDialog'
 import { useSelectedAccount } from '@/components/wallet/use-selected-account'
 import { useRecipientAccount } from '@/components/wallet/use-recipient-account'
+import { useWallets } from '@kheopskit/react'
+import { getRequiredPlatform, isPlatformCompatible, WalletPlatform } from '@/components/wallet/platform-utils'
 
 export function SwapContainer() {
   // UI state
@@ -38,6 +40,7 @@ export function SwapContainer() {
   const [isConnectWalletOpen, setIsConnectWalletOpen] = useState(false)
   const [isSelectRecipientOpen, setIsSelectRecipientOpen] = useState(false)
   const [isRecipientWalletDialogOpen, setIsRecipientWalletDialogOpen] = useState(false)
+  const [walletFilterPlatform, setWalletFilterPlatform] = useState<WalletPlatform | undefined>()
 
   // Wrapper function to update slippage and persist to localStorage
   const handleSlippageChange = useCallback((value: number) => {
@@ -46,7 +49,10 @@ export function SwapContainer() {
   }, []);
 
   // Get selected account from global hook
-  const { selectedAccount } = useSelectedAccount()
+  const { selectedAccount, setSelectedAccount } = useSelectedAccount()
+
+  // Get all connected accounts for auto-switch
+  const { accounts: allAccounts } = useWallets()
 
   // Get recipient account from hook (with localStorage persistence)
   const {
@@ -250,6 +256,44 @@ export function SwapContainer() {
     setCustomRecipient(address);
   }, [setCustomRecipient]);
 
+  // Compute platform mismatch state
+  const requiredPlatform = useMemo(() =>
+    getRequiredPlatform(inputToken?.network),
+    [inputToken?.network]
+  );
+
+  const isWalletMismatch = useMemo(() => {
+    if (!selectedAccount || !inputToken?.network) return false;
+    return !isPlatformCompatible(selectedAccount.platform as WalletPlatform, inputToken.network);
+  }, [selectedAccount, inputToken?.network]);
+
+  // Auto-switch or prompt wallet when input token network changes
+  useEffect(() => {
+    if (!inputToken?.network || !requiredPlatform) return;
+
+    const currentPlatform = selectedAccount?.platform as WalletPlatform | undefined;
+
+    // Check if current wallet is compatible
+    if (selectedAccount && isPlatformCompatible(currentPlatform, inputToken.network)) {
+      // Already compatible, do nothing
+      return;
+    }
+
+    // Try to find a compatible connected account to auto-switch
+    const compatibleAccount = allAccounts.find(acc =>
+      acc.platform === requiredPlatform
+    );
+
+    if (compatibleAccount) {
+      // Auto-switch to the compatible account
+      setSelectedAccount(compatibleAccount as any);
+    } else if (selectedAccount) {
+      // No compatible account connected, show filtered wallet dialog
+      setWalletFilterPlatform(requiredPlatform);
+      setIsConnectWalletOpen(true);
+    }
+  }, [inputToken?.network, requiredPlatform, selectedAccount, allAccounts, setSelectedAccount]);
+
   // Effect to reset states when tokens change
   useEffect(() => {
     // Reset amounts and route state
@@ -340,7 +384,13 @@ export function SwapContainer() {
                 isLoading={isBalanceLoading}
                 balancesLoaded={balancesLoaded}
                 isConnected={isConnected}
-                onConnectWalletClick={() => setIsConnectWalletOpen(true)}
+                onConnectWalletClick={() => {
+                  // Set filter when manually clicking connect with a token selected
+                  if (requiredPlatform) setWalletFilterPlatform(requiredPlatform);
+                  setIsConnectWalletOpen(true);
+                }}
+                isWalletMismatch={isWalletMismatch}
+                requiredPlatform={requiredPlatform}
               />
 
               <ArrowSymbolDown />
@@ -439,9 +489,14 @@ export function SwapContainer() {
       />
 
       {/* Sender Wallet Dialog */}
-      <ConnectWalletDialog 
-        isOpen={isConnectWalletOpen} 
-        onOpenChange={setIsConnectWalletOpen}
+      <ConnectWalletDialog
+        isOpen={isConnectWalletOpen}
+        onOpenChange={(open) => {
+          setIsConnectWalletOpen(open);
+          // Clear filter when dialog closes
+          if (!open) setWalletFilterPlatform(undefined);
+        }}
+        filterPlatform={walletFilterPlatform}
       />
 
       {/* Recipient Wallet Selection Dialog - Dedicated component */}

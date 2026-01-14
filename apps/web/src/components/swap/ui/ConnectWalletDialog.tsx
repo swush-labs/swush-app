@@ -1,12 +1,13 @@
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { cn, shortenAddress } from "@/lib/utils";
-import { X, ArrowLeft, Check } from "lucide-react"
+import { X, ArrowLeft, Check, AlertTriangle } from "lucide-react"
 import Image from 'next/image';
 import { useWallets } from "@kheopskit/react";
 import { useSelectedAccount } from "@/components/wallet/use-selected-account";
 import Identicon from "@/components/ui/identicon";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { toast } from 'react-hot-toast';
+import { WalletPlatform, getPlatformDisplayName } from "@/components/wallet/platform-utils";
 
 // Account Card Component
 const AccountCard = ({ 
@@ -59,13 +60,31 @@ const AccountCard = ({
 interface ConnectWalletDialogProps {
     isOpen?: boolean
     onOpenChange?: (open: boolean) => void
+    /** Filter wallets to only show ones matching this platform */
+    filterPlatform?: WalletPlatform
 }
 
 export default function ConnectWalletDialog({
     isOpen = false,
-    onOpenChange
+    onOpenChange,
+    filterPlatform
 }:ConnectWalletDialogProps) {
-    const { wallets, accounts } = useWallets();
+    const { wallets: allWallets, accounts: allAccounts } = useWallets();
+
+    // Filter wallets and accounts by platform if specified
+    const wallets = useMemo(() =>
+      filterPlatform
+        ? allWallets.filter(w => w.platform === filterPlatform)
+        : allWallets,
+      [allWallets, filterPlatform]
+    );
+
+    const accounts = useMemo(() =>
+      filterPlatform
+        ? allAccounts.filter(a => a.platform === filterPlatform)
+        : allAccounts,
+      [allAccounts, filterPlatform]
+    );
     const { selectedAccount, setSelectedAccount } = useSelectedAccount();
     const [currentView, setCurrentView] = useState<"wallets" | "accounts">("wallets");
     const [forceWalletView, setForceWalletView] = useState(false);
@@ -237,7 +256,11 @@ export default function ConnectWalletDialog({
                 </button>
               )}
               <DialogTitle className="text-white text-2xl font-medium" >
-                {currentView === "accounts" ? "Select Account" : "Connect Wallet"}
+                {currentView === "accounts"
+                  ? "Select Account"
+                  : filterPlatform
+                    ? `Connect ${getPlatformDisplayName(filterPlatform)} Wallet`
+                    : "Connect Wallet"}
               </DialogTitle>
               <DialogClose className="absolute self-center right-0" >
                 <X className="w-5 h-5 stroke-2 text-white" />
@@ -247,6 +270,18 @@ export default function ConnectWalletDialog({
             {/* Wallet Connection View */}
             {currentView === "wallets" && (
               <div className="flex flex-col items-stretch gap-y-3 overflow-y-auto pr-2 custom-scrollbar" >
+                {/* Show message when filtering and no wallets available */}
+                {filterPlatform && wallets.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <AlertTriangle className="w-12 h-12 text-burning-orange mb-4" />
+                    <p className="text-white text-lg font-medium mb-2">
+                      No {getPlatformDisplayName(filterPlatform)} Wallets Found
+                    </p>
+                    <p className="text-white/60 text-sm">
+                      Please install a {getPlatformDisplayName(filterPlatform)} wallet extension to continue.
+                    </p>
+                  </div>
+                )}
                 {wallets?.map((wallet) => {
                   const accountCount = walletAccounts(wallet).length;
                   return (

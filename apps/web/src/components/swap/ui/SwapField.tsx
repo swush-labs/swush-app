@@ -6,10 +6,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { TokenButton } from '../button/TokenButton';
 import { AssetList } from './AssetList';
 import { SwapFieldProps, AssetGroup } from '../types';
-import { Loader2, ChevronDown, Wallet, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { Loader2, ChevronDown, Wallet, ChevronLeft, ChevronRight, Check, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn, shortenAddress } from '@/lib/utils';
 import { useSelectedAccount } from '@/components/wallet/use-selected-account';
+import { getPlatformDisplayName, WalletPlatform } from '@/components/wallet/platform-utils';
 
 const WalletButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ className, children, ...props }) => {
   return (
@@ -45,6 +46,8 @@ export function SwapField({
   onSelectRecipientClick,
   recipientAddress,
   isCustomRecipient = false,
+  isWalletMismatch = false,
+  requiredPlatform,
 }: SwapFieldProps) {
   const isInput = type === 'input';
 
@@ -128,14 +131,26 @@ export function SwapField({
           {/* Wallet connection status / Send to button */}
           {isInput ? (
             isConnected && selectedAccount ? (
-              // Show connected status with shortened address - clickable to change account
-              <button
-                onClick={onConnectWalletClick}
-                className="rounded-full py-1 px-3 flex items-center text-white bg-blue-whale/50 border border-burning-orange/30 hover:bg-blue-whale/70 hover:border-burning-orange/50 transition-all cursor-pointer"
-              >
-                <Check className="w-3 h-3 text-burning-orange" />
-                <p className="text-xs font-normal ml-1">{shortenAddress(selectedAccount.address)}</p>
-              </button>
+              isWalletMismatch ? (
+                // Show mismatch warning - clickable to switch wallet
+                <button
+                  onClick={onConnectWalletClick}
+                  className="rounded-full py-1 px-3 flex items-center text-red-400 bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 transition-all cursor-pointer"
+                  title={`Switch to ${getPlatformDisplayName(requiredPlatform as WalletPlatform)} wallet`}
+                >
+                  <AlertTriangle className="w-3 h-3 text-red-400" />
+                  <p className="text-xs font-normal ml-1">Switch Wallet</p>
+                </button>
+              ) : (
+                // Show connected status with shortened address - clickable to change account
+                <button
+                  onClick={onConnectWalletClick}
+                  className="rounded-full py-1 px-3 flex items-center text-white bg-blue-whale/50 border border-burning-orange/30 hover:bg-blue-whale/70 hover:border-burning-orange/50 transition-all cursor-pointer"
+                >
+                  <Check className="w-3 h-3 text-burning-orange" />
+                  <p className="text-xs font-normal ml-1">{shortenAddress(selectedAccount.address)}</p>
+                </button>
+              )
             ) : (
               // Show connect wallet button
               <WalletButton onClick={onConnectWalletClick}>Connect Wallet</WalletButton>

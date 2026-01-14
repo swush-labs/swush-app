@@ -102,6 +102,9 @@ export interface SwapFieldProps {
   onSelectRecipientClick?: () => void
   recipientAddress?: string // Address of the recipient (for output field)
   isCustomRecipient?: boolean // Whether recipient is different from sender
+  // Wallet-token platform mismatch detection
+  isWalletMismatch?: boolean // True if connected wallet doesn't match token platform
+  requiredPlatform?: string | null // Required platform for current token
 }
 
 export interface XcmSwapPreviewData {
