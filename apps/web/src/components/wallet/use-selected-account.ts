@@ -68,7 +68,14 @@ export function useSelectedAccount() {
     if (isInitialized && accounts.length === 1 && !selectedId) {
       const account = accounts[0];
       setSelectedId(account.id);
-      localStorage.setItem(STORAGE_KEY, account.id);
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, account.id);
+
+        // Broadcast change to all other hook instances
+        const event = new CustomEvent(STORAGE_EVENT, { detail: account.id });
+        window.dispatchEvent(event);
+      }
     }
   }, [accounts, selectedId, isInitialized]);
 

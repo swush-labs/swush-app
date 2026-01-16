@@ -1,5 +1,6 @@
 import React, { ButtonHTMLAttributes, ReactNode, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -45,6 +46,7 @@ export function SwapField({
   onSelectRecipientClick,
   recipientAddress,
   isCustomRecipient = false,
+  formatUSD,
 }: SwapFieldProps) {
   const isInput = type === 'input';
 
@@ -164,8 +166,12 @@ export function SwapField({
             <DialogTrigger asChild>
               <div className="flex-shrink-0">
                 <div className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-blue-whale border-forest-600 hover:border-flame-400 transition-all duration-200 cursor-pointer">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-flame-400 to-flame-500 flex items-center justify-center shadow-lg">
-                    <span className="text-white text-lg font-bold">{token?.icon || '?'}</span>
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-flame-400 to-flame-500 flex items-center justify-center shadow-lg overflow-hidden">
+                    {token?.icon && typeof token.icon === 'string' && token.icon.startsWith('/') ? (
+                      <Image src={token.icon} alt={token.symbol || 'Token'} width={40} height={40} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-white text-lg font-bold">{token?.icon || '?'}</span>
+                    )}
                   </div>
                   <div className="flex flex-col items-start w-[60px] md:w-[80px]">
                     <span className="font-semibold text-white truncate w-full">{token?.symbol || 'Select Token'}</span>
@@ -198,15 +204,23 @@ export function SwapField({
             {!isInput && isProcessing ? (
               <Skeleton className="w-full max-w-24 sm:max-w-52 h-11 ml-auto" />
             ) : (
-              <Input
-                type="text"
-                inputMode="decimal"
-                value={amount}
-                onChange={handleInputChange}
-                readOnly={!isInput}
-                className="border-0 bg-transparent px-0 text-2xl md:text-3xl text-white focus-visible:ring-0 focus-visible:ring-offset-0 text-right appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                placeholder="0"
-              />
+              <div className="flex flex-col items-end">
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={handleInputChange}
+                  readOnly={!isInput}
+                  className="border-0 bg-transparent px-0 text-2xl md:text-3xl text-white focus-visible:ring-0 focus-visible:ring-offset-0 text-right appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  placeholder="0"
+                />
+                {/* USD Value Display */}
+                {token && amount && formatUSD && parseFloat(amount) > 0 && (
+                  <div className="text-sm text-forest-400 mt-1">
+                    ≈ {formatUSD(amount, token.symbol, token.decimals)}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

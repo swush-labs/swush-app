@@ -12,7 +12,7 @@ interface KheopskitAccount {
   id: string;
   address: string;
   name?: string;
-  platform: "polkadot" | "ethereum";
+  platform: "polkadot" | "ethereum" | "solana";
   walletName: string;
   polkadotSigner?: any;
   client?: any;

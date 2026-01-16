@@ -34,8 +34,6 @@ export interface NetworkSupport {
   decimals?: number;
   contractAddress?: string;
   assetId?: string;  // Polkadot asset ID for Assets pallet (e.g., "1337" for USDC)
-  // EVM chain identification (for balance fetching)
-  chainId?: number;  // EVM chain ID (e.g., 1 for Ethereum, 11155111 for Sepolia, 42161 for Arbitrum)
 }
 
 // Unified asset-network data structure
@@ -44,6 +42,7 @@ export type UnifiedAsset = {
   name: string;
   category: string;
   description?: string;
+  logo?: string;
   // Pre-computed networks that support this asset (now includes both XCM and Chainflip)
   supportedNetworks: NetworkSupport[];
   // Validation status
@@ -102,8 +101,6 @@ const createNetworkData = (
     decimals: instance.decimals,
     contractAddress: instance.contractAddress,
     assetId: instance.assetId,
-    // Pass through EVM chain IDs (for balance fetching)
-    chainId: instance.chainId,
   };
 };
 
@@ -138,6 +135,7 @@ const processRegistryAssets = (
       name: registryEntry.name,
       category: registryEntry.category,
       description: registryEntry.description,
+      logo: registryEntry.logo,
       supportedNetworks: [],
       isValid: false,
       totalNetworks: Object.keys(registryEntry.networkInstances).length,

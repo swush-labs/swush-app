@@ -50,6 +50,7 @@ export type AssetRegistryEntry = {
   description?: string;
   category: "stablecoin" | "native" | "defi" | "wrapped";
   logo?: string;
+  coingeckoId?: string;  // CoinGecko API ID for price lookup
   dexConfig?: {
     preferredExchange?: TExchangeChain;
   };
@@ -122,6 +123,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     name: "USD Coin",
     description: "USD-backed stablecoin by Circle",
     category: "stablecoin",
+    logo: "/tokens/usdc.png",
+    coingeckoId: "usd-coin",
     networkInstances: {
       // ─── XCM Networks ───
       "USDC-1337-AssetHubPolkadot": {
@@ -210,6 +213,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     name: "Tether USD",
     description: "Tether USD stablecoin",
     category: "stablecoin",
+    logo: "/tokens/usdt.png",
+    coingeckoId: "tether",
     networkInstances: {
       // ─── XCM Networks ───
       "USDt-1984-AssetHubPolkadot": {
@@ -278,6 +283,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     name: "Polkadot",
     description: "Polkadot native token",
     category: "native",
+    logo: "/tokens/dot.jpg",
+    coingeckoId: "polkadot",
     networkInstances: {
       // ─── XCM Networks ───
       "DOT-native-AssetHubPolkadot": {
@@ -328,6 +335,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     name: "Acala",
     description: "Acala native token",
     category: "native",
+    logo: "/tokens/aca.jpg",
+    coingeckoId: "acala",
     networkInstances: {
       "ACA-native-Acala": {
         network: "Acala",
@@ -344,6 +353,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     name: "Moonbeam",
     description: "Moonbeam native token",
     category: "native",
+    logo: "/tokens/glmr.png",
+    coingeckoId: "moonbeam",
     networkInstances: {
       "GLMR-native-Moonbeam": {
         network: "Moonbeam",
@@ -363,6 +374,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     name: "Ethereum",
     description: "Native Ethereum token",
     category: "native",
+    logo: "/tokens/eth.png",
+    coingeckoId: "ethereum",
     networkInstances: {
       "ETH-Ethereum": {
         network: "Ethereum",
@@ -402,6 +415,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     name: "Solana",
     description: "Native Solana token",
     category: "native",
+    logo: "/tokens/sol.png",
+    coingeckoId: "solana",
     networkInstances: {
       "SOL-Solana": {
         network: "Solana",
@@ -432,6 +447,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     name: "Bitcoin",
     description: "Native Bitcoin",
     category: "native",
+    logo: "/tokens/btc.png",
+    coingeckoId: "bitcoin",
     networkInstances: {
       "BTC-Bitcoin": {
         network: "Bitcoin",
@@ -453,6 +470,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     name: "Chainflip",
     description: "Chainflip native token",
     category: "native",
+    logo: "/tokens/flip.png",
+    coingeckoId: "chainflip",
     networkInstances: {
       "FLIP-Ethereum": {
         network: "Ethereum",

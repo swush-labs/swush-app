@@ -1,14 +1,23 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { TokenButton } from '../button/TokenButton';
 import { AssetListProps, TokenInfo, AssetGroup } from '../types';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { usePriceAggregator } from '@/services/prices';
 
 export const AssetList = ({ assetGroups, onSelect, currentAsset, onClose }: AssetListProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
+
+  // Extract unique symbols from asset groups for price fetching
+  const symbols = useMemo(() => {
+    return Array.from(new Set(assetGroups.map(group => group.symbol)));
+  }, [assetGroups]);
+
+  // Fetch prices for all symbols
+  const { getPrice } = usePriceAggregator(symbols);
 
   const filteredGroups = assetGroups.filter((group: AssetGroup) => {
     const q = searchQuery.toLowerCase();
@@ -47,15 +56,23 @@ export const AssetList = ({ assetGroups, onSelect, currentAsset, onClose }: Asse
               onClick={() => setExpandedSymbol(prev => prev === group.symbol ? null : group.symbol)}
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-flame-400 to-flame-500 flex items-center justify-center">
-                  <span className="text-white text-base font-bold">{group.icon}</span>
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-flame-400 to-flame-500 flex items-center justify-center overflow-hidden">
+                  {typeof group.icon === 'string' && group.icon.startsWith('/') ? (
+                    <Image src={group.icon} alt={group.symbol} width={36} height={36} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-white text-base font-bold">{group.icon}</span>
+                  )}
                 </div>
                 <div className="flex flex-col items-start">
                   <span className="text-white text-md font-semibold">{group.symbol}</span>
                   <span className="text-forest-400 text-xs">{group.tokens.length} Networks</span>
                 </div>
               </div>
-              <span className="text-forest-400 text-sm">$0</span>
+              <span className="text-forest-400 text-sm">
+                {getPrice(group.symbol) 
+                  ? `$${getPrice(group.symbol)!.toFixed(2)}` 
+                  : '—'}
+              </span>
             </button>
 
             {expandedSymbol === group.symbol && (
@@ -71,8 +88,12 @@ export const AssetList = ({ assetGroups, onSelect, currentAsset, onClose }: Asse
                       icon={
                         <div className={`w-full h-full ${
                           token.name === currentAsset?.name ? 'bg-blue-500' : 'bg-slate-600'
-                        } rounded-full flex items-center justify-center`}>
-                          <span className="text-white text-sm font-bold">{group.icon}</span>
+                        } rounded-full flex items-center justify-center overflow-hidden`}>
+                          {typeof group.icon === 'string' && group.icon.startsWith('/') ? (
+                            <Image src={group.icon} alt={group.symbol} width={40} height={40} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-white text-sm font-bold">{group.icon}</span>
+                          )}
                         </div>
                       }
                       onClick={() => handleSelect(token)}

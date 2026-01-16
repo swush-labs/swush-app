@@ -94,34 +94,38 @@ const useCurrencyOptions = (
   // Create the select options for the currencyFrom field
   const currencyFromOptions = useMemo(
     () =>
-      Object.keys(currencyFromMap).map((key) => ({
-        value: key,
-        label: `${currencyFromMap[key].symbol} - ${
-          "assetId" in currencyFromMap[key] ||
-          "multiLocation" in currencyFromMap[key]
-            ? "assetId" in currencyFromMap[key]
-              ? currencyFromMap[key].assetId
-              : "Multi-Location"
-            : "Native"
-        } - ${(currencyFromMap[key] as any)._network ?? "Unknown"}`,
-      })),
+      Object.keys(currencyFromMap).map((key) => {
+        const asset = currencyFromMap[key];
+        const assetType = "assetId" in asset
+          ? (asset as { assetId: string }).assetId
+          : "multiLocation" in asset
+          ? "Multi-Location"
+          : "Native";
+        
+        return {
+          value: key,
+          label: `${asset.symbol} - ${assetType} - ${(asset as any)._network ?? "Unknown"}`,
+        };
+      }),
     [currencyFromMap]
   );
 
   // Create the select options for the currencyTo field
   const currencyToOptions = useMemo(
     () =>
-      Object.keys(currencyToMap).map((key) => ({
-        value: key,
-        label: `${currencyToMap[key].symbol} - ${
-          "assetId" in currencyToMap[key] ||
-          "multiLocation" in currencyToMap[key]
-            ? "assetId" in currencyToMap[key]
-              ? currencyToMap[key].assetId
-              : "Multi-location"
-            : "Native"
-        } - ${(currencyToMap[key] as any)._network ?? "Unknown"}`,
-      })),
+      Object.keys(currencyToMap).map((key) => {
+        const asset = currencyToMap[key];
+        const assetType = "assetId" in asset
+          ? (asset as { assetId: string }).assetId
+          : "multiLocation" in asset
+          ? "Multi-location"
+          : "Native";
+        
+        return {
+          value: key,
+          label: `${asset.symbol} - ${assetType} - ${(asset as any)._network ?? "Unknown"}`,
+        };
+      }),
     [currencyToMap]
   );
 
