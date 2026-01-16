@@ -25,7 +25,7 @@ import SelectRecipientDialog from './ui/SelectRecipientDialog'
 import SelectRecipientWalletDialog from './ui/SelectRecipientWalletDialog'
 import { useSelectedAccount } from '@/components/wallet/use-selected-account'
 import { useRecipientAccount } from '@/components/wallet/use-recipient-account'
-import { usePriceAggregator } from '@/services/prices'
+import { useTokenPrices } from '@/components/swap/hooks/useTokenPrices'
 
 export function SwapContainer() {
   // UI state
@@ -89,16 +89,8 @@ export function SwapContainer() {
     unifiedToAssets,
   } = useXcmTokens()
 
-  // Extract unique symbols from fromTokens and toTokens for price fetching
-  const allSymbols = useMemo(() => {
-    const symbols = new Set<string>();
-    fromTokens.forEach(t => symbols.add(t.symbol));
-    toTokens.forEach(t => symbols.add(t.symbol));
-    return Array.from(symbols);
-  }, [fromTokens, toTokens]);
-
   // Fetch prices for all visible tokens
-  const { formatUSD } = usePriceAggregator(allSymbols);
+  const { formatUSD } = useTokenPrices({ fromTokens, toTokens });
 
 
   // Unified balance fetching - automatically routes to EVM (wagmi) or XCM (ParaSpell)

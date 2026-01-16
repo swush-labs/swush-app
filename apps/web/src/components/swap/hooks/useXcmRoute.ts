@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { RouterBuilder } from '@paraspell/xcm-router';
 import debounce from 'lodash.debounce';
 
 // Proper ParaSpell types - NO any types!
@@ -8,6 +7,9 @@ import type {
   TExchangeChain,
   TRouterXcmFeeResult
 } from '@paraspell/xcm-router';
+
+// Lazy-loaded RouterBuilder to prevent WASM memory issues
+import { getRouterBuilder } from '@/services/xcm-router/lazyRouter';
 
 // Our types
 import type { TokenInfo } from '@/components/swap/types';
@@ -248,6 +250,9 @@ export function useXcmRoute({
         amountDecimal: currentInputAmount,
         exchanges: exchangesToUse,
       });
+
+      // Get lazy-loaded RouterBuilder to prevent WASM memory issues
+      const RouterBuilder = await getRouterBuilder();
 
       const quotePromise = RouterBuilder({ abstractDecimals: true })
         .from(inputToken.networkChain as any) // Type assertion for chain compatibility

@@ -3,6 +3,25 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+
+  // Add security headers for WASM/SharedArrayBuffer support in Brave
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
+          },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
+          },
+        ],
+      },
+    ];
+  },
   
   webpack: (config, { isServer, dev }) => {
     // CRITICAL: Set the output target to support async/await for WASM

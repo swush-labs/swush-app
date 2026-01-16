@@ -1,5 +1,4 @@
 import { useCallback, useRef } from 'react';
-import { RouterBuilder } from '@paraspell/xcm-router';
 import type { TAssetInfo, TChain } from '@paraspell/sdk';
 import type {
   TExchangeChain,
@@ -7,6 +6,9 @@ import type {
   TRouterEventType
 } from '@paraspell/xcm-router';
 import type { PolkadotSigner } from 'polkadot-api';
+
+// Lazy-loaded RouterBuilder to prevent WASM memory issues
+import { getRouterBuilder } from '@/services/xcm-router/lazyRouter';
 
 // Our types
 import type { TokenInfo } from '@/components/swap/types';
@@ -412,6 +414,9 @@ export function useXcmSwapExecution({
         useLocalEndpoints: USE_LOCAL_ENDPOINTS,
         config: routerConfig
       });
+
+      // Get lazy-loaded RouterBuilder to prevent WASM memory issues
+      const RouterBuilder = await getRouterBuilder();
 
       // Round to 2 decimal places to avoid floating-point precision issues
       const safeSlippage = Math.round(slippageTolerance * 100) / 100;
