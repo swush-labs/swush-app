@@ -171,6 +171,11 @@ export function SwapContainer() {
   // Swap success/error handlers (extracted to custom hook)
   const { handleSwapSuccess, handleSwapError } = useSwapCallbacks({
     provider,
+    inputToken,
+    outputToken,
+    inputAmount,
+    walletAddress,
+    exchange: xcmRouteDex,
     setInputAmount,
     resetRoute,
     resetToSender,
@@ -298,7 +303,7 @@ export function SwapContainer() {
   ], []);
 
   // Swap history hook
-  const { swapHistory, isLoadingHistory } = useSwapHistory({
+  const { swapHistory, isLoadingHistory, totalPoints } = useSwapHistory({
     walletAddress,
     showHistory
   });
@@ -409,6 +414,7 @@ export function SwapContainer() {
         setShowHistory={setShowHistory}
         swapHistory={swapHistory}
         isLoadingHistory={isLoadingHistory}
+        totalPoints={totalPoints}
       />
 
       {/* Swap Confirmation Bottom Sheet */}
@@ -434,6 +440,7 @@ export function SwapContainer() {
         outputAmount={flowState.success?.outputAmount || outputAmount}
         outputToken={flowState.success?.outputToken || outputToken?.name || ''}
         duration={flowState.success?.duration || 4000}
+        pointsEarned={flowState.success?.pointsEarned}
         onClose={() => {
           stopBalancePolling(); // Clean up polling on dialog close
           resetSwapFlow();

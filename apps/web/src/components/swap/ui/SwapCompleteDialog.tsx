@@ -78,6 +78,7 @@ interface SwapCompleteDialogProps {
     outputAmount: string
     outputToken: string
     duration: number
+    pointsEarned?: number
     onClose?: () => void
     currentStep?: number
     totalSteps?: number
@@ -95,6 +96,7 @@ export function SwapCompleteDialog({
     outputAmount,
     outputToken,
     duration,
+    pointsEarned = 60,
     onClose,
     currentStep,
     totalSteps,
@@ -194,7 +196,7 @@ export function SwapCompleteDialog({
                             {/* <p className="text-cloud text-sm sm:text-base font-normal" >{`${inputAmount} ${inputToken} → ${outputAmount} ${outputToken}`}</p> */}
                             <p className="text-cloud text-sm sm:text-base font-normal" >{` ${inputToken} → ${outputToken}`}</p>
                             {
-                                isGiftRevealed ? <SwushPointCard points={60} className="mt-9 sm:mt-16" /> :
+                                isGiftRevealed ? <SwushPointCard points={pointsEarned} className="mt-9 sm:mt-16" /> :
                                 <SecretGift className="mt-8" onMouseDown={() => {
                                     setIsGiftRevealed(true)
                                 }} />

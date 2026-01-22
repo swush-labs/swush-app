@@ -39,6 +39,7 @@ export interface SwapFlowState {
     inputToken: string;
     outputAmount: string;
     outputToken: string;
+    pointsEarned?: number;
   };
   
   // Error details (only when stage = 'error')
