@@ -618,6 +618,7 @@ export function getDepositType(
     case 'Ethereum':
     case 'Sepolia':
     case 'Arbitrum':
+    case 'Arbitrum Sepolia':
       return asset === 'ETH' ? 'evm-native' : 'evm-token';
     case 'AssetHubPolkadot':
       return asset === 'DOT' ? 'polkadot-native' : 'polkadot-token';
@@ -638,7 +639,7 @@ export function getDepositType(
  * Check if a chain is supported for in-app deposits
  */
 export function isChainSupportedForDeposit(chain: string): boolean {
-  return ['Ethereum', 'Sepolia', 'Arbitrum', 'AssetHubPolkadot', 'AssetHubPerseverance', 'Solana', 'SolanaDevnet'].includes(chain);
+  return ['Ethereum', 'Sepolia', 'Arbitrum', 'Arbitrum Sepolia', 'AssetHubPolkadot', 'AssetHubPerseverance', 'Solana', 'SolanaDevnet'].includes(chain);
 }
 
 

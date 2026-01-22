@@ -3,6 +3,7 @@ import { useXcmSwapExecution } from './useXcmSwapExecution';
 import { useChainflipExecution } from './useChainflipExecution';
 import type { SwapProvider } from '@/services/xcm-router/assetRegistry';
 import type { PolkadotSigner } from 'polkadot-api';
+import type { SolanaAccount } from './useSwapSigners';
 
 interface UnifiedSwapExecutionProps {
   // Provider info
@@ -24,6 +25,7 @@ interface UnifiedSwapExecutionProps {
   senderPolkadotSigner: PolkadotSigner | undefined;
   recipientPolkadotSigner: PolkadotSigner | undefined;
   evmSigner: any;
+  solanaSigner: SolanaAccount | undefined;
   
   // Settings
   slippageTolerance: number;
@@ -69,6 +71,7 @@ export function useUnifiedSwapExecution({
   senderPolkadotSigner,
   recipientPolkadotSigner,
   evmSigner,
+  solanaSigner,
   slippageTolerance,
   xcmRouteExchange,
   getOptimalExchanges,
@@ -122,6 +125,7 @@ export function useUnifiedSwapExecution({
     slippageTolerance,
     evmSigner,
     polkadotSigner: senderPolkadotSigner,
+    solanaSigner,
     onExecutionStart: (execution) => {
       onExecutionStart({
         currentStep: 0,

@@ -66,6 +66,7 @@ export function SwapContainer() {
     walletAddress,
     senderPolkadotSigner,
     evmSigner,
+    solanaSigner,
     recipientPolkadotSigner,
   } = useSwapSigners(selectedAccount, recipientAccount)
 
@@ -205,6 +206,7 @@ export function SwapContainer() {
     senderPolkadotSigner,
     recipientPolkadotSigner,
     evmSigner,
+    solanaSigner,
     slippageTolerance,
     xcmRouteExchange: xcmRouteState?.data?.exchange,
     getOptimalExchanges,
@@ -438,7 +440,8 @@ export function SwapContainer() {
         inputAmount={flowState.success?.inputAmount || inputAmount}
         inputToken={flowState.success?.inputToken || inputToken?.symbol || ''}
         outputAmount={flowState.success?.outputAmount || outputAmount}
-        outputToken={flowState.success?.outputToken || outputToken?.name || ''}
+        outputToken={flowState.success?.outputToken || outputToken?.symbol || ''}
+        outputNetwork={outputToken?.network}
         duration={flowState.success?.duration || 4000}
         pointsEarned={flowState.success?.pointsEarned}
         onClose={() => {

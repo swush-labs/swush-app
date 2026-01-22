@@ -143,6 +143,25 @@ export const arbitrum = defineChain({
   caipNetworkId: "eip155:42161",
 });
 
+export const arbitrumSepolia = defineChain({
+  id: "421614",
+  name: "Arbitrum Sepolia",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: {
+      http: ["https://sepolia-rollup.arbitrum.io/rpc"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Arbiscan Sepolia",
+      url: "https://sepolia.arbiscan.io",
+    },
+  },
+  chainNamespace: "eip155",
+  caipNetworkId: "eip155:421614",
+});
+
 // Solana for Chainflip integration
 export const solanaMainnet = defineChain({
   id: "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
@@ -215,6 +234,7 @@ export const APPKIT_CHAINS: [AppKitNetwork, ...AppKitNetwork[]] = [
   paseo,
   paseoAssetHub,
   sepolia,
+  arbitrumSepolia,
   solanaDevnet,
   assetHubChainflipTestnet,
 ];

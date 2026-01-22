@@ -15,9 +15,12 @@ import {
   sendEvmTokenDeposit,
   sendPolkadotDeposit,
   sendPolkadotTestnetDeposit,
+  sendSolanaDeposit,
+  sendSolanaTokenDeposit,
   getDepositType,
   type DepositResult,
 } from '@/services/chainflip/signerUtils';
+import type { SolanaAccount } from './useSwapSigners';
 import { getNetworkNameFromChainId } from '@/lib/config/kheopskit';
 import { AddressService } from '@/services/AddressService';
 
@@ -116,6 +119,7 @@ interface UseChainflipExecutionProps {
   slippageTolerance: number;
   evmSigner?: any;
   polkadotSigner?: any;
+  solanaSigner?: SolanaAccount;
 
   // State management callbacks
   onExecutionStart?: (execution: ChainflipExecutionDetails) => void;
@@ -193,6 +197,7 @@ export function useChainflipExecution({
   slippageTolerance,
   evmSigner,
   polkadotSigner,
+  solanaSigner,
   onExecutionStart,
   onExecutionUpdate,
   onSuccess,
@@ -572,6 +577,45 @@ export function useChainflipExecution({
           );
           break;
 
+        case 'solana-native':
+          // SOL on Solana (mainnet or devnet)
+          if (!solanaSigner) {
+            throw new Error('Solana wallet not connected');
+          }
+          // Determine RPC URL based on network
+          const solanaRpcUrl = inputToken.network === 'SolanaDevnet' 
+            ? 'https://api.devnet.solana.com'
+            : 'https://api.mainnet-beta.solana.com';
+          depositResult = await sendSolanaDeposit(
+            solanaSigner,
+            swapResponse.address,
+            inputAmount,
+            solanaRpcUrl
+          );
+          break;
+
+        case 'solana-token':
+          // SPL tokens (e.g., USDC) on Solana
+          if (!solanaSigner) {
+            throw new Error('Solana wallet not connected');
+          }
+          if (!inputToken.contractAddress) {
+            throw new Error('Token mint address not configured');
+          }
+          // Determine RPC URL based on network
+          const solanaTokenRpcUrl = inputToken.network === 'SolanaDevnet' 
+            ? 'https://api.devnet.solana.com'
+            : 'https://api.mainnet-beta.solana.com';
+          depositResult = await sendSolanaTokenDeposit(
+            solanaSigner,
+            swapResponse.address,
+            inputToken.contractAddress, // SPL token mint address
+            inputAmount,
+            inputToken.decimals || 9,
+            solanaTokenRpcUrl
+          );
+          break;
+
         default:
           throw new Error(
             `Unsupported deposit type for ${inputToken.symbol} on ${inputToken.network}. ` +
@@ -633,6 +677,7 @@ export function useChainflipExecution({
     slippageTolerance,
     evmSigner,
     polkadotSigner,
+    solanaSigner,
     onExecutionStart,
     updateStage,
     pollSwapStatus,

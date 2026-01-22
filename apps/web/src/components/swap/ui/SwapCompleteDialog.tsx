@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { Zap } from "lucide-react";
+import { Zap, TrendingUp } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
@@ -21,6 +21,44 @@ const SwushPointCard:React.FC<SwushPointCardProps> = ({
                 <p className="text-white max-sm:text-3xl text-[38px] font-extrabold" >{points}+</p>
                 <p className="text-white max-sm:text-sm text-base font-normal" >Swush Points</p>
             </div>
+        </div>
+    )
+}
+
+interface HyperliquidCardProps {
+    className?: string
+    outputNetwork?: string
+}
+
+const HyperliquidCard:React.FC<HyperliquidCardProps> = ({
+    className,
+    outputNetwork
+}) => {
+    return (
+        <div className={cn("w-[194px] rounded-xl border border-white/70 pt-[42px] pb-8 px-4 flex flex-col items-center gap-y-5 bg-gradient-to-b from-myrtle to-black", className)} >
+            {/* Icon - matching SwushPointCard icon size */}
+            <Image src="/tokens/hyperliquid.png" alt="Hyperliquid" width={105} height={105} className="w-[105px] h-[105px]" />
+            
+            {/* Text */}
+            <div className="flex flex-col items-center gap-y-1 text-center" >
+                <p className="text-white text-base font-bold" >Trade on Hyperliquid</p>
+                <p className="text-white/70 text-xs font-normal leading-relaxed" >
+                    Your {outputNetwork} assets are ready to deposit
+                </p>
+            </div>
+
+            {/* CTA Button */}
+            <a 
+                href="https://app.hyperliquid.xyz/trade?referral=SWUSH"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                    console.log('User clicked Hyperliquid CTA');
+                }}
+                className="w-full bg-tealish-green text-black text-sm font-semibold py-2.5 rounded-lg text-center hover:bg-tealish-green/90 transition-all duration-200"
+            >
+                Continue →
+            </a>
         </div>
     )
 }
@@ -77,6 +115,7 @@ interface SwapCompleteDialogProps {
     inputToken: string
     outputAmount: string
     outputToken: string
+    outputNetwork?: string
     duration: number
     pointsEarned?: number
     onClose?: () => void
@@ -95,6 +134,7 @@ export function SwapCompleteDialog({
     inputToken,
     outputAmount,
     outputToken,
+    outputNetwork,
     duration,
     pointsEarned = 60,
     onClose,
@@ -106,6 +146,11 @@ export function SwapCompleteDialog({
 }:SwapCompleteDialogProps) {
     const [swapProgress, setSwapProgress] = useState<number>(10)
     const [isGiftRevealed, setIsGiftRevealed] = useState<boolean>(false)
+    
+    // Check if we should show Hyperliquid CTA (USDC on Arbitrum or Arbitrum Sepolia)
+    const showHyperliquidCTA = isGiftRevealed && 
+        (outputToken === 'USDC' || outputToken === 'ETH') && 
+        (outputNetwork === 'Arbitrum' || outputNetwork === 'Arbitrum Sepolia' || outputNetwork === 'Sepolia');
 
     useEffect(() => {
         if(!isSwapComplete) return
@@ -187,7 +232,7 @@ export function SwapCompleteDialog({
                 }
                 {
                     (isSwapComplete && swapProgress >= 100) && (
-                        <div className="flex flex-col items-center pb-[46px] pt-[36px]" >
+                        <div className="flex flex-col items-center pb-[46px] pt-[36px] px-4" >
                             <div className="flex items-center justify-center rounded-full bg-tune size-[65px]" >
                                 <Image src="/icons/check_circle.svg" alt="check-icon" width={40} height={40} />
                             </div>
@@ -196,10 +241,30 @@ export function SwapCompleteDialog({
                             {/* <p className="text-cloud text-sm sm:text-base font-normal" >{`${inputAmount} ${inputToken} → ${outputAmount} ${outputToken}`}</p> */}
                             <p className="text-cloud text-sm sm:text-base font-normal" >{` ${inputToken} → ${outputToken}`}</p>
                             {
-                                isGiftRevealed ? <SwushPointCard points={pointsEarned} className="mt-9 sm:mt-16" /> :
-                                <SecretGift className="mt-8" onMouseDown={() => {
-                                    setIsGiftRevealed(true)
-                                }} />
+                                isGiftRevealed ? (
+                                    showHyperliquidCTA ? (
+                                        <>
+                                            {/* Desktop: Side-by-side layout (ONLY when Hyperliquid CTA is shown) */}
+                                            <div className="hidden sm:flex gap-4 mt-9 sm:mt-16 items-stretch">
+                                                <SwushPointCard points={pointsEarned} className="flex-shrink-0" />
+                                                <HyperliquidCard outputNetwork={outputNetwork} className="flex-shrink-0" />
+                                            </div>
+
+                                            {/* Mobile: Stacked layout (ONLY when Hyperliquid CTA is shown) */}
+                                            <div className="flex sm:hidden flex-col items-center w-full gap-4 mt-9">
+                                                <SwushPointCard points={pointsEarned} />
+                                                <HyperliquidCard outputNetwork={outputNetwork} />
+                                            </div>
+                                        </>
+                                    ) : (
+                                        // Original centered layout (when CTA is NOT shown)
+                                        <SwushPointCard points={pointsEarned} className="mt-9 sm:mt-16" />
+                                    )
+                                ) : (
+                                    <SecretGift className="mt-8" onMouseDown={() => {
+                                        setIsGiftRevealed(true)
+                                    }} />
+                                )
                             }
                         </div>
                     )

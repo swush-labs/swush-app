@@ -1,11 +1,31 @@
 import { useMemo } from 'react';
 import type { PolkadotSigner } from 'polkadot-api';
 
+/**
+ * Solana account interface matching kheopskit's Solana wallet integration
+ */
+export interface SolanaAccount {
+  address: string;
+  publicKey: Uint8Array;
+  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+  signAndSendTransaction: (
+    transaction: Uint8Array,
+    options?: { minContextSlot?: number }
+  ) => Promise<{ signature: Uint8Array }>;
+}
+
 interface Account {
   address: string;
   platform: 'polkadot' | 'ethereum' | 'solana';
   polkadotSigner?: PolkadotSigner;
   client?: any;
+  // Solana-specific fields
+  publicKey?: Uint8Array;
+  signMessage?: (message: Uint8Array) => Promise<Uint8Array>;
+  signAndSendTransaction?: (
+    transaction: Uint8Array,
+    options?: { minContextSlot?: number }
+  ) => Promise<{ signature: Uint8Array }>;
 }
 
 interface SwapSignersResult {
@@ -16,6 +36,7 @@ interface SwapSignersResult {
   // Sender signers
   senderPolkadotSigner: PolkadotSigner | undefined;
   evmSigner: any;
+  solanaSigner: SolanaAccount | undefined;
   
   // Recipient signers
   recipientPolkadotSigner: PolkadotSigner | undefined;
@@ -48,6 +69,20 @@ export function useSwapSigners(
       : undefined;
   }, [selectedAccount]);
   
+  // Extract Solana signer (account with signAndSendTransaction method)
+  const solanaSigner = useMemo((): SolanaAccount | undefined => {
+    if (!selectedAccount) return undefined;
+    if (selectedAccount.platform !== 'solana') return undefined;
+    if (!selectedAccount.signAndSendTransaction || !selectedAccount.publicKey) return undefined;
+    
+    return {
+      address: selectedAccount.address,
+      publicKey: selectedAccount.publicKey,
+      signMessage: selectedAccount.signMessage!,
+      signAndSendTransaction: selectedAccount.signAndSendTransaction,
+    };
+  }, [selectedAccount]);
+  
   // Extract recipient signer (used for cross-platform swaps: EVM → Substrate)
   const recipientPolkadotSigner = useMemo(() => {
     if (!recipientAccount) return undefined;
@@ -61,6 +96,7 @@ export function useSwapSigners(
     walletAddress,
     senderPolkadotSigner,
     evmSigner,
+    solanaSigner,
     recipientPolkadotSigner,
   };
 }
