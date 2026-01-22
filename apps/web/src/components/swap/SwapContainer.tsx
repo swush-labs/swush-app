@@ -26,6 +26,7 @@ import SelectRecipientWalletDialog from './ui/SelectRecipientWalletDialog'
 import { useSelectedAccount } from '@/components/wallet/use-selected-account'
 import { useRecipientAccount } from '@/components/wallet/use-recipient-account'
 import { useTokenPrices } from '@/components/swap/hooks/useTokenPrices'
+import { useWalletPlatformValidation } from '@/components/swap/hooks/useWalletPlatformValidation'
 
 export function SwapContainer() {
   // UI state
@@ -47,17 +48,18 @@ export function SwapContainer() {
   }, []);
 
   // Get selected account from global hook
-  const { selectedAccount } = useSelectedAccount()
+  const { selectedAccount, clearSelection } = useSelectedAccount()
 
   // Get recipient account from hook (with localStorage persistence)
+  // Note: recipientAccount/recipientAddress are now independent from sender
   const {
     recipientAccount,
     recipientAddress,
     setRecipientAccount,
     setCustomRecipient,
     resetToSender,
-    isDifferentFromSender,
     isCustomAddress,
+    hasSavedRecipient,
   } = useRecipientAccount()
 
   // Extract signers from accounts (simplified with hook)
@@ -69,6 +71,10 @@ export function SwapContainer() {
     solanaSigner,
     recipientPolkadotSigner,
   } = useSwapSigners(selectedAccount, recipientAccount)
+
+  // Derive effective recipient address for transactions
+  // Falls back to sender address when no explicit recipient is set (self-transfer)
+  const effectiveRecipientAddress = recipientAddress || walletAddress
 
   // Custom hooks - Token and Balance handling (nuqs handles URL params automatically)
   const { 
@@ -93,6 +99,15 @@ export function SwapContainer() {
   // Fetch prices for all visible tokens
   const { formatUSD } = useTokenPrices({ fromTokens, toTokens });
 
+  // Auto-clear wallets when switching to incompatible networks
+  useWalletPlatformValidation(
+    selectedAccount,
+    inputToken?.network,
+    recipientAccount,
+    outputToken?.network,
+    clearSelection,
+    resetToSender
+  );
 
   // Unified balance fetching - automatically routes to EVM (wagmi) or XCM (ParaSpell)
   const {
@@ -109,7 +124,7 @@ export function SwapContainer() {
   } = useUnifiedBalances({
     isConnected,
     walletAddress,
-    recipientAddress, // Pass recipient address for output balance
+    recipientAddress: effectiveRecipientAddress, // Use effective recipient (falls back to sender)
     inputToken,
     outputToken,
     determineCurrency,
@@ -139,7 +154,7 @@ export function SwapContainer() {
     inputToken,
     outputToken,
     walletAddress,
-    recipientAddress,
+    recipientAddress: effectiveRecipientAddress, // Use effective recipient (falls back to sender)
     slippageTolerance,
     // Pass helpers from useXcmTokens (required for XCM routes)
     getOptimalExchanges,
@@ -202,7 +217,7 @@ export function SwapContainer() {
     inputAmount,
     outputAmount,
     walletAddress,
-    recipientAddress,
+    recipientAddress: effectiveRecipientAddress, // Use effective recipient (falls back to sender)
     senderPolkadotSigner,
     recipientPolkadotSigner,
     evmSigner,
@@ -375,8 +390,8 @@ export function SwapContainer() {
                 error={routeState.error}
                 onConnectWalletClick={() => setIsConnectWalletOpen(true)}
                 onSelectRecipientClick={() => setIsSelectRecipientOpen(true)}
-                recipientAddress={isDifferentFromSender ? recipientAddress : undefined}
-                isCustomRecipient={isCustomAddress || isDifferentFromSender}
+                recipientAddress={hasSavedRecipient ? recipientAddress : undefined}
+                isCustomRecipient={isCustomAddress || hasSavedRecipient}
                 formatUSD={formatUSD}
               />
             </div>
@@ -474,7 +489,7 @@ export function SwapContainer() {
         isOpen={isSelectRecipientOpen} 
         onOpenChange={setIsSelectRecipientOpen}
         onSelectDifferentWallet={handleSelectDifferentWallet}
-        selectedRecipient={isDifferentFromSender && !isCustomAddress ? recipientAccount : null}
+        selectedRecipient={hasSavedRecipient && !isCustomAddress ? recipientAccount : null}
         customAddress={isCustomAddress ? recipientAddress : ''}
         onCustomAddressSubmit={handleCustomAddressSubmit}
         onResetToSender={resetToSender}

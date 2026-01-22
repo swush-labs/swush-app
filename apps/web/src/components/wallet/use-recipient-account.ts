@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useWallets } from '@kheopskit/react';
-import { useSelectedAccount } from './use-selected-account';
 
 // Account interface from Kheopskit
 interface KheopskitAccount {
@@ -26,13 +25,12 @@ const RECIPIENT_STORAGE_EVENT = 'swush:recipient-changed';
  * - Persists recipient selection across page refreshes
  * - Validates recipient account still exists
  * - Supports custom addresses
- * - Defaults to sender if no recipient set
+ * - Independent from sender (no automatic fallback)
  * - Syncs across components via custom events
  * - Auto-cleanup of invalid selections
  */
 export function useRecipientAccount() {
   const { accounts } = useWallets();
-  const { selectedAccount: senderAccount } = useSelectedAccount();
   
   const [recipientId, setRecipientId] = useState<string | null>(null);
   const [customAddress, setCustomAddress] = useState<string | null>(null);
@@ -90,9 +88,9 @@ export function useRecipientAccount() {
     }
   }, [recipientId, accounts, isInitialized]);
 
-  // Determine final recipient account
+  // Determine final recipient account (independent from sender)
   const recipientAccount = useMemo(() => {
-    // Priority: custom address > wallet account > sender
+    // Priority: custom address > wallet account > null (no fallback to sender)
     if (customAddress) {
       return {
         id: 'custom',
@@ -106,20 +104,15 @@ export function useRecipientAccount() {
       return recipientAccountFromWallet;
     }
     
-    // Default to sender account
-    return senderAccount;
-  }, [customAddress, recipientAccountFromWallet, senderAccount]);
+    // Return null - SwapContainer will handle fallback to sender for transactions
+    return null;
+  }, [customAddress, recipientAccountFromWallet]);
 
   // Get recipient address (for actual transactions)
+  // Returns empty string if no explicit recipient - caller should fall back to sender
   const recipientAddress = useMemo(() => {
     return recipientAccount?.address || '';
   }, [recipientAccount]);
-
-  // Check if recipient is different from sender
-  const isDifferentFromSender = useMemo(() => {
-    if (!senderAccount || !recipientAccount) return false;
-    return recipientAccount.address !== senderAccount.address;
-  }, [senderAccount, recipientAccount]);
 
   // Check if using custom address
   const isCustomAddress = useMemo(() => {
@@ -197,7 +190,6 @@ export function useRecipientAccount() {
     setRecipientAccount,
     setCustomRecipient,
     resetToSender,
-    isDifferentFromSender,
     isCustomAddress,
     hasSavedRecipient,
     isLoading: !isInitialized,

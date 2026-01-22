@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ArrowRight, CircleAlert, X, Check, RefreshCw, Bookmark } from "lucide-react";
-import { useSelectedAccount } from "@/components/wallet/use-selected-account";
 import { useRecipientAccount } from "@/components/wallet/use-recipient-account";
 import { shortenAddress } from "@/lib/utils";
 import Identicon from "@/components/ui/identicon";
@@ -37,19 +36,16 @@ export default function SelectRecipientDialog({
   onCustomAddressSubmit,
   onResetToSender
 }: SelectRecipientDialogProps) {
-  const { selectedAccount: senderAccount } = useSelectedAccount();
   const { hasSavedRecipient } = useRecipientAccount();
   const [customAddressInput, setCustomAddressInput] = useState('');
   const [addressError, setAddressError] = useState('');
 
-  // Determine what to display
+  // Determine what to display - NO fallback to sender (independent wallets)
   const displayAccount = customAddress 
     ? null // Show custom address UI
-    : selectedRecipient || senderAccount; // Show selected recipient or default to sender
+    : selectedRecipient; // Only show explicitly selected recipient, NOT sender
 
-  const isDifferentFromSender = selectedRecipient && 
-    senderAccount && 
-    selectedRecipient.address !== senderAccount.address;
+  const hasExplicitRecipient = !!selectedRecipient || !!customAddress;
 
   const handleCustomAddressSubmit = () => {
     const trimmedAddress = customAddressInput.trim();
@@ -98,17 +94,17 @@ export default function SelectRecipientDialog({
             <p className="text-white text-sm font-normal">
               {customAddress 
                 ? "Custom address selected"
-                : isDifferentFromSender 
+                : selectedRecipient 
                   ? "Selected destination" 
-                  : "Your connected wallet"}
+                  : ""}
             </p>
-            {(isDifferentFromSender || customAddress) && (
+            {hasExplicitRecipient && (
               <button
                 onClick={onResetToSender}
                 className="text-xs text-burning-orange/70 hover:text-burning-orange flex items-center gap-1"
               >
                 <RefreshCw className="w-3 h-3" />
-                Reset to sender
+                Clear
               </button>
             )}
           </div>
@@ -180,7 +176,7 @@ export default function SelectRecipientDialog({
                 className="text-base w-full"
                 onClick={onSelectDifferentWallet}
               >
-                Choose from Connected Wallets
+                Select Recipient
               </Button>
             </div>
           )}

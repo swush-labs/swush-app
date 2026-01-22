@@ -45,6 +45,33 @@ export const CHAINFLIP_ONLY_NETWORKS = [
   'SolanaDevnet',
 ] as const;
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Wallet Platform Detection - Determines which wallet type a network requires
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export type WalletPlatform = 'polkadot' | 'ethereum' | 'solana';
+
+// Pure EVM networks (require ethereum wallet - MetaMask, etc.)
+const EVM_ONLY_NETWORKS = ['Ethereum', 'Sepolia', 'Arbitrum', 'Arbitrum Sepolia'] as const;
+
+// Solana networks (require solana wallet - Phantom, etc.)
+const SOLANA_NETWORKS = ['Solana', 'SolanaDevnet'] as const;
+
+/**
+ * Determine which wallet platform a network requires for signing transactions
+ * 
+ * - 'ethereum': Pure EVM chains (MetaMask, etc.)
+ * - 'solana': Solana chains (Phantom, etc.)
+ * - 'polkadot': Polkadot ecosystem including Substrate EVM chains like Moonbeam
+ *              (Talisman, SubWallet provide polkadotSigner for both)
+ */
+export function getNetworkPlatform(network: string | undefined): WalletPlatform {
+  if (!network) return 'polkadot';
+  if (EVM_ONLY_NETWORKS.includes(network as typeof EVM_ONLY_NETWORKS[number])) return 'ethereum';
+  if (SOLANA_NETWORKS.includes(network as typeof SOLANA_NETWORKS[number])) return 'solana';
+  return 'polkadot'; // Polkadot ecosystem including Moonbeam/Astar
+}
+
 export type AssetRegistryEntry = {
   symbol: string;
   name: string;
