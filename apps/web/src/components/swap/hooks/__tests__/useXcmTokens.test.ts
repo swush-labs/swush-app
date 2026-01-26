@@ -104,6 +104,19 @@ jest.mock('../utils/queryParams', () => ({
   useToNetworkState: () => ['AssetHubPolkadot', jest.fn()],
 }));
 
+// Mock kheopskit to avoid ESM module parsing issues with @reown/appkit
+jest.mock('@/lib/config/kheopskit', () => ({
+  getEvmChainId: jest.fn((network: string) => {
+    // Return undefined for Polkadot chains, mock chain ID for EVM chains
+    const evmChainIds: Record<string, number> = {
+      'Ethereum': 1,
+      'Arbitrum': 42161,
+      'Base': 8453,
+    };
+    return evmChainIds[network];
+  }),
+}));
+
 describe('useXcmTokens - Phase 1: Token Selection', () => {
   it('should generate correct asset key format for native tokens', () => {
     const { result } = renderHook(() => useXcmTokens());

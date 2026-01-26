@@ -75,7 +75,7 @@ export default function SelectRecipientWalletDialog({
             <div className="text-center py-8">
               <p className="text-white/60 text-sm mb-4">No wallets connected</p>
               <p className="text-white/40 text-xs">
-                Please connect a wallet first using the "Connect Wallet" button
+                Please connect a wallet first using the &quot;Connect Wallet&quot; button
               </p>
             </div>
           ) : (

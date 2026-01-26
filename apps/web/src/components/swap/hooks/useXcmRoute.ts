@@ -439,6 +439,7 @@ export function useXcmRoute({
     determineCurrency,
     getTAssetFromKey,
     walletAddress,
+    recipientAddress,
     slippageTolerance,
   ]);
 
