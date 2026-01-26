@@ -168,7 +168,7 @@ export const WalletConnectorModal = () => {
   // Auto-select account if only one is available
   useEffect(() => {
     if (filteredAccounts.length === 1 && !selectedAccount && currentView === "accounts") {
-      setSelectedAccount(filteredAccounts[0]);
+      setSelectedAccount(filteredAccounts[0] as any);
     }
   }, [filteredAccounts, selectedAccount, currentView, setSelectedAccount]);
 
@@ -428,7 +428,7 @@ export const WalletConnectorModal = () => {
                     key={account.id}
                     account={account}
                     isSelected={selectedAccount?.id === account.id}
-                    onSelect={() => setSelectedAccount(account)}
+                    onSelect={() => setSelectedAccount(account as any)}
                   />
                 ))}
               </div>
