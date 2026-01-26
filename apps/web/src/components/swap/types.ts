@@ -15,6 +15,8 @@ export interface SwapHistoryItem {
   timestamp: Date;
 }
 
+import type { SwapProvider } from '@/services/xcm-router/assetRegistry';
+
 export interface TokenInfo {
   id: string;              // Asset key (e.g., "USDC-1984") - used for ParaSpell integration
   name: string;
@@ -24,11 +26,16 @@ export interface TokenInfo {
   network?: string;        // Network/chain name (e.g., "AssetHubPolkadot")
   assetKey?: string;       // Explicit asset key for XCM operations
   networkChain?: string;   // Explicit network chain for XCM operations
+  // Chainflip-specific fields
+  provider?: SwapProvider;        // 'xcm' (default) or 'chainflip'
+  chainflipId?: string;           // Chainflip compound asset ID (e.g., "dot.hub", "usdc.arb")
+  contractAddress?: string;       // ERC20/SPL contract address
+  assetId?: string;               // Polkadot asset ID for Assets pallet (e.g., "1337" for USDC on AssetHub)
+  // EVM chain identification
+  chainId?: number;               // EVM chain ID (e.g., 1 for Ethereum, 11155111 for Sepolia, 42161 for Arbitrum)
+  // Price data
+  usdPrice?: number;              // Current USD price per token
 }
-
-// Extended token information that can optionally include a network/chain label
-// Note: NetworkTokenInfo is now equivalent to TokenInfo since network was added to TokenInfo
-export interface NetworkTokenInfo extends TokenInfo {}
 
 // Group of the same asset symbol across multiple networks
 export interface AssetGroup {
@@ -36,7 +43,7 @@ export interface AssetGroup {
   name: string;
   icon: string;
   network: string;
-  tokens: NetworkTokenInfo[];
+  tokens: TokenInfo[];
 }
 
 export interface DetailedRouteInfo {
@@ -48,8 +55,8 @@ export interface DetailedRouteInfo {
 
 export interface AssetListProps {
   assetGroups: AssetGroup[];
-  onSelect: (asset: NetworkTokenInfo) => void;
-  currentAsset?: NetworkTokenInfo | null;
+  onSelect: (asset: TokenInfo) => void;
+  currentAsset?: TokenInfo | null;
   onClose: () => void;
 }
 
@@ -95,6 +102,10 @@ export interface SwapFieldProps {
   error?: string | null;
   onConnectWalletClick?: () => void
   onSelectRecipientClick?: () => void
+  recipientAddress?: string // Address of the recipient (for output field)
+  isCustomRecipient?: boolean // Whether recipient is different from sender
+  // Price display
+  formatUSD?: (amount: string, symbol: string, decimals: number) => string; // Function to format USD value
 }
 
 export interface XcmSwapPreviewData {

@@ -8,11 +8,13 @@ import { SubmitButtonAction } from '@/components/swap/ui/SwapAction'
 import { SwapConfirmSheet } from '@/components/swap/ui/SwapConfirmSheet'
 import { SwapHistoryDialog } from '@/components/swap/ui/SwapHistoryDialog'
 import { useXcmTokens } from '@/components/swap/hooks/useXcmTokens'
-import { useXcmRoute } from '@/components/swap/hooks/useXcmRoute'
-import { useXcmSwapExecution } from '@/components/swap/hooks/useXcmSwapExecution'
+import { useSwapRouter } from '@/components/swap/hooks/useSwapRouter'
+import { useUnifiedSwapExecution } from '@/components/swap/hooks/useUnifiedSwapExecution'
 import { useSwapFlow } from '@/components/swap/hooks/useSwapFlow'
 import { useSwapHistory } from '@/components/swap/hooks/useSwapHistory'
-import { useParaSpellBalances } from '@/components/swap/hooks/useParaSpellBalances'
+import { useUnifiedBalances } from '@/components/swap/hooks/useUnifiedBalances'
+import { useSwapCallbacks } from '@/components/swap/hooks/useSwapCallbacks'
+import { useSwapSigners } from '@/components/swap/hooks/useSwapSigners'
 import { LoadState } from '@/components/swap/ui/LoadState'
 import { ArrowSymbolDown } from '@/components/swap/ui/ArrowSymbolDown'
 import { calculateMinimumReceived } from '@/components/swap/utils'
@@ -20,7 +22,11 @@ import { loadSlippageFromStorage, saveSlippageToStorage } from '@/components/swa
 import { SwapCompleteDialog } from './ui/SwapCompleteDialog'
 import ConnectWalletDialog from './ui/ConnectWalletDialog'
 import SelectRecipientDialog from './ui/SelectRecipientDialog'
+import SelectRecipientWalletDialog from './ui/SelectRecipientWalletDialog'
 import { useSelectedAccount } from '@/components/wallet/use-selected-account'
+import { useRecipientAccount } from '@/components/wallet/use-recipient-account'
+import { useTokenPrices } from '@/components/swap/hooks/useTokenPrices'
+import { useWalletPlatformValidation } from '@/components/swap/hooks/useWalletPlatformValidation'
 
 export function SwapContainer() {
   // UI state
@@ -33,6 +39,7 @@ export function SwapContainer() {
   const [openOutputDialog, setOpenOutputDialog] = useState(false)
   const [isConnectWalletOpen, setIsConnectWalletOpen] = useState(false)
   const [isSelectRecipientOpen, setIsSelectRecipientOpen] = useState(false)
+  const [isRecipientWalletDialogOpen, setIsRecipientWalletDialogOpen] = useState(false)
 
   // Wrapper function to update slippage and persist to localStorage
   const handleSlippageChange = useCallback((value: number) => {
@@ -41,13 +48,33 @@ export function SwapContainer() {
   }, []);
 
   // Get selected account from global hook
-  const { selectedAccount } = useSelectedAccount()
-  const isConnected = !!selectedAccount
-  const walletAddress = selectedAccount?.address || ''
-  // Get polkadotSigner - only available for Polkadot accounts
-  const polkadotSigner = selectedAccount && 'polkadotSigner' in selectedAccount 
-    ? selectedAccount.polkadotSigner 
-    : undefined
+  const { selectedAccount, clearSelection } = useSelectedAccount()
+
+  // Get recipient account from hook (with localStorage persistence)
+  // Note: recipientAccount/recipientAddress are now independent from sender
+  const {
+    recipientAccount,
+    recipientAddress,
+    setRecipientAccount,
+    setCustomRecipient,
+    resetToSender,
+    isCustomAddress,
+    hasSavedRecipient,
+  } = useRecipientAccount()
+
+  // Extract signers from accounts (simplified with hook)
+  const {
+    isConnected,
+    walletAddress,
+    senderPolkadotSigner,
+    evmSigner,
+    solanaSigner,
+    recipientPolkadotSigner,
+  } = useSwapSigners(selectedAccount, recipientAccount)
+
+  // Derive effective recipient address for transactions
+  // Falls back to sender address when no explicit recipient is set (self-transfer)
+  const effectiveRecipientAddress = recipientAddress || walletAddress
 
   // Custom hooks - Token and Balance handling (nuqs handles URL params automatically)
   const { 
@@ -69,7 +96,20 @@ export function SwapContainer() {
     unifiedToAssets,
   } = useXcmTokens()
 
-  // Balance fetching using ParaSpell SDK
+  // Fetch prices for all visible tokens
+  const { formatUSD } = useTokenPrices({ fromTokens, toTokens });
+
+  // Auto-clear wallets when switching to incompatible networks
+  useWalletPlatformValidation(
+    selectedAccount,
+    inputToken?.network,
+    recipientAccount,
+    outputToken?.network,
+    clearSelection,
+    resetToSender
+  );
+
+  // Unified balance fetching - automatically routes to EVM (wagmi) or XCM (ParaSpell)
   const {
     inputBalance,
     outputBalance,
@@ -81,42 +121,51 @@ export function SwapContainer() {
     refreshBalances,
     startBalancePolling,
     stopBalancePolling,
-  } = useParaSpellBalances({
+  } = useUnifiedBalances({
     isConnected,
     walletAddress,
+    recipientAddress: effectiveRecipientAddress, // Use effective recipient (falls back to sender)
     inputToken,
     outputToken,
     determineCurrency,
     getTAssetFromKey,
   });
 
-  // Handle wallet disconnect - account management is now handled by the wallet dialog
-  const handleDisconnect = useCallback(() => {
-    // Wallet disconnect cleanup
-  }, []);
 
-  // Swap route - now using real ParaSpell RouterBuilder with parallel fetching
+  // Unified swap router - automatically routes to XCM or Chainflip based on tokens
   const {
+    provider,
+    providerLabel,
     outputAmount,
-    routeDex,
-    routeState,
     estimatedFees,
-    feeBreakdown,
-    debouncedFetchRoute,
-    isProcessing,
+    estimatedDuration,
+    routeState,
     isLoadingQuote,
-    isLoadingFees,
-    resetRoute
-  } = useXcmRoute({
+    isProcessing,
+    // Provider-specific data for execution
+    xcmRouteState,
+    xcmRouteDex,
+    xcmFeeBreakdown,
+    chainflipQuote,
+    // Actions
+    debouncedFetchRoute,
+    resetRoute,
+  } = useSwapRouter({
     inputToken,
     outputToken,
     walletAddress,
+    recipientAddress: effectiveRecipientAddress, // Use effective recipient (falls back to sender)
     slippageTolerance,
-    // Pass helpers from useXcmTokens
+    // Pass helpers from useXcmTokens (required for XCM routes)
     getOptimalExchanges,
     determineCurrency,
     getTAssetFromKey,
   })
+
+  // Backward compatibility aliases
+  const routeDex = xcmRouteDex || '';
+  const feeBreakdown = xcmFeeBreakdown;
+  const isLoadingFees = isLoadingQuote; // Chainflip gets fees with quote
 
   // Unified swap flow state management
   const {
@@ -135,63 +184,54 @@ export function SwapContainer() {
     isActive
   } = useSwapFlow();
 
-  // XCM Swap execution hook with ParaSpell RouterBuilder
-  const { executeSwap } = useXcmSwapExecution({
+  // Swap success/error handlers (extracted to custom hook)
+  const { handleSwapSuccess, handleSwapError } = useSwapCallbacks({
+    provider,
+    inputToken,
+    outputToken,
+    inputAmount,
+    walletAddress,
+    exchange: xcmRouteDex,
+    setInputAmount,
+    resetRoute,
+    resetToSender,
+    refreshBalances,
+    startBalancePolling,
+    stopBalancePolling,
+    resetBalances,
+    resetSwapFlow,
+    completeSwap,
+    failSwap,
+    updateExecution,
+  });
+
+  // Unified swap execution - handles both XCM and Chainflip
+  const { 
+    executeSwap,
+    chainflipDepositAddress,
+    chainflipStage,
+  } = useUnifiedSwapExecution({
+    provider,
     inputToken,
     outputToken,
     inputAmount,
     outputAmount,
-    slippageTolerance,
     walletAddress,
-    polkadotSigner,
-    selectedExchange: routeState.data?.exchange, // Pass the exchange from quote
+    recipientAddress: effectiveRecipientAddress, // Use effective recipient (falls back to sender)
+    senderPolkadotSigner,
+    recipientPolkadotSigner,
+    evmSigner,
+    solanaSigner,
+    slippageTolerance,
+    xcmRouteExchange: xcmRouteState?.data?.exchange,
     getOptimalExchanges,
     determineCurrency,
     getTAssetFromKey,
+    chainflipQuote,
     onExecutionStart: startExecution,
     onExecutionUpdate: updateExecution,
-    onSuccess: (success) => {
-      // Wait for destination balance to update before marking as successful
-      console.log('🎯 Origin transaction complete, waiting for XCM delivery...');
-      
-      // Start polling destination balance to confirm XCM delivery
-      startBalancePolling((newBalance, oldBalance) => {
-        // Mark swap as successful when balance increases
-        completeSwap(success);
-        
-        // Don't auto-reset - let SwapCompleteDialog control its own lifecycle
-        // Dialog will call resetSwapFlow (via onClose) when user dismisses it
-        // This allows user to interact with gift animation without being rushed
-        
-        // Clear input and route immediately (but don't close dialog)
-        setInputAmount('');
-        resetRoute();
-        
-        // Refresh both balances with delay to ensure source deduction is visible
-        // Output balance already updated by polling, but source needs time to propagate
-        console.log('💰 XCM delivery confirmed, refreshing source balance...');
-        refreshBalances(true); // true = add 3 second delay for blockchain confirmation
-      });
-      
-      // Update UI to show "waiting for delivery" state
-      updateExecution({
-        statusMessage: 'Waiting for cross-chain delivery...',
-      });
-    },
-    onError: (error) => {
-      failSwap(error);
-      // Stop any ongoing balance polling
-      stopBalancePolling();
-      // Refresh balances after failed transaction
-      resetBalances(true);
-      // Auto-reset after showing error state
-      setTimeout(() => {
-        setInputAmount('');
-        resetRoute();
-        resetSwapFlow();
-      }, 5000);
-    },
-    // XCM Tracking (optional - disable for Chopsticks testing)
+    onSuccess: handleSwapSuccess,
+    onError: handleSwapError,
     enableXcmTracking: process.env.NEXT_PUBLIC_USE_LOCAL_ENDPOINTS === 'false',
     ocelloidsApiKey: process.env.NEXT_PUBLIC_OCELLOIDS_API_KEY,
   });
@@ -220,17 +260,21 @@ export function SwapContainer() {
     cancelSwap(); // Resets to 'idle'
   }, [cancelSwap]);
 
-  // Handle wallet disconnect with confirmation state cleanup
-  const handleWalletDisconnect = useCallback(() => {
-    handleDisconnect();
-    if (isActive) {
-      resetSwapFlow();
-    }
-    // Reset route state
-    resetRoute();
-    // Reset input amount
-    setInputAmount('');
-  }, [handleDisconnect, isActive, resetSwapFlow, resetRoute]);
+
+  // Recipient management handlers (simplified with hook)
+  const handleSelectDifferentWallet = useCallback(() => {
+    setIsSelectRecipientOpen(false);
+    setIsRecipientWalletDialogOpen(true);
+  }, []);
+
+  const handleRecipientWalletSelect = useCallback((account: any) => {
+    setRecipientAccount(account);
+    setIsRecipientWalletDialogOpen(false);
+  }, [setRecipientAccount]);
+
+  const handleCustomAddressSubmit = useCallback((address: string) => {
+    setCustomRecipient(address);
+  }, [setCustomRecipient]);
 
   // Effect to reset states when tokens change
   useEffect(() => {
@@ -276,7 +320,7 @@ export function SwapContainer() {
   ], []);
 
   // Swap history hook
-  const { swapHistory, isLoadingHistory } = useSwapHistory({
+  const { swapHistory, isLoadingHistory, totalPoints } = useSwapHistory({
     walletAddress,
     showHistory
   });
@@ -323,6 +367,7 @@ export function SwapContainer() {
                 balancesLoaded={balancesLoaded}
                 isConnected={isConnected}
                 onConnectWalletClick={() => setIsConnectWalletOpen(true)}
+                formatUSD={formatUSD}
               />
 
               <ArrowSymbolDown />
@@ -345,9 +390,12 @@ export function SwapContainer() {
                 error={routeState.error}
                 onConnectWalletClick={() => setIsConnectWalletOpen(true)}
                 onSelectRecipientClick={() => setIsSelectRecipientOpen(true)}
-
+                recipientAddress={hasSavedRecipient ? recipientAddress : undefined}
+                isCustomRecipient={isCustomAddress || hasSavedRecipient}
+                formatUSD={formatUSD}
               />
             </div>
+
 
             <SwapDetails
               minimumReceived={calculateMinimumReceived(outputAmount, slippageTolerance)}
@@ -355,11 +403,14 @@ export function SwapContainer() {
               inputToken={inputToken}
               maxTransactionFee={estimatedFees || flowState.simulationResult?.estimatedFee || '0'}
               feeBreakdown={feeBreakdown || flowState.simulationResult?.feeBreakdown}
-              route={routeDex || ''}
+              route={providerLabel || routeDex || ''}
               isLoading={routeState.isLoading}
               isProcessing={isProcessing}
               isLoadingQuote={isLoadingQuote}
               isLoadingFees={isLoadingFees}
+              estimatedDuration={estimatedDuration}
+              provider={provider}
+              formatUSD={formatUSD}
             />
 
             <SubmitButtonAction
@@ -380,6 +431,7 @@ export function SwapContainer() {
         setShowHistory={setShowHistory}
         swapHistory={swapHistory}
         isLoadingHistory={isLoadingHistory}
+        totalPoints={totalPoints}
       />
 
       {/* Swap Confirmation Bottom Sheet */}
@@ -403,8 +455,10 @@ export function SwapContainer() {
         inputAmount={flowState.success?.inputAmount || inputAmount}
         inputToken={flowState.success?.inputToken || inputToken?.symbol || ''}
         outputAmount={flowState.success?.outputAmount || outputAmount}
-        outputToken={flowState.success?.outputToken || outputToken?.name || ''}
+        outputToken={flowState.success?.outputToken || outputToken?.symbol || ''}
+        outputNetwork={outputToken?.network}
         duration={flowState.success?.duration || 4000}
+        pointsEarned={flowState.success?.pointsEarned}
         onClose={() => {
           stopBalancePolling(); // Clean up polling on dialog close
           resetSwapFlow();
@@ -416,11 +470,29 @@ export function SwapContainer() {
         xcmStatusMessage={flowState.execution?.xcmStatusMessage}
       />
 
-      <ConnectWalletDialog isOpen={isConnectWalletOpen} onOpenChange={setIsConnectWalletOpen} />
+      {/* Sender Wallet Dialog */}
+      <ConnectWalletDialog 
+        isOpen={isConnectWalletOpen} 
+        onOpenChange={setIsConnectWalletOpen}
+      />
+
+      {/* Recipient Wallet Selection Dialog - Dedicated component */}
+      <SelectRecipientWalletDialog 
+        isOpen={isRecipientWalletDialogOpen}
+        onOpenChange={setIsRecipientWalletDialogOpen}
+        onAccountSelect={handleRecipientWalletSelect}
+        currentRecipient={recipientAccount}
+      />
+
+      {/* Recipient Selection Dialog */}
       <SelectRecipientDialog 
         isOpen={isSelectRecipientOpen} 
-        onConnectWalletClick={() => setIsConnectWalletOpen(true)}
-        onOpenChange={setIsSelectRecipientOpen} 
+        onOpenChange={setIsSelectRecipientOpen}
+        onSelectDifferentWallet={handleSelectDifferentWallet}
+        selectedRecipient={hasSavedRecipient && !isCustomAddress ? recipientAccount : null}
+        customAddress={isCustomAddress ? recipientAddress : ''}
+        onCustomAddressSubmit={handleCustomAddressSubmit}
+        onResetToSender={resetToSender}
       />
     </>
   )

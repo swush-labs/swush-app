@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { RouterBuilder } from '@paraspell/xcm-router';
 import debounce from 'lodash.debounce';
 
 // Proper ParaSpell types - NO any types!
@@ -9,6 +8,9 @@ import type {
   TRouterXcmFeeResult
 } from '@paraspell/xcm-router';
 
+// Lazy-loaded RouterBuilder to prevent WASM memory issues
+import { getRouterBuilder } from '@/services/xcm-router/lazyRouter';
+
 // Our types
 import type { TokenInfo } from '@/components/swap/types';
 import type { FeeSummary } from '@/services/xcm-router/feeCalculator';
@@ -16,6 +18,7 @@ import { calculateTotalFees, formatFeeSummary, safeStringify } from '@/services/
 import { formatAmount } from '@/services/balances/utils';
 import { NUMBER_FORMAT_OPTIONS, TEST_RPC_ACALA, TEST_RPC_ASSET_HUB, TEST_RPC_HYDRATION, TEST_RPC_BIFROST } from '@/services/constants';
 import { ROUTE_FETCH_TIMEOUT } from '@/lib/const';
+import { toSmallestUnit } from '@/services/chainflip';
 
 /**
  * Check if price fetching should be skipped (from environment variable)
@@ -24,34 +27,6 @@ import { ROUTE_FETCH_TIMEOUT } from '@/lib/const';
 const shouldSkipPriceFetch = (): boolean => {
   return process.env.NEXT_PUBLIC_SKIP_PRICE_FETCH === 'true';
 };
-
-/**
- * Convert user input (decimal string) to smallest unit (bigint)
- * 
- * Uses string manipulation to preserve precision for large decimals
- * Example: "1.5" with 12 decimals → 1500000000000n
- * 
- * @param amount - Decimal amount as string (e.g., "1.5")
- * @param decimals - Number of decimal places (e.g., 12 for DOT)
- * @returns Amount in smallest unit as bigint
- */
-function toSmallestUnit(amount: string, decimals: number): bigint {
-
-  const parsed = parseFloat(amount);
-
-  if (parsed > Number.MAX_SAFE_INTEGER) {
-    throw new Error('Amount too large');
-  }
-
-  if (isNaN(parsed) || parsed <= 0) return BigInt(0);
-
-  // Handle decimal places with string manipulation to avoid precision loss
-  const [whole = '0', fraction = ''] = amount.split('.');
-  const paddedFraction = fraction.padEnd(decimals, '0').slice(0, decimals);
-  const combined = whole + paddedFraction;
-
-  return BigInt(combined);
-}
 
 
 /**
@@ -73,6 +48,7 @@ interface UseXcmRouteProps {
   inputToken: TokenInfo | null;
   outputToken: TokenInfo | null;
   walletAddress?: string;
+  recipientAddress?: string; // Recipient address for fee calculation (defaults to walletAddress)
   slippageTolerance?: number; // Percentage (e.g., 1 for 1%)
 
   // Helper functions from useXcmTokens
@@ -127,6 +103,7 @@ export function useXcmRoute({
   inputToken,
   outputToken,
   walletAddress,
+  recipientAddress,
   slippageTolerance = 1,
   getOptimalExchanges,
   determineCurrency,
@@ -274,6 +251,9 @@ export function useXcmRoute({
         exchanges: exchangesToUse,
       });
 
+      // Get lazy-loaded RouterBuilder to prevent WASM memory issues
+      const RouterBuilder = await getRouterBuilder();
+
       const quotePromise = RouterBuilder({ abstractDecimals: true })
         .from(inputToken.networkChain as any) // Type assertion for chain compatibility
         .to(outputToken.networkChain as any) // Type assertion for chain compatibility
@@ -339,7 +319,7 @@ export function useXcmRoute({
           .currencyTo(determineCurrency(toAsset))
           .amount(currentInputAmount) // Use string amount
           .senderAddress(walletAddress)
-          .recipientAddress(walletAddress)
+          .recipientAddress(recipientAddress || walletAddress) // Use recipient or default to sender
           .slippagePct(safeSlippage.toString())
           .getXcmFees()
         : Promise.reject(new Error('No wallet connected'));
@@ -459,6 +439,7 @@ export function useXcmRoute({
     determineCurrency,
     getTAssetFromKey,
     walletAddress,
+    recipientAddress,
     slippageTolerance,
   ]);
 

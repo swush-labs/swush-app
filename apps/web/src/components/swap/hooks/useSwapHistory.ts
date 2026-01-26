@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { SwapHistory, SwapHistoryService } from '@/services/swapHistoryService';
+import type { SwapHistory } from '@/types/swapHistory';
 
 interface UseSwapHistoryProps {
   walletAddress: string;
@@ -17,7 +17,13 @@ export function useSwapHistory({ walletAddress, showHistory }: UseSwapHistoryPro
       
       setIsLoadingHistory(true);
       try {
-        const history = await SwapHistoryService.getSwapHistoryByWalletAddress(walletAddress);
+        const response = await fetch(`/api/swap-history?walletAddress=${encodeURIComponent(walletAddress)}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch swap history');
+        }
+        
+        const history = await response.json();
         setSwapHistory(history);
       } catch (error) {
         console.error('Failed to fetch swap history:', error);
@@ -32,8 +38,14 @@ export function useSwapHistory({ walletAddress, showHistory }: UseSwapHistoryPro
     }
   }, [showHistory, walletAddress]);
 
+  // Calculate total points from successful swaps
+  const totalPoints = swapHistory
+    .filter(swap => swap.status === 'success')
+    .reduce((sum, swap) => sum + swap.pointsEarned, 0);
+
   return {
     swapHistory,
-    isLoadingHistory
+    isLoadingHistory,
+    totalPoints
   };
 } 

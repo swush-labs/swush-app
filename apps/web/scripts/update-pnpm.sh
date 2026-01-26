@@ -1,0 +1,1 @@
+pnpm update @paraspell/sdk @paraspell/xcm-router --latest

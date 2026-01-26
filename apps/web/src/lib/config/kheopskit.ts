@@ -91,7 +91,7 @@ export const sepolia = defineChain({
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
   rpcUrls: {
     default: {
-      http: ["https://rpc.sepolia.org"],
+      http: ["https://ethereum-sepolia.publicnode.com"],
     },
   },
   blockExplorers: {
@@ -123,19 +123,126 @@ export const mainnet = defineChain({
   caipNetworkId: "eip155:1",
 });
 
-// All supported networks
+// Arbitrum for Chainflip integration
+export const arbitrum = defineChain({
+  id: "42161",
+  name: "Arbitrum",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: {
+      http: ["https://arb1.arbitrum.io/rpc"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Arbiscan",
+      url: "https://arbiscan.io",
+    },
+  },
+  chainNamespace: "eip155",
+  caipNetworkId: "eip155:42161",
+});
+
+export const arbitrumSepolia = defineChain({
+  id: "421614",
+  name: "Arbitrum Sepolia",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: {
+      http: ["https://sepolia-rollup.arbitrum.io/rpc"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Arbiscan Sepolia",
+      url: "https://sepolia.arbiscan.io",
+    },
+  },
+  chainNamespace: "eip155",
+  caipNetworkId: "eip155:421614",
+});
+
+// Solana for Chainflip integration
+export const solanaMainnet = defineChain({
+  id: "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+  name: "Solana",
+  nativeCurrency: { name: "Solana", symbol: "SOL", decimals: 9 },
+  rpcUrls: {
+    default: {
+      http: ["https://api.mainnet-beta.solana.com"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Solscan",
+      url: "https://solscan.io",
+    },
+  },
+  chainNamespace: "solana",
+  caipNetworkId: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+});
+
+export const solanaDevnet = defineChain({
+  id: "EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+  name: "Solana Devnet",
+  nativeCurrency: { name: "Solana", symbol: "SOL", decimals: 9 },
+  rpcUrls: {
+    default: {
+      http: ["https://api.devnet.solana.com"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Solscan Devnet",
+      url: "https://solscan.io?cluster=devnet",
+    },
+  },
+  chainNamespace: "solana",
+  caipNetworkId: "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+});
+
+// AssetHub Chainflip Testnet (Perseverance)
+export const assetHubChainflipTestnet = defineChain({
+  id: "assethub-perseverance-chainflip",
+  name: "AssetHub Chainflip Testnet",
+  nativeCurrency: { name: "Polkadot", symbol: "DOT", decimals: 10 },
+  rpcUrls: {
+    default: {
+      http: [], // WebSocket only endpoint
+      webSocket: ["wss://assethub.perseverance.chainflip.io"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Perseverance Explorer",
+      url: "https://scan.perseverance.chainflip.io",
+    },
+  },
+  chainNamespace: "polkadot",
+  caipNetworkId: "polkadot:assethub-perseverance-chainflip",
+});
+
+// All supported networks - include both mainnet and testnet
 export const APPKIT_CHAINS: [AppKitNetwork, ...AppKitNetwork[]] = [
+  // Mainnet
   polkadot,
-  polkadotAssetHub, 
-  paseo,
-  sepolia,
+  polkadotAssetHub,
   mainnet,
+  arbitrum,
+  solanaMainnet,
+  // Testnet
+  paseo,
+  paseoAssetHub,
+  sepolia,
+  arbitrumSepolia,
+  solanaDevnet,
+  assetHubChainflipTestnet,
 ];
 
 // Kheopskit configuration
 export const kheopskitConfig: KheopskitConfig = {
   autoReconnect: true,
-  platforms: ["polkadot", "ethereum"], // Support both platforms
+  platforms: ["polkadot", "ethereum", "solana"], // Support all three platforms
   walletConnect: {
     projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || "demo-project-id",
     metadata: {
@@ -147,5 +254,42 @@ export const kheopskitConfig: KheopskitConfig = {
     networks: APPKIT_CHAINS,
   },
   debug: process.env.NODE_ENV === "development",
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Chain ID Utilities - Single Source of Truth
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Get EVM chain ID by network name
+ * Network names match those used throughout the app (assetRegistry, etc.)
+ * 
+ * @param network - Network name (e.g., "Ethereum", "Sepolia", "Arbitrum")
+ * @returns Numeric chain ID or undefined if not found
+ */
+export const getEvmChainId = (network: string): number | undefined => {
+  const chain = APPKIT_CHAINS.find(
+    c => c.name === network && (c as { chainNamespace?: string }).chainNamespace === 'eip155'
+  );
+  
+  if (!chain) return undefined;
+  return typeof chain.id === 'string' ? parseInt(chain.id, 10) : chain.id;
+};
+
+/**
+ * Get network name from EVM chain ID
+ * Reverse lookup of getEvmChainId
+ * 
+ * @param chainId - Numeric chain ID (e.g., 1, 11155111, 42161)
+ * @returns Network name or undefined if not found
+ */
+export const getNetworkNameFromChainId = (chainId: number): string | undefined => {
+  const chain = APPKIT_CHAINS.find(c => {
+    if ((c as { chainNamespace?: string }).chainNamespace !== 'eip155') return false;
+    const id = typeof c.id === 'string' ? parseInt(c.id, 10) : c.id;
+    return id === chainId;
+  });
+  
+  return chain?.name;
 };
 

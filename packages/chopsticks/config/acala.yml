@@ -58,7 +58,7 @@ import-storage:
         -
           - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
           - token: DOT
-        - free: 10000000000
+        - free: 1000000000000000
       -
         -
           - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
@@ -68,12 +68,17 @@ import-storage:
         -
           - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
           - ForeignAsset: 14
-        - free: 10000000000
+        - free: 1000000000000000
       -
         -
           - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
           - ForeignAsset: 12
-        - free: 10000000000
+        - free: 1000000000000000
+      -
+        -
+          - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK
+          - ForeignAsset: 17
+        - free: 1000000000000000
   GeneralCouncil:
     Members:
       - 5DPLGAR43FRbPxkkAWJudfyLTbJAP1GMvtyt1mx7KCuiuNvK

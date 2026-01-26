@@ -2,7 +2,11 @@
 
 import { useMemo, useCallback } from "react";
 import useCurrencyOptions from "./useCurrencyOptions";
-import { type AssetRegistryEntry, ASSET_REGISTRY, DEX_CHAIN_COMPATIBILITY } from "./assetRegistry";
+import { 
+  type AssetRegistryEntry, 
+  ASSET_REGISTRY, 
+  type SwapProvider,
+} from "./assetRegistry";
 import { getCompatibleDEXs, getOptimalDEXArray } from "./assetRegistryUtils";
 import {
   type TChain,
@@ -12,21 +16,35 @@ import {
 } from "@paraspell/sdk";
 import type { TExchangeChain } from "@paraspell/xcm-router";
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Network Support Data Structure
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export interface NetworkSupport {
+  network: string;
+  assetKey: string;
+  displayName: string;
+  assetType: string;
+  verified: boolean;
+  // Provider-specific fields
+  provider: SwapProvider;
+  actualAsset: TAssetInfo | null;  // null for Chainflip-only networks
+  // Chainflip-specific fields (also used by hybrid XCM tokens)
+  chainflipId?: string;  // Chainflip compound asset ID (e.g., "dot.hub", "usdc.arb")
+  decimals?: number;
+  contractAddress?: string;
+  assetId?: string;  // Polkadot asset ID for Assets pallet (e.g., "1337" for USDC)
+}
+
 // Unified asset-network data structure
 export type UnifiedAsset = {
   symbol: string;
   name: string;
   category: string;
   description?: string;
-  // Pre-computed networks that support this asset
-  supportedNetworks: Array<{
-    network: string;
-    assetKey: string;
-    displayName: string;
-    assetType: string;
-    verified: boolean;
-    actualAsset: TAssetInfo;
-  }>;
+  logo?: string;
+  // Pre-computed networks that support this asset (now includes both XCM and Chainflip)
+  supportedNetworks: NetworkSupport[];
   // Validation status
   isValid: boolean;
   totalNetworks: number;
@@ -46,24 +64,115 @@ export const determineCurrency = (asset: TAssetInfo): TCurrencyInput => {
   return { symbol: asset.symbol ?? "" };
 };
 
-// Create unified network data for an asset
-const createUnifiedNetworkData = (
+// ═══════════════════════════════════════════════════════════════════════════════
+// Unified Network Data Creator
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Create unified network data for any asset (XCM, Chainflip, or hybrid)
+ * 
+ * This function handles all network types:
+ * - XCM-only networks (e.g., Hydration, Bifrost) - have actualAsset from ParaSpell
+ * - Chainflip-only networks (e.g., Ethereum, Arbitrum, Solana) - no actualAsset
+ * - Hybrid networks (e.g., AssetHub with chainflipId) - have both actualAsset and chainflipId
+ * 
+ * @param key - Asset registry key (e.g., "USDC-1337-AssetHubPolkadot")
+ * @param registryEntry - Full registry entry for the asset
+ * @param actualAsset - ParaSpell TAssetInfo (null for Chainflip-only networks)
+ */
+const createNetworkData = (
   key: string,
   registryEntry: AssetRegistryEntry,
-  actualAsset: TAssetInfo
-) => {
-  const registryInstance = registryEntry.networkInstances[key];
-    //TODO: validation is already done in the useCurrencyOptions hook
+  actualAsset: TAssetInfo | null
+): NetworkSupport => {
+  const instance = registryEntry.networkInstances[key];
+  const provider = instance.provider || 'xcm';
 
   return {
-    network: registryInstance?.network || "Unknown",
+    network: instance.network,
     assetKey: key,
-    displayName: registryInstance?.displayName || `${actualAsset.symbol} (${registryInstance?.network || "Unknown"})`,
-    assetType: registryInstance?.assetType || "Unknown",
-    verified: registryInstance?.verified || false,
+    displayName: instance.displayName || `${registryEntry.symbol} (${instance.network})`,
+    assetType: instance.assetType,
+    verified: instance.verified || false,
+    provider,
     actualAsset,
+    // Pass through Chainflip fields (for both Chainflip-only and hybrid tokens)
+    chainflipId: instance.chainflipId,
+    decimals: instance.decimals,
+    contractAddress: instance.contractAddress,
+    assetId: instance.assetId,
   };
 };
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Asset Processing Helper
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Process registry assets and create unified asset list
+ * 
+ * Handles both XCM (ParaSpell-validated) and Chainflip (direct) networks:
+ * - XCM networks are validated against ParaSpell's currencyMap
+ * - Chainflip networks are added directly from registry (no validation needed)
+ * - Hybrid tokens (e.g., AssetHub USDC/DOT) get both XCM validation and Chainflip fields
+ * 
+ * @param currencyMap - ParaSpell currency map (from/to specific)
+ * @param expectedAssetKeys - Set of valid asset keys from registry
+ * @returns Array of unified assets with their supported networks
+ */
+const processRegistryAssets = (
+  currencyMap: Record<string, TAssetInfo>,
+  expectedAssetKeys: Set<string>
+): UnifiedAsset[] => {
+  const assetMap = new Map<string, UnifiedAsset>();
+
+  Object.values(ASSET_REGISTRY).forEach(registryEntry => {
+    const symbol = registryEntry.symbol;
+    
+    // Initialize asset entry
+    assetMap.set(symbol, {
+      symbol,
+      name: registryEntry.name,
+      category: registryEntry.category,
+      description: registryEntry.description,
+      logo: registryEntry.logo,
+      supportedNetworks: [],
+      isValid: false,
+      totalNetworks: Object.keys(registryEntry.networkInstances).length,
+      validNetworks: 0,
+    });
+    
+    const asset = assetMap.get(symbol)!;
+    
+    // Process each network instance
+    Object.entries(registryEntry.networkInstances).forEach(([key, instance]) => {
+      const provider = instance.provider || 'xcm';
+      
+      if (provider === 'xcm') {
+        // XCM: Validate against ParaSpell currencyMap
+        const actualAsset = currencyMap[key];
+        if (actualAsset && expectedAssetKeys.has(key)) {
+          asset.supportedNetworks.push(createNetworkData(key, registryEntry, actualAsset));
+          if (instance.verified) asset.validNetworks++;
+        }
+      } else {
+        // Chainflip: Add directly (no ParaSpell validation needed)
+        asset.supportedNetworks.push(createNetworkData(key, registryEntry, null));
+        if (instance.verified) asset.validNetworks++;
+      }
+    });
+    
+    asset.isValid = asset.validNetworks > 0;
+  });
+
+  return Array.from(assetMap.values())
+    .filter(asset => asset.supportedNetworks.length > 0)
+    .sort((a, b) => a.symbol.localeCompare(b.symbol));
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Main Hook
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const useAssetAggregator = (
   from: TChain | undefined,
@@ -102,93 +211,17 @@ const useAssetAggregator = (
     currencyFromMap,
     currencyToMap,
   } = useCurrencyOptions(from, exchangeNode, to, validTargetNetworks);
-  // Create unified asset-network structure for FROM assets (registry-first)
-  const unifiedFromAssets = useMemo(() => {
-    const assetMap = new Map<string, UnifiedAsset>();
 
-    // Process registry assets first, then validate with ParaSpell data
-    Object.values(ASSET_REGISTRY).forEach(registryEntry => {
-      const symbol = registryEntry.symbol;
-      
-      assetMap.set(symbol, {
-        symbol,
-        name: registryEntry.name,
-        category: registryEntry.category,
-        description: registryEntry.description,
-        supportedNetworks: [],
-        isValid: false,
-        totalNetworks: Object.keys(registryEntry.networkInstances).length,
-        validNetworks: 0,
-      });
-      
-      const asset = assetMap.get(symbol)!;
-      
-      // Only include networks that exist in ParaSpell data
-      Object.entries(registryEntry.networkInstances).forEach(([key, networkInstance]) => {
-        const actualAsset = currencyFromMap[key];
-        
-        if (actualAsset && registryMetadata.expectedAssetKeys.has(key)) {
-          const networkData = createUnifiedNetworkData(key, registryEntry, actualAsset);
-          asset.supportedNetworks.push(networkData);
-          
-          if (networkInstance.verified) {
-            asset.validNetworks++;
-          }
-        }
-      });
-      
-      // Mark asset as valid if it has at least one verified network
-      asset.isValid = asset.validNetworks > 0;
-    });
+  // Create unified asset lists using shared helper (DRY principle)
+  const unifiedFromAssets = useMemo(() => 
+    processRegistryAssets(currencyFromMap, registryMetadata.expectedAssetKeys),
+    [currencyFromMap, registryMetadata.expectedAssetKeys]
+  );
 
-    return Array.from(assetMap.values())
-      .filter(asset => asset.supportedNetworks.length > 0) // Only include assets with validated networks
-      .sort((a, b) => a.symbol.localeCompare(b.symbol));
-  }, [currencyFromMap, registryMetadata.expectedAssetKeys]);
-
-  // Create unified asset-network structure for TO assets (registry-first)
-  const unifiedToAssets = useMemo(() => {
-    const assetMap = new Map<string, UnifiedAsset>();
-
-    // Process registry assets first, then validate with ParaSpell data
-    Object.values(ASSET_REGISTRY).forEach(registryEntry => {
-      const symbol = registryEntry.symbol;
-      
-      assetMap.set(symbol, {
-        symbol,
-        name: registryEntry.name,
-        category: registryEntry.category,
-        description: registryEntry.description,
-        supportedNetworks: [],
-        isValid: false,
-        totalNetworks: Object.keys(registryEntry.networkInstances).length,
-        validNetworks: 0,
-      });
-      
-      const asset = assetMap.get(symbol)!;
-      
-      // Only include networks that exist in ParaSpell data
-      Object.entries(registryEntry.networkInstances).forEach(([key, networkInstance]) => {
-        const actualAsset = currencyToMap[key];
-        
-        if (actualAsset && registryMetadata.expectedAssetKeys.has(key)) {
-          const networkData = createUnifiedNetworkData(key, registryEntry, actualAsset);
-          asset.supportedNetworks.push(networkData);
-          
-          if (networkInstance.verified) {
-            asset.validNetworks++;
-          }
-        }
-      });
-      
-      // Mark asset as valid if it has at least one verified network
-      asset.isValid = asset.validNetworks > 0;
-    });
-
-    return Array.from(assetMap.values())
-      .filter(asset => asset.supportedNetworks.length > 0) // Only include assets with validated networks
-      .sort((a, b) => a.symbol.localeCompare(b.symbol));
-  }, [currencyToMap, registryMetadata.expectedAssetKeys]);
+  const unifiedToAssets = useMemo(() => 
+    processRegistryAssets(currencyToMap, registryMetadata.expectedAssetKeys),
+    [currencyToMap, registryMetadata.expectedAssetKeys]
+  );
 
   // Helper functions for RouterBuilder compatibility (memoized to prevent infinite loops)
   const getTAssetFromKey = useCallback((key: string, direction: 'from' | 'to'): TAssetInfo | undefined => {
@@ -249,17 +282,8 @@ const useAssetAggregator = (
     // DEX selection functions
     getOptimalExchanges,
     validateExchangeCompatibility,
-    
-    // Backward compatibility
-    aggregatedFromAssets: unifiedFromAssets,
-    aggregatedToAssets: unifiedToAssets,
-    registeredFromAssets: unifiedFromAssets,
-    unregisteredFromAssets: [],
-    registeredToAssets: unifiedToAssets,
-    unregisteredToAssets: [],
   };
 };
 
 
 export default useAssetAggregator;
-

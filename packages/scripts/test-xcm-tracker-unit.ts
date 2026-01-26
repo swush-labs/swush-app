@@ -7,7 +7,7 @@
  *   npx tsx scripts/test-xcm-tracker-unit.ts
  */
 
-import { XcmMessageTracker } from '../apps/web/src/services/xcm-tracker/XcmMessageTracker';
+import { XcmMessageTracker } from '../../apps/web/src/services/xcm-tracker/XcmMessageTracker';
 
 // Mock XCM events with unique extrinsic hashes
 const createMockSentEvent = (extrinsicHash: string, chainId: string = 'urn:ocn:polkadot:0') => ({
