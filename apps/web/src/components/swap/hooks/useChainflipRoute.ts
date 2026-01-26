@@ -8,6 +8,7 @@ import {
   type ChainflipQuote,
 } from '@/services/chainflip';
 import { ROUTE_FETCH_TIMEOUT } from '@/lib/const';
+import { SwapToasts } from '@/components/swap/utils/toastUtils';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -215,13 +216,13 @@ export function useChainflipRoute({
 
       // Only update state if this is still the latest request
       if (latestInputAmountRef.current === currentInputAmount) {
-        const errorMessage = error instanceof Error
-          ? error.message
-          : 'Failed to fetch Chainflip quote';
+        // Show toast notification using centralized utility
+        SwapToasts.chainflipQuoteError();
 
+        // Clear state without setting error (no inline error display)
         setRouteState({
           isLoading: false,
-          error: errorMessage,
+          error: null,
           data: null,
         });
         setOutputAmount('');

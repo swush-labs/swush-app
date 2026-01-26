@@ -101,6 +101,16 @@ const getErrorToastStyle = () => {
   };
 };
 
+const getWarningToastStyle = () => {
+  return {
+    ...getResponsiveToastStyle(),
+    background: '#1a1f2e',
+    color: '#fff',
+    border: '1px solid rgba(251, 146, 60, 0.3)',
+    fontWeight: '500',
+  };
+};
+
 // Toast IDs for consistent management
 export const TOAST_IDS = {
   SWAP_PREPARE: 'swap-prepare',
@@ -108,6 +118,7 @@ export const TOAST_IDS = {
   SWAP_SUCCESS: 'swap-success',
   SWAP_ERROR: 'swap-error',
   XCM_ERROR: 'xcm-error',
+  CHAINFLIP_QUOTE_ERROR: 'chainflip-quote-error',
   CHOPSTICKS_STATUS: 'chopsticks-status',
   WALLET_CONNECTION: 'wallet-connection'
 } as const;
@@ -252,6 +263,16 @@ export const SwapToasts = {
     return toast.success('Wallet disconnected', {
       duration: 2000,
       style: getSuccessToastStyle()
+    });
+  },
+
+  // Chainflip-specific toasts
+  chainflipQuoteError: () => {
+    return toast.error('Unable to get quote', {
+      id: TOAST_IDS.CHAINFLIP_QUOTE_ERROR,
+      duration: 4000,
+      icon: '⚠️',
+      style: getWarningToastStyle()
     });
   }
 };

@@ -225,11 +225,7 @@ export function SwapField({
           </div>
         </div>
 
-        {error && (
-          <div className="mt-2 text-sm text-red-400">
-            {error}
-          </div>
-        )}
+        {/* Error display removed - now handled by toast notifications */}
       </div>
     </motion.div>
   );
