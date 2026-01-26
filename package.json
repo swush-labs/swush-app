@@ -15,7 +15,7 @@
     "lint": "pnpm --filter @swush/web lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "start-chopsticks": "npx @acala-network/chopsticks@latest xcm -p packages/chopsticks/config/polkadot_asset_hub.yml -p packages/chopsticks/config/hydration.yml -p packages/chopsticks/config/bifrost.yml -p packages/chopsticks/config/acala.yml -p packages/chopsticks/config/moonbeam.yml",
-    "postinstall": ""
+    "postinstall": "papi"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.21.0",
