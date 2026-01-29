@@ -141,10 +141,15 @@ export const getSwapProvider = (
   return 'xcm';
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// MILESTONE 2: Testnet-only configuration for Chainflip integration
+// Only keeping: Sepolia, Arbitrum Sepolia, AssetHubPerseverance, SolanaDevnet
+// ═══════════════════════════════════════════════════════════════════════════════
+
 // Simple registry mapping keys from useCurrencyOptions.ts to asset info
 export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
   // ═══════════════════════════════════════════════════════════════════════════════
-  // USDC - Available on XCM chains AND Chainflip chains
+  // USDC - Testnet instances only for M2
   // ═══════════════════════════════════════════════════════════════════════════════
   "USDC": {
     symbol: "USDC",
@@ -154,17 +159,7 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     logo: "/tokens/usdc.png",
     coingeckoId: "usd-coin",
     networkInstances: {
-      // ─── XCM Networks ───
-      "USDC-1337-AssetHubPolkadot": {
-        network: "AssetHubPolkadot",
-        assetType: "Asset ID",
-        displayName: "USDC (AssetHub)",
-        verified: true,
-        provider: 'xcm',
-        chainflipId: 'usdc.hub',  // Available for Chainflip cross-ecosystem swaps
-        decimals: 6,
-        assetId: "1337",  // Asset ID for Assets.transfer call
-      },
+      // ─── Testnet - AssetHub Perseverance (Chainflip) ───
       "USDC-1337-AssetHubPerseverance": {
         network: "AssetHubPerseverance",
         assetType: "Asset ID",
@@ -174,6 +169,39 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         chainflipId: 'usdc.hub',
         decimals: 6,
         assetId: "1337",  // Asset ID for Assets.transfer call
+      },
+      // ─── Testnet - Sepolia ───
+      "USDC-Sepolia": {
+        network: "Sepolia",
+        assetType: "Native",
+        displayName: "USDC (Sepolia)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'usdc.eth',
+        decimals: 6,
+        contractAddress: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
+      },
+      // ─── Testnet - Arbitrum Sepolia ───
+      "USDC-ArbitrumSepolia": {
+        network: "Arbitrum Sepolia",
+        assetType: "Native",
+        displayName: "USDC (Arbitrum Sepolia)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'usdc.arb',
+        decimals: 6,
+        contractAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',  // USDC on Arbitrum Sepolia
+      },
+      /* ─── MAINNET INSTANCES (Commented for M2) ───
+      "USDC-1337-AssetHubPolkadot": {
+        network: "AssetHubPolkadot",
+        assetType: "Asset ID",
+        displayName: "USDC (AssetHub)",
+        verified: true,
+        provider: 'xcm',
+        chainflipId: 'usdc.hub',
+        decimals: 6,
+        assetId: "1337",
       },
       "USDC-22-Hydration": {
         network: "Hydration",
@@ -189,7 +217,6 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         verified: true,
         provider: 'xcm',
       },
-      // ─── Chainflip Networks ───
       "USDC-Ethereum": {
         network: "Ethereum",
         assetType: "Native",
@@ -199,16 +226,6 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         chainflipId: 'usdc.eth',
         decimals: 6,
         contractAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-      },
-      "USDC-Sepolia": {
-        network: "Sepolia",
-        assetType: "Native",
-        displayName: "USDC (Sepolia)",
-        verified: true,
-        provider: 'chainflip',
-        chainflipId: 'usdc.eth',
-        decimals: 6,
-        contractAddress: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
       },
       "USDC-Arbitrum": {
         network: "Arbitrum",
@@ -220,16 +237,6 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         decimals: 6,
         contractAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
       },
-      "USDC-ArbitrumSepolia": {
-        network: "Arbitrum Sepolia",
-        assetType: "Native",
-        displayName: "USDC (Arbitrum Sepolia)",
-        verified: true,
-        provider: 'chainflip',
-        chainflipId: 'usdc.arb',
-        decimals: 6,
-        contractAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',  // USDC on Arbitrum Sepolia
-      },
       "USDC-Solana": {
         network: "Solana",
         assetType: "Native",
@@ -238,13 +245,13 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         provider: 'chainflip',
         chainflipId: 'usdc.sol',
         decimals: 6,
-        // Solana uses different chain identification, not EVM chainId
       },
+      */
     }
   },
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // USDT - Available on XCM chains AND Chainflip (Ethereum)
+  // USDT - Testnet instances only for M2
   // ═══════════════════════════════════════════════════════════════════════════════
   "USDT": {
     symbol: "USDT",
@@ -254,17 +261,7 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     logo: "/tokens/usdt.png",
     coingeckoId: "tether",
     networkInstances: {
-      // ─── XCM Networks ───
-      "USDt-1984-AssetHubPolkadot": {
-        network: "AssetHubPolkadot",
-        assetType: "Asset ID",
-        displayName: "USDt (AssetHubPolkadot)",
-        verified: true,
-        provider: 'xcm',
-        chainflipId: 'usdt.hub',  // Available for Chainflip cross-ecosystem swaps
-        decimals: 6,
-        assetId: "1984",  // Asset ID for Assets.transfer call
-      },
+      // ─── Testnet - AssetHub Perseverance (Chainflip) ───
       "USDt-1984-AssetHubPerseverance": {
         network: "AssetHubPerseverance",
         assetType: "Asset ID",
@@ -274,6 +271,28 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         chainflipId: 'usdt.hub',
         decimals: 6,
         assetId: "1984",  // Asset ID for Assets.transfer call
+      },
+      // ─── Testnet - Sepolia ───
+      "USDT-Sepolia": {
+        network: "Sepolia",
+        assetType: "Native",
+        displayName: "USDT (Sepolia)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'usdt.eth',
+        decimals: 6,
+        // Note: Add testnet USDT contract address when available
+      },
+      /* ─── MAINNET INSTANCES (Commented for M2) ───
+      "USDt-1984-AssetHubPolkadot": {
+        network: "AssetHubPolkadot",
+        assetType: "Asset ID",
+        displayName: "USDt (AssetHubPolkadot)",
+        verified: true,
+        provider: 'xcm',
+        chainflipId: 'usdt.hub',
+        decimals: 6,
+        assetId: "1984",
       },
       "USDT-10-Hydration": {
         network: "Hydration",
@@ -289,7 +308,6 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         verified: true,
         provider: 'xcm',
       },
-      // ─── Chainflip Networks ───
       "USDT-Ethereum": {
         network: "Ethereum",
         assetType: "Native",
@@ -300,21 +318,12 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         decimals: 6,
         contractAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
       },
-      "USDT-Sepolia": {
-        network: "Sepolia",
-        assetType: "Native",
-        displayName: "USDT (Sepolia)",
-        verified: true,
-        provider: 'chainflip',
-        chainflipId: 'usdt.eth',
-        decimals: 6,
-        // Note: Add testnet USDT contract address when available
-      },
+      */
     }
   },
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // DOT - Available on XCM chains AND Chainflip
+  // DOT - Testnet instances only for M2
   // ═══════════════════════════════════════════════════════════════════════════════
   "DOT": {
     symbol: "DOT",
@@ -324,14 +333,24 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     logo: "/tokens/dot.jpg",
     coingeckoId: "polkadot",
     networkInstances: {
-      // ─── XCM Networks ───
+      // ─── Testnet - AssetHub Perseverance (Chainflip) ───
+      "DOT-native-AssetHubPerseverance": {
+        network: "AssetHubPerseverance",
+        assetType: "Multi-Location",
+        displayName: "DOT (AssetHub Perseverance)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'dot.hub',
+        decimals: 10,
+      },
+      /* ─── MAINNET INSTANCES (Commented for M2) ───
       "DOT-native-AssetHubPolkadot": {
         network: "AssetHubPolkadot",
         assetType: "Multi-Location",
         displayName: "DOT (Native)",
         verified: true,
         provider: 'xcm',
-        chainflipId: 'dot.hub',  // Available for Chainflip cross-ecosystem swaps
+        chainflipId: 'dot.hub',
         decimals: 10,
       },
       "DOT-5-Hydration": {
@@ -355,19 +374,13 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         verified: true,
         provider: 'xcm',
       },
-      // ─── Chainflip Testnet ───
-      "DOT-native-AssetHubPerseverance": {
-        network: "AssetHubPerseverance",
-        assetType: "Multi-Location",
-        displayName: "DOT (AssetHub Perseverance)",
-        verified: true,
-        provider: 'chainflip',
-        chainflipId: 'dot.hub',
-        decimals: 10,
-      },
+      */
     }
   },
 
+  /* ═══════════════════════════════════════════════════════════════════════════════
+     XCM-ONLY ASSETS (No Chainflip support - Commented for M2)
+     ═══════════════════════════════════════════════════════════════════════════════
   "ACA": {
     symbol: "ACA",
     name: "Acala",
@@ -403,9 +416,10 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
       },
     }
   },
+  */
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // ETH - Chainflip only (Ethereum and Arbitrum)
+  // ETH - Testnet instances only for M2
   // ═══════════════════════════════════════════════════════════════════════════════
   "ETH": {
     symbol: "ETH",
@@ -415,19 +429,31 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     logo: "/tokens/eth.png",
     coingeckoId: "ethereum",
     networkInstances: {
-      "ETH-Ethereum": {
-        network: "Ethereum",
+      // ─── Testnet - Sepolia ───
+      "ETH-Sepolia": {
+        network: "Sepolia",
         assetType: "Native",
-        displayName: "ETH (Ethereum)",
+        displayName: "ETH (Sepolia)",
         verified: true,
         provider: 'chainflip',
         chainflipId: 'eth.eth',
         decimals: 18,
       },
-      "ETH-Sepolia": {
-        network: "Sepolia",
+      // ─── Testnet - Arbitrum Sepolia ───
+      "ETH-ArbitrumSepolia": {
+        network: "Arbitrum Sepolia",
         assetType: "Native",
-        displayName: "ETH (Sepolia)",
+        displayName: "ETH (Arbitrum Sepolia)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'eth.arb',
+        decimals: 18,
+      },
+      /* ─── MAINNET INSTANCES (Commented for M2) ───
+      "ETH-Ethereum": {
+        network: "Ethereum",
+        assetType: "Native",
+        displayName: "ETH (Ethereum)",
         verified: true,
         provider: 'chainflip',
         chainflipId: 'eth.eth',
@@ -442,20 +468,12 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         chainflipId: 'eth.arb',
         decimals: 18,
       },
-      "ETH-ArbitrumSepolia": {
-        network: "Arbitrum Sepolia",
-        assetType: "Native",
-        displayName: "ETH (Arbitrum Sepolia)",
-        verified: true,
-        provider: 'chainflip',
-        chainflipId: 'eth.arb',
-        decimals: 18,
-      },
+      */
     }
   },
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // SOL - Chainflip only (Solana Mainnet and Devnet)
+  // SOL - Testnet instances only for M2
   // ═══════════════════════════════════════════════════════════════════════════════
   "SOL": {
     symbol: "SOL",
@@ -465,15 +483,7 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     logo: "/tokens/sol.png",
     coingeckoId: "solana",
     networkInstances: {
-      "SOL-Solana": {
-        network: "Solana",
-        assetType: "Native",
-        displayName: "SOL (Solana)",
-        verified: true,
-        provider: 'chainflip',
-        chainflipId: 'sol.sol',
-        decimals: 9,
-      },
+      // ─── Testnet - Solana Devnet ───
       "SOL-SolanaDevnet": {
         network: "SolanaDevnet",
         assetType: "Native",
@@ -483,12 +493,24 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         chainflipId: 'sol.sol',
         decimals: 9,
       },
+      /* ─── MAINNET INSTANCES (Commented for M2) ───
+      "SOL-Solana": {
+        network: "Solana",
+        assetType: "Native",
+        displayName: "SOL (Solana)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'sol.sol',
+        decimals: 9,
+      },
+      */
     }
   },
 
-  // ═══════════════════════════════════════════════════════════════════════════════
+  /* ═══════════════════════════════════════════════════════════════════════════════
+     MAINNET-ONLY ASSETS (Commented for M2)
+     ═══════════════════════════════════════════════════════════════════════════════
   // BTC - Chainflip only (Bitcoin)
-  // ═══════════════════════════════════════════════════════════════════════════════
   "BTC": {
     symbol: "BTC",
     name: "Bitcoin",
@@ -508,9 +530,10 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
       },
     }
   },
+  */
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // FLIP - Chainflip native token (Ethereum/Sepolia)
+  // FLIP - Testnet instances only for M2
   // ═══════════════════════════════════════════════════════════════════════════════
   "FLIP": {
     symbol: "FLIP",
@@ -520,16 +543,7 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
     logo: "/tokens/flip.png",
     coingeckoId: "chainflip",
     networkInstances: {
-      "FLIP-Ethereum": {
-        network: "Ethereum",
-        assetType: "Native",
-        displayName: "FLIP (Ethereum)",
-        verified: true,
-        provider: 'chainflip',
-        chainflipId: 'flip.eth',
-        decimals: 18,
-        contractAddress: '0x826180541412D574cf1336d22c0C0a287822678A',
-      },
+      // ─── Testnet - Sepolia ───
       "FLIP-Sepolia": {
         network: "Sepolia",
         assetType: "Native",
@@ -540,6 +554,18 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryEntry> = {
         decimals: 18,
         contractAddress: '0xdC27c60956cB065D19F08bb69a707E37b36d8086', // tFLIP on Sepolia
       },
+      /* ─── MAINNET INSTANCES (Commented for M2) ───
+      "FLIP-Ethereum": {
+        network: "Ethereum",
+        assetType: "Native",
+        displayName: "FLIP (Ethereum)",
+        verified: true,
+        provider: 'chainflip',
+        chainflipId: 'flip.eth',
+        decimals: 18,
+        contractAddress: '0x826180541412D574cf1336d22c0C0a287822678A',
+      },
+      */
     }
   }
 
