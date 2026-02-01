@@ -56,7 +56,7 @@ export const AssetList = ({ assetGroups, onSelect, currentAsset, onClose }: Asse
               onClick={() => setExpandedSymbol(prev => prev === group.symbol ? null : group.symbol)}
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-flame-400 to-flame-500 flex items-center justify-center overflow-hidden">
+                <div className="w-9 h-9 rounded-full bg-midnight flex items-center justify-center overflow-hidden ring-1 ring-white/10">
                   {typeof group.icon === 'string' && group.icon.startsWith('/') ? (
                     <Image src={group.icon} alt={group.symbol} width={36} height={36} className="w-full h-full object-cover" />
                   ) : (

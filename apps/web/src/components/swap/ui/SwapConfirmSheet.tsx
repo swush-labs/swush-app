@@ -39,7 +39,7 @@ const SwapCard: React.FC<SwapCardProps> = ({
       {label && <p className="text-white text-sm font-medium" >{label}</p>}
       <div className="h-fit flex items-center rounded-2xl" >
         {
-          tokenIcon ? <Image src={tokenIcon} alt="token-icon" className="size-[45px]" /> :
+          tokenIcon ? <Image src={tokenIcon} alt="token-icon" width={45} height={45} className="size-[45px] rounded-full object-cover" /> :
           <div className="size-[45px] rounded-full bg-blackPearl" ></div>
         }
         <p className="text-lg font-medium uppercase ml-3 text-white" >{token ? token : "NOT FOUND"}</p>
@@ -63,8 +63,10 @@ export interface SwapConfirmSheetProps {
   onConfirm: () => void;
   inputAmount: string;
   inputToken: string;
+  inputTokenIcon?: string;
   outputAmount: string;
   outputToken: string;
+  outputTokenIcon?: string;
   slippageTolerance: number;
   simulationResult: SimulationResult | null;
   isConfirming: boolean;
@@ -76,8 +78,10 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
   onConfirm,
   inputAmount,
   inputToken,
+  inputTokenIcon,
   outputAmount,
   outputToken,
+  outputTokenIcon,
   slippageTolerance,
   simulationResult,
   isConfirming
@@ -118,6 +122,7 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
               <SwapCard 
                 label="You Pay"
                 token={inputToken}
+                tokenIcon={inputTokenIcon}
                 amount={inputAmount}
                 className="pl-4 sm:pl-8 pr-6"
               />
@@ -129,6 +134,7 @@ export const SwapConfirmSheet: React.FC<SwapConfirmSheetProps> = ({
               <SwapCard 
                 label="You Receive"
                 token={outputToken}
+                tokenIcon={outputTokenIcon}
                 amount={outputAmount}
                 className="pl-4 sm:pl-8 pr-6 pt-4"
               />

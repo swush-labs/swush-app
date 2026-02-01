@@ -441,8 +441,10 @@ export function SwapContainer() {
         onConfirm={handleConfirmSwap}
         inputAmount={inputAmount}
         inputToken={inputToken?.symbol || ''}
+        inputTokenIcon={typeof inputToken?.icon === 'string' && inputToken.icon.startsWith('/') ? inputToken.icon : undefined}
         outputAmount={outputAmount}
         outputToken={outputToken?.symbol || ''}
+        outputTokenIcon={typeof outputToken?.icon === 'string' && outputToken.icon.startsWith('/') ? outputToken.icon : undefined}
         slippageTolerance={slippageTolerance}
         simulationResult={flowState.simulationResult || null}
         isConfirming={false}

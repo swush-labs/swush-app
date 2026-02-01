@@ -89,19 +89,20 @@ export const SwapDetails = memo(function SwapDetails({
             </div>
           )}
         </div>
-        {/* Show estimated duration for Chainflip swaps */}
-        {provider === 'chainflip' && estimatedDuration && (
-          <>
-            <SubText>Est. Duration</SubText>
-            <SubText className="justify-self-end">
-              {isLoadingQuote ? (
-                <Skeleton className="w-16 h-5 animate-pulse" />
-              ) : (
-                estimatedDuration
-              )}
-            </SubText>
-          </>
-        )}
+        {/* Show estimated duration for Chainflip swaps 
+          {provider === 'chainflip' && estimatedDuration && (
+            <>
+              <SubText>Est. Duration</SubText>
+              <SubText className="justify-self-end">
+                {isLoadingQuote ? (
+                  <Skeleton className="w-16 h-5 animate-pulse" />
+                ) : (
+                  estimatedDuration
+                )}
+              </SubText>
+            </>
+          )}
+        */}
         <SubText>Route</SubText>
         <SubText className="justify-self-end" >
           {isLoadingQuote ? (
