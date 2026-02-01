@@ -15,8 +15,8 @@ pnpm i
 
 #### 2. Start the development servers:
 ```bash
-# Start web app and chopsticks
-pnpm dev:all
+# Start web app
+pnpm dev
 
 ```
 
